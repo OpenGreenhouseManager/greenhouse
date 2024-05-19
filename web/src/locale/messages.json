@@ -1,8 +1,8 @@
 {
   "locale": "en-US",
   "translations": {
-    "3181321956246135552": "Nothing to see here yet.",
-    "4380577927630678747": "Add some content to get startedd!",
-    "4707389893461695537": "this is some more localization!"
+    "HOME-HEADER": "Nothing to see here yet.",
+    "HOME-TEXT1": "Add some content to get startedd!",
+    "HOME-TEXT2": "this is some more localization!"
   }
 }
