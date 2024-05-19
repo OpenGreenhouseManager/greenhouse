@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
   standalone: true,
   imports: [RouterOutlet, ButtonModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   public str: string = $localize`:@@HOME-TEXT1:Add some content to get startedd!`;
