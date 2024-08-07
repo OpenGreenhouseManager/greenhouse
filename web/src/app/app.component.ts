@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
-  selector: 'app-root',
+  selector: 'grn-root',
   standalone: true,
   imports: [RouterOutlet, ButtonModule],
   templateUrl: './app.component.html',
