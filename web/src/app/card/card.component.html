@@ -3,11 +3,12 @@
     [style]="{
       width: 'fit-content',
       backgroundColor: 'var(--grn-card-color)',
+      borderRadius: '10px',
     }">
     <ng-template pTemplate="header">
       <div class="header">
-        <h3>{{ title() }}</h3>
-        <i class="pi pi-cog"></i>
+        <h1>{{ title() }}</h1>
+        <i class="pi pi-cog" (click)="iconClicked.emit()"></i>
       </div>
     </ng-template>
     <ng-template pTemplate="content">
