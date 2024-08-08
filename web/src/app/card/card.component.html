@@ -1,7 +1,19 @@
-<p-panel>
-  <ng-template pTemplate="header">
-    Header Text
-    <i class="pi pi-cog"></i>
-  </ng-template>
-  <ng-content></ng-content>
-</p-panel>
+<div class="component">
+  <p-card
+    [style]="{
+      width: 'fit-content',
+      backgroundColor: 'var(--grn-card-color)',
+    }">
+    <ng-template pTemplate="header">
+      <div class="header">
+        <h3>{{ title() }}</h3>
+        <i class="pi pi-cog"></i>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="content">
+      <div class="content">
+        <ng-content styleClass="card-content"></ng-content>
+      </div>
+    </ng-template>
+  </p-card>
+</div>

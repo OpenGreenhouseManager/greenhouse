@@ -1,2 +1,34 @@
 /* You can add global styles to this file, and also import other style files */
+$primaryColor: #717744 !default;
 @import 'primeicons/primeicons.css';
+:root {
+  --grn-background-color: #eff1ed;
+  --grn-accent-color: #766153;
+  --grn-primary-color: #373d20;
+  --grn-card-color: #71774456;
+  --grn-secondary-color: #717744;
+  --grn-text-color: #080b05;
+  --primary-color: #717744;
+  --text-color: var(--grn-text-color) !important;
+}
+
+.p-card-content {
+  padding: 0;
+}
+
+html {
+  background-color: var(--grn-background-color);
+  height: 100%;
+}
+
+html * {
+  font-size: 1em !important;
+  color: var(--grn-text-color) !important;
+}
+
+body {
+  height: 100%;
+}
+grn-root {
+  height: 100%;
+}

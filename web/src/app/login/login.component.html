@@ -1,3 +1,24 @@
-<grn-card>
-  <p>content</p>
-</grn-card>
+<main class="login">
+  <grn-card title="Login" class="card" [icon]="'pi-cog'">
+    <div class="container">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" type="text" pInputText [(ngModel)]="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <p-password
+          id="password"
+          [(ngModel)]="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          inputStyleClass="w-full"
+          [style]="{ width: '100%' }"
+          [inputStyle]="{ width: '100%' }" />
+      </div>
+      <div class="form-group login-button">
+        <p-button label="Login" />
+      </div>
+    </div>
+  </grn-card>
+</main>
