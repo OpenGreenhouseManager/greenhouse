@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { HttpClient } from '@angular/common/http';
-import { RegisterRequestDto, RegisterResponseDto } from '../dtos/register';
+import { LoginRequestDto, LoginResponseDto } from '../dtos/login';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'grn-login',
@@ -24,14 +25,18 @@ export class LoginComponent {
   username: string = '';
   password: string = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cookieService: CookieService) {}
 
   public login() {
-    let a = this.http.post<RegisterResponseDto>(
+    let a = this.http.post<LoginResponseDto>(
       'http://localhost:5001/api/login',
-      new RegisterRequestDto(this.username, this.password)
+      new LoginRequestDto(this.username, this.password),
+      {
+        withCredentials: true
+      }
     );
     a.subscribe(data => {
+      //this.cookieService.set('auth-token', data.token)
       console.log(data);
     });
   }

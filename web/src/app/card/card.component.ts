@@ -11,6 +11,6 @@ import { CardModule } from 'primeng/card';
 export class CardComponent {
   public title = input.required<string>();
   public icon = input<string>();
-  public icon_class = computed(() => `pi pi-${this.icon()}`);
+  public icon_class = computed(() => `pi ${this.icon()}`);
   public iconClicked = output();
 }
