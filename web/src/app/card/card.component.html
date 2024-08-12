@@ -1,1 +1,20 @@
-<p>card works!</p>
+<div class="component">
+  <p-card
+    [style]="{
+      width: 'fit-content',
+      backgroundColor: 'var(--grn-card-color)',
+      borderRadius: '10px',
+    }">
+    <ng-template pTemplate="header">
+      <div class="header">
+        <h1>{{ title() }}</h1>
+        <i [class]="icon_class()" (click)="iconClicked.emit()"></i>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="content">
+      <div class="content">
+        <ng-content styleClass="card-content"></ng-content>
+      </div>
+    </ng-template>
+  </p-card>
+</div>
