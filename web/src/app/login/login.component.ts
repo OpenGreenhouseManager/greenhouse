@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CardComponent } from '../card/card.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequestDto, LoginResponseDto } from '../dtos/login';
-import { CookieService } from 'ngx-cookie-service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'grn-login',
@@ -24,20 +24,28 @@ import { CookieService } from 'ngx-cookie-service';
 export class LoginComponent {
   username: string = '';
   password: string = '';
+  public error = signal(false);
 
-  constructor(private http: HttpClient, private cookieService: CookieService) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) {}
 
   public login() {
-    let a = this.http.post<LoginResponseDto>(
-      'http://localhost:5001/api/login',
-      new LoginRequestDto(this.username, this.password),
-      {
-        withCredentials: true
-      }
-    );
-    a.subscribe(data => {
-      //this.cookieService.set('auth-token', data.token)
-      console.log(data);
-    });
+    this.http
+      .post<LoginResponseDto>(
+        'http://localhost:5001/api/login',
+        new LoginRequestDto(this.username, this.password),
+        {
+          withCredentials: true,
+        }
+      )
+      .subscribe({
+        complete: () => this.router.navigate(['/']),
+        error: () => {
+          this.password = '';
+          this.error.set(true);
+        },
+      });
   }
 }

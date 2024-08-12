@@ -9,7 +9,7 @@ $primaryColor: #717744 !default;
   --grn-secondary-color: #717744;
   --grn-text-color: #080b05;
   --primary-color: #717744;
-  --text-color: var(--grn-text-color) !important;
+  --text-color: var(--grn-text-color);
 }
 
 .p-card-content {
@@ -22,8 +22,8 @@ html {
 }
 
 html * {
-  font-size: 1em !important;
-  color: var(--grn-text-color) !important;
+  font-size: 1em;
+  color: var(--grn-text-color);
 }
 
 body {
