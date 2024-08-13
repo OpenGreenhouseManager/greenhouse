@@ -49,4 +49,8 @@ export class LoginComponent {
         },
       });
   }
+
+  public navRegister() {
+    this.router.navigate(['/register']);
+  }
 }

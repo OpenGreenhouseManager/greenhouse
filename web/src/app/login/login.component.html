@@ -21,6 +21,14 @@
           <label class="login-failed">Password or username wrong</label>
         </div>
       }
+      <div class="form-group">
+        <p-button
+          type="button"
+          label="Register instead"
+          class="p-button-text"
+          [text]="true"
+          (click)="navRegister()" />
+      </div>
       <div class="form-group login-button">
         <p-button label="Login" (click)="login()" />
       </div>
