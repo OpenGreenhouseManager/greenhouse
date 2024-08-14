@@ -5,7 +5,7 @@ use axum::{
 use derive_more::From;
 use serde::Serialize;
 
-use crate::{database, user_token};
+use crate::{database, token};
 
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -17,7 +17,7 @@ pub enum Error {
     #[from]
     User(database::Error),
     #[from]
-    Token(user_token::Error),
+    Token(token::Error),
 }
 
 // region:    --- Error Boilerplate
