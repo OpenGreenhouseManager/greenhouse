@@ -11,9 +11,10 @@ export class RegisterResponseDto {
 export class RegisterRequestDto {
   username!: string;
   password!: string;
-
-  constructor(username: string, password: string) {
+  one_time_password!: string;
+  constructor(username: string, password: string, one_time_password: string) {
     this.username = username;
     this.password = password;
+    this.one_time_password = one_time_password;
   }
 }

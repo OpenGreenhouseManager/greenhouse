@@ -28,6 +28,8 @@ export class RegisterComponent {
   username: string = '';
   password: string = '';
   passwordRepeat: string = '';
+  otp: string = '';
+
   public error = signal(false);
   public passwordError = signal(false);
   constructor(
@@ -51,7 +53,7 @@ export class RegisterComponent {
     this.http
       .post<RegisterResponseDto>(
         apiRegister,
-        new RegisterRequestDto(this.username, this.password),
+        new RegisterRequestDto(this.username, this.password, this.otp),
         {
           withCredentials: true,
         }
