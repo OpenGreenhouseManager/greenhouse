@@ -16,8 +16,7 @@ export class NavBarComponent {
   ) {}
 
   signOut() {
-    this.router.navigate(['/login']);
-
     this.cookieService.delete('auth-token');
+    this.router.navigate(['/login']);
   }
 }
