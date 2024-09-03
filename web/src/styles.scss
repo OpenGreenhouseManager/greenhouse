@@ -18,17 +18,18 @@ $primaryColor: #717744 !default;
 
 html {
   background-color: var(--grn-background-color);
-  height: 100%;
+  height: 1vh;
 }
 
 html * {
   font-size: 1em;
+  font-family: sans-serif;
   color: var(--grn-text-color);
 }
 
 body {
-  height: 100%;
+  height: 1vh;
 }
 grn-root {
-  height: 100%;
+  height: 1vh;
 }
