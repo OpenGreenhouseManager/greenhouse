@@ -3,6 +3,7 @@ import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './_guards/auth.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { RegisterComponent } from './register/register.component';
+import { SettingsComponent } from './settings/settings.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -36,7 +37,7 @@ export const routes: Routes = [
   },
   {
     path: 'settings',
-    component: DashboardComponent,
+    component: SettingsComponent,
     canActivate: [AuthGuard],
   },
   {

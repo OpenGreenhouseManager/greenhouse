@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { HttpClient } from '@angular/common/http';
 import { RegisterRequestDto, RegisterResponseDto } from '../dtos/register';
 import { Router } from '@angular/router';
-import { apiRegister } from '../urls/urls';
+import { register } from '../urls/urls';
 import { DividerModule } from 'primeng/divider';
 
 @Component({
@@ -52,7 +52,7 @@ export class RegisterComponent {
     }
     this.http
       .post<RegisterResponseDto>(
-        apiRegister,
+        register,
         new RegisterRequestDto(this.username, this.password, this.otp),
         {
           withCredentials: true,

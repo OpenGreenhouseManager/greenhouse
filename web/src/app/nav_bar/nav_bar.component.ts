@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'grn-nav-bar',
@@ -9,5 +10,14 @@ import { RouterModule } from '@angular/router';
   styleUrl: './nav_bar.component.scss',
 })
 export class NavBarComponent {
-  constructor() {}
+  constructor(
+    private router: Router,
+    private cookieService: CookieService
+  ) {}
+
+  signOut() {
+    this.router.navigate(['/login']);
+
+    this.cookieService.delete('auth-token');
+  }
 }
