@@ -1,0 +1,58 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  background-color: var(--grn-card-color);
+  text-align: start;
+  height: 100%;
+  overflow: hidden;
+}
+
+.nav :first-child {
+  margin-bottom: auto;
+}
+
+.nav :last-child {
+  margin-top: auto;
+}
+
+.line {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+span {
+  padding: 10px;
+  white-space: nowrap;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+}
+
+//center text
+.text {
+  display: flex;
+  text-align: center;
+}
+
+.background {
+  background-color: var(--grn-background-color);
+  position: fixed;
+  height: 100%;
+  width: 50px;
+  left: 0;
+  top: 0;
+  transition: width 0.5s;
+  -webkit-transition: width 0.5s;
+  z-index: 1;
+}
+
+.background:hover {
+  width: 250px;
+}
+
+a {
+  text-decoration: none;
+}
