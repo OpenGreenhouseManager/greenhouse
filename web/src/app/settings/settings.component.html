@@ -1,0 +1,71 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <h1>Settings</h1>
+  <div class="content">
+    <div class="content_left">
+      <div
+        class="list_item"
+        [ngClass]="{ selected: currentTab === settingsTabs.Dashboard }"
+        (click)="changeTab(settingsTabs.Dashboard)">
+        <span class="text">Dashboard</span>
+        <span class="icon"><i class="pi pi-chevron-right"></i></span>
+      </div>
+      <div
+        class="list_item"
+        [ngClass]="{ selected: currentTab === settingsTabs.Watchdog }"
+        (click)="changeTab(settingsTabs.Watchdog)">
+        <span class="text">Watchdog</span>
+        <span class="icon"><i class="pi pi-chevron-right"></i></span>
+      </div>
+      <div
+        class="list_item"
+        [ngClass]="{ selected: currentTab === settingsTabs.AdminSettings }"
+        (click)="changeTab(settingsTabs.AdminSettings)">
+        <span class="text">Admin Settings</span>
+        <span class="icon"><i class="pi pi-chevron-right"></i></span>
+      </div>
+    </div>
+    <div class="content_right">
+      @if (currentTab === settingsTabs.Dashboard) {
+        <grn-card title="Dashboard Settings" class="card">
+          <div class="card_content">
+            <p>Admin settings works!</p>
+          </div>
+        </grn-card>
+      } @else if (currentTab === settingsTabs.Watchdog) {
+        <grn-card title="Watchdog Settings" class="card">
+          <div class="card_content">
+            <p>Watchdog settings work</p>
+          </div>
+        </grn-card>
+      } @else if (currentTab === settingsTabs.AdminSettings) {
+        <grn-card title="Admin Settings" class="card">
+          <div class="card_content">
+            <div class="otp">
+              <span class="otp_input">
+                <input
+                  id="otpUsername"
+                  type="text"
+                  pInputText
+                  [(ngModel)]="otpUsername" />
+                <p-button type="button" (click)="RequestOtp()">
+                  <span class="button_label">Request otp</span>
+                </p-button> </span
+              ><span class="otp_output">
+                <p-inputGroup>
+                  <input id="otp" type="text" pInputText [(ngModel)]="otp" />
+                  <p-button
+                    type="button"
+                    icon="pi pi-clipboard"
+                    (click)="copyToClipboard()"
+                    [severity]="!isCopied ? 'warning' : 'primary'">
+                  </p-button>
+                </p-inputGroup>
+              </span>
+            </div>
+          </div>
+        </grn-card>
+      }
+    </div>
+  </div>
+</main>

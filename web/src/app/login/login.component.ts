@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequestDto, LoginResponseDto } from '../dtos/login';
 import { Router } from '@angular/router';
-import { apiRegister } from '../urls/urls';
+import { login } from '../urls/urls';
 
 @Component({
   selector: 'grn-login',
@@ -35,7 +35,7 @@ export class LoginComponent {
   public login() {
     this.http
       .post<LoginResponseDto>(
-        apiRegister,
+        login,
         new LoginRequestDto(this.username, this.password),
         {
           withCredentials: true,

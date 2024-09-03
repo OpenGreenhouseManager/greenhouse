@@ -1,0 +1,78 @@
+main {
+  padding-left: 50px;
+  h1 {
+    font-size: calc(1.375rem + 1.5vw);
+  }
+  .list_item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+    .text {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+    //center i element inside this span .icon element
+    .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  .list_item:hover {
+    background-color: var(--grn-card-color);
+    border-radius: 5px;
+  }
+  .selected {
+    background-color: var(--grn-card-color);
+    border-radius: 5px;
+  }
+  .content {
+    display: flex;
+    flex-direction: row;
+    .content_left {
+      height: 100%;
+      width: 25%;
+      display: flex;
+      flex-direction: column;
+    }
+    .content_right {
+      padding-left: 8px;
+      height: 100%;
+      width: 75%;
+      display: flex;
+      flex-direction: column;
+
+      //make the card content the rest of the screen width but width: 100% is not working
+      .card_content {
+        width: calc(75vw - 100px);
+        .otp {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 8px;
+          .otp_input {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            width: 50%;
+            input {
+              width: -webkit-fill-available;
+            }
+            .button_label {
+              white-space: nowrap;
+              font-weight: 600;
+            }
+          }
+          .otp_output {
+            width: 50%;
+            .warning {
+              background: #fbc02d !important;
+            }
+          }
+        }
+      }
+    }
+  }
+}
