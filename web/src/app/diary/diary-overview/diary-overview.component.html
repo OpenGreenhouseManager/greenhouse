@@ -1,0 +1,31 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    <h1>Diary</h1>
+    <p-button type="button" (click)="addEntry()">
+      <i class="pi pi-plus"></i><span class="button_label">Add Entry</span>
+    </p-button>
+  </div>
+  <div class="content">
+    <grn-card [title]="title()" class="card" [centerTitle]="true">
+      <div class="DiaryContainer">
+        <div class="chevron" (click)="subDate()">
+          <i class="pi pi-chevron-left"></i>
+        </div>
+        <div class="container">
+          <span
+            class="list_item"
+            *ngFor="let diary of diaries()"
+            (click)="diaryClicked(diary.id)">
+            <i class="pi pi-book"></i>
+            <h2>{{ diary.title }}</h2>
+            <span>{{ getTime(diary.date) }}</span>
+          </span>
+        </div>
+        <div class="chevron" (click)="addDate()">
+          <i class="pi pi-chevron-right"></i>
+        </div>
+      </div>
+    </grn-card>
+  </div>
+</main>
