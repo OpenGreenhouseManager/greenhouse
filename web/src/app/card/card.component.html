@@ -6,7 +6,7 @@
       borderRadius: '10px',
     }">
     <ng-template pTemplate="header">
-      <div class="header">
+      <div class="header" [ngClass]="{ center: centerTitle() }">
         <h1>{{ title() }}</h1>
         <i [class]="icon_class()" (click)="iconClicked.emit()"></i>
       </div>
