@@ -37,6 +37,22 @@ const mockDiaries = [
 })
 export class DiaryService {
   constructor(private http: HttpClient) {}
+  getDiary(id: string): Diary {
+    return mockDiaries
+      .filter(diary => diary.id === id)
+      .map(
+        diary =>
+          new Diary(
+            diary.id,
+            parseISO(diary.date),
+            diary.title,
+            diary.content,
+            parseISO(diary.created_at),
+            parseISO(diary.updated_at)
+          )
+      )[0];
+  }
+
   getDiaries(start: Date, end: Date): Diary[] {
     return mockDiaries
       .filter(diary => {

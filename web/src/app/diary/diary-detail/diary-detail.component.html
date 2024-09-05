@@ -1,0 +1,18 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    <h1>Diary</h1>
+    <p-button type="button" (click)="editEntry()">
+      <i class="pi pi-pencil"></i><span class="button_label">Edit Entry</span>
+    </p-button>
+  </div>
+  <div class="content">
+    <grn-card [title]="diary()?.title || ''" class="card">
+      <div class="content">
+        <div class="container">
+          <p>{{ diary()?.content || '' }}</p>
+        </div>
+      </div>
+    </grn-card>
+  </div>
+</main>
