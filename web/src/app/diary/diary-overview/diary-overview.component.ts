@@ -60,7 +60,10 @@ export class DiaryOverviewComponent {
     this.router.navigate(['/diary/add']);
   }
 
-  getTime(date: Date) {
+  getTime(date: Date | undefined) {
+    if (!date) {
+      return '';
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 

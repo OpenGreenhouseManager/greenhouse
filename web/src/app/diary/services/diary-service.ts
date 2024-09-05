@@ -43,7 +43,6 @@ export class DiaryService {
       .map(
         diary =>
           new Diary(
-            diary.id,
             parseISO(diary.date),
             diary.title,
             diary.content,
@@ -53,55 +52,35 @@ export class DiaryService {
       )[0];
   }
 
-  getDiaries(start: Date, end: Date): Diary[] {
-    return mockDiaries
-      .filter(diary => {
-        const diaryDate = new Date(diary.date);
-        return diaryDate >= start && diaryDate <= end;
-      })
-      .map(
-        diary =>
-          new Diary(
-            diary.id,
-            parseISO(diary.date),
-            diary.title,
-            diary.content,
-            parseISO(diary.created_at),
-            parseISO(diary.updated_at)
-          )
-      );
+  getDiaries(start: Date, end: Date): Map<string, Diary> {
+    const a = mockDiaries.filter(diary => {
+      const date = parseISO(diary.date);
+      return date >= start && date <= end;
+    });
 
-    this.http
-      .get<GetDiaryDtoResponse>(
-        `${diary}?start=${formatISO(start)}&end=${formatISO(end)}`
-      )
-      .subscribe({
-        next: diaries => {
-          return diaries.entries.map(
-            diary =>
-              new Diary(
-                diary.id,
-                parseISO(diary.date),
-                diary.title,
-                diary.content,
-                parseISO(diary.created_at),
-                parseISO(diary.updated_at)
-              )
-          );
-        },
-        error: () => {
-          return [];
-        },
-      });
-    return [];
+    const b = new Map<string, Diary>();
+    for (let i = 0; i < a.length; i++) {
+      const diary = a[i];
+      b.set(
+        diary.id,
+        new Diary(
+          parseISO(diary.date),
+          diary.title,
+          diary.content,
+          parseISO(diary.created_at),
+          parseISO(diary.updated_at)
+        )
+      );
+    }
+    return b;
   }
-  addDiaryEntry() {
+  addDiaryEntry(diary: Diary) {
     return;
   }
-  updateDiaryEntry() {
+  updateDiaryEntry(id: string, diary: Diary) {
     return;
   }
-  deleteDiaryEntry() {
+  deleteDiaryEntry(id: string) {
     return;
   }
 }
