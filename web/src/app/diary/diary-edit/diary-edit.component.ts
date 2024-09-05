@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { CommonModule } from '@angular/common';
 import { CardComponent } from '../../card/card.component';
@@ -10,6 +10,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DiaryService } from '../services/diary-service';
 import { Diary } from '../models/diary';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'grn-diary-edit',
@@ -27,27 +28,19 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
   templateUrl: './diary-edit.component.html',
   styleUrl: './diary-edit.component.scss',
 })
-export class DiaryEditComponent implements OnInit {
+export class DiaryEditComponent {
   private id = this.route.snapshot.paramMap.get('id');
   edit = computed(() => this.id !== null);
-  diary = signal(new Diary(new Date(), '', '', new Date(), new Date()));
+  diary = toSignal(this.diaryService.getDiary(this.id as string), {
+    initialValue: new Diary(new Date(), '', '', new Date(), new Date()),
+    rejectErrors: true,
+  });
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private diaryService: DiaryService
   ) {}
-
-  async ngOnInit() {
-    if (this.edit()) {
-      const diary = await this.diaryService.getDiary(this.id as string);
-      if (diary) {
-        this.diary.set(diary);
-        return;
-      }
-      this.id = null;
-    }
-  }
 
   saveEntry() {
     if (this.edit()) {
