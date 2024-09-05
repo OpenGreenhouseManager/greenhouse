@@ -7,10 +7,10 @@
     </p-button>
   </div>
   <div class="content">
-    <grn-card [title]="diary()?.title" class="card">
+    <grn-card [title]="diary()?.title || ''" class="card">
       <div class="content">
         <div class="container">
-          <p>{{ diary()?.content }}</p>
+          <p>{{ diary()?.content || '' }}</p>
         </div>
       </div>
     </grn-card>
