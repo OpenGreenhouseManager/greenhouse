@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { CommonModule } from '@angular/common';
 import { CardComponent } from '../../card/card.component';
@@ -17,6 +17,7 @@ import {
   subDays,
   addDays,
 } from 'date-fns';
+import { Diary } from '../models/diary';
 
 @Component({
   selector: 'grn-diary-overview',
@@ -34,13 +35,8 @@ import {
   templateUrl: './diary-overview.component.html',
   styleUrl: './diary-overview.component.scss',
 })
-export class DiaryOverviewComponent {
-  diaries = computed(() => {
-    return this.diaryService.getDiaries(
-      startOfDay(this.selectedDate()),
-      endOfDay(this.selectedDate())
-    );
-  });
+export class DiaryOverviewComponent implements OnInit {
+  diaries = signal(new Map<string, Diary>());
   selectedDate = signal(new Date());
   title = computed(() => {
     if (isToday(this.selectedDate())) {
@@ -56,11 +52,23 @@ export class DiaryOverviewComponent {
     private diaryService: DiaryService
   ) {}
 
+  ngOnInit() {
+    this.diaryService
+      .getDiaries(
+        startOfDay(this.selectedDate()),
+        endOfDay(this.selectedDate())
+      )
+      .subscribe(this.diaries);
+  }
+
   addEntry() {
     this.router.navigate(['/diary/add']);
   }
 
-  getTime(date: Date) {
+  getTime(date: Date | undefined) {
+    if (!date) {
+      return '';
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 

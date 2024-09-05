@@ -1,0 +1,41 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    @if (edit()) {
+      <h1>Edit Diary</h1>
+    } @else {
+      <h1>Add Diary</h1>
+    }
+  </div>
+  <div class="outer-container">
+    <div class="content-width">
+      <grn-card title="Edit" class="card">
+        <div class="content">
+          <div class="container-width-restriction">
+            <div class="container">
+              <div class="editGroup">
+                <label for="Title">Title</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Title"
+                  [(ngModel)]="diary().title" />
+              </div>
+              <div class="editGroup">
+                <label for="Content">Content</label>
+                <textarea
+                  pInputTextarea
+                  [autoResize]="true"
+                  id="Content"
+                  [(ngModel)]="diary().content"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </grn-card>
+      <p-button type="button" (click)="saveEntry()">
+        <i class="pi pi-save"></i><span class="button_label">Save</span>
+      </p-button>
+    </div>
+  </div>
+</main>

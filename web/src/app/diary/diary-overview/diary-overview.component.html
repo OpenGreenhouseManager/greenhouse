@@ -15,11 +15,11 @@
         <div class="container">
           <span
             class="list_item"
-            *ngFor="let diary of diaries()"
-            (click)="diaryClicked(diary.id)">
+            *ngFor="let diary of diaries() | keyvalue"
+            (click)="diaryClicked(diary?.key || '')">
             <i class="pi pi-book"></i>
-            <h2>{{ diary.title }}</h2>
-            <span>{{ getTime(diary.date) }}</span>
+            <h2>{{ diary?.value?.title || '' }}</h2>
+            <span>{{ getTime(diary?.value?.date) }}</span>
           </span>
         </div>
         <div class="chevron" (click)="addDate()">
