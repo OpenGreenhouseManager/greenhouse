@@ -38,9 +38,14 @@ export class DiaryEditComponent implements OnInit {
     private diaryService: DiaryService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     if (this.edit()) {
-      this.diary.set(this.diaryService.getDiary(this.id as string));
+      const diary = await this.diaryService.getDiary(this.id as string);
+      if (diary) {
+        this.diary.set(diary);
+        return;
+      }
+      this.id = null;
     }
   }
 
