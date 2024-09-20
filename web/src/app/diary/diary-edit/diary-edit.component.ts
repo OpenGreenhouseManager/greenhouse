@@ -11,6 +11,7 @@ import { DiaryService } from '../services/diary-service';
 import { Diary } from '../models/diary';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { CalendarModule } from 'primeng/calendar';
 
 @Component({
   selector: 'grn-diary-edit',
@@ -24,6 +25,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     ButtonModule,
     InputGroupModule,
     InputTextareaModule,
+    CalendarModule,
   ],
   templateUrl: './diary-edit.component.html',
   styleUrl: './diary-edit.component.scss',
@@ -31,7 +33,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class DiaryEditComponent {
   private id = this.route.snapshot.paramMap.get('id');
   edit = computed(() => this.id !== null);
-  diary = toSignal(this.diaryService.getDiary(this.id as string), {
+  diary = toSignal(this.diaryService.getDiary(this.id), {
     initialValue: new Diary(new Date(), '', '', new Date(), new Date()),
     rejectErrors: true,
   });
@@ -43,11 +45,15 @@ export class DiaryEditComponent {
   ) {}
 
   saveEntry() {
+    let observable;
     if (this.edit()) {
-      this.diaryService.updateDiaryEntry(this.id ?? '', this.diary());
+      observable = this.diaryService.updateDiaryEntry(
+        this.id ?? '',
+        this.diary()
+      );
     } else {
-      this.diaryService.addDiaryEntry(this.diary());
+      observable = this.diaryService.addDiaryEntry(this.diary());
     }
-    this.router.navigate(['/diary']);
+    observable.subscribe(() => this.router.navigate(['/diary']));
   }
 }

@@ -11,6 +11,7 @@
       <div class="content">
         <div class="container">
           <p>{{ diary()?.content || '' }}</p>
+          <span>{{ getDate(diary()?.date) }}</span>
         </div>
       </div>
     </grn-card>

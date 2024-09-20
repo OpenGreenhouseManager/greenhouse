@@ -29,6 +29,16 @@
                   id="Content"
                   [(ngModel)]="diary().content"></textarea>
               </div>
+              <div class="editGroup">
+                <label for="Date">Date</label>
+                <p-calendar
+                  [style]="{ width: '100%' }"
+                  [inputStyle]="{ width: '100%' }"
+                  inputId="calendar-24h"
+                  [(ngModel)]="diary().date"
+                  [showTime]="true"
+                  [hourFormat]="'24'" />
+              </div>
             </div>
           </div>
         </div>

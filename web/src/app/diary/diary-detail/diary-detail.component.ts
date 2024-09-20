@@ -40,4 +40,11 @@ export class DiaryDetailComponent {
   editEntry() {
     this.router.navigate(['diary', this.id, 'edit']);
   }
+
+  getDate(date: Date | undefined): string {
+    if (date === undefined) {
+      return '';
+    }
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
 }

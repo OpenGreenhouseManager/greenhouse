@@ -16,7 +16,7 @@
           <span
             class="list_item"
             *ngFor="let diary of diaries() | keyvalue"
-            (click)="diaryClicked(diary?.key || '')">
+            (click)="diaryClicked(diary?.key)">
             <i class="pi pi-book"></i>
             <h2>{{ diary?.value?.title || '' }}</h2>
             <span>{{ getTime(diary?.value?.date) }}</span>
