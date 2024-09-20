@@ -47,18 +47,14 @@ export class DiaryOverviewComponent implements OnInit {
     }
     return this.selectedDate().toLocaleDateString();
   });
+
   constructor(
     private router: Router,
     private diaryService: DiaryService
   ) {}
 
   ngOnInit() {
-    this.diaryService
-      .getDiaries(
-        startOfDay(this.selectedDate()),
-        endOfDay(this.selectedDate())
-      )
-      .subscribe(this.diaries);
+    this.updateDiaries();
   }
 
   addEntry() {
@@ -74,6 +70,7 @@ export class DiaryOverviewComponent implements OnInit {
 
   subDate() {
     this.selectedDate.set(subDays(this.selectedDate(), 1));
+    this.updateDiaries();
   }
 
   addDate() {
@@ -81,9 +78,21 @@ export class DiaryOverviewComponent implements OnInit {
       return;
     }
     this.selectedDate.set(addDays(this.selectedDate(), 1));
+    this.updateDiaries();
   }
 
-  diaryClicked(diaryId: string) {
+  updateDiaries() {
+    this.diaryService
+      .getDiaries(
+        startOfDay(this.selectedDate()),
+        endOfDay(this.selectedDate())
+      )
+      .subscribe(value => {
+        this.diaries.set(value);
+      });
+  }
+
+  diaryClicked(diaryId: string | undefined) {
     this.router.navigate(['/diary', diaryId]);
   }
 }

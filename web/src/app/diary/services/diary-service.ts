@@ -4,9 +4,7 @@ import {
   DiaryEntryDtoResponse,
   GetDiaryDtoResponse,
   PostDiaryEntryDtoRequest,
-  PostDiaryEntryDtoResponse,
   PutDiaryEntryDtoRequest,
-  PutDiaryEntryDtoResponse,
 } from '../../dtos/diary';
 import { Diary } from '../models/diary';
 import { Injectable } from '@angular/core';
@@ -18,9 +16,15 @@ import { map, Observable } from 'rxjs';
 })
 export class DiaryService {
   constructor(private http: HttpClient) {}
-  getDiary(id: string): Observable<Diary> {
+  getDiary(id: string | null): Observable<Diary> {
+    if (id === null) {
+      return new Observable<Diary>();
+    }
+
     return this.http
-      .get<DiaryEntryDtoResponse>(`${diary}/${id}`)
+      .get<DiaryEntryDtoResponse>(`${diary}/${id}`, {
+        withCredentials: true,
+      })
       .pipe(
         map(
           x =>
@@ -37,12 +41,12 @@ export class DiaryService {
 
   getDiaries(start: Date, end: Date): Observable<Map<string, Diary>> {
     return this.http
-      .get<GetDiaryDtoResponse>(diary, {
-        params: {
-          start: start.toISOString(),
-          end: end.toISOString(),
-        },
-      })
+      .get<GetDiaryDtoResponse>(
+        diary + '/' + start.toISOString() + '/' + end.toISOString(),
+        {
+          withCredentials: true,
+        }
+      )
       .pipe(
         map(x => {
           const a = new Map<string, Diary>();
@@ -64,48 +68,38 @@ export class DiaryService {
       );
   }
 
-  addDiaryEntry(newDiary: Diary): Observable<Diary> {
-    return this.http
-      .post<PostDiaryEntryDtoResponse>(diary, {
+  addDiaryEntry(newDiary: Diary): Observable<void> {
+    return this.http.post<void>(
+      diary,
+      {
         date: formatISO(newDiary.date),
         title: newDiary.title,
         content: newDiary.content,
-      } as PostDiaryEntryDtoRequest)
-      .pipe(
-        map(x => {
-          return new Diary(
-            parseISO(x.date),
-            x.title,
-            x.content,
-            parseISO(x.created_at),
-            parseISO(x.updated_at)
-          );
-        })
-      );
+      } as PostDiaryEntryDtoRequest,
+      {
+        withCredentials: true,
+      }
+    );
   }
 
-  updateDiaryEntry(id: string, newDiary: Diary): Observable<Diary> {
-    return this.http
-      .put<PutDiaryEntryDtoResponse>(`${diary}/${id}`, {
+  updateDiaryEntry(id: string, newDiary: Diary): Observable<void> {
+    return this.http.put<void>(
+      `${diary}/${id}`,
+      {
         date: formatISO(newDiary.date),
         title: newDiary.title,
         content: newDiary.content,
-      } as PutDiaryEntryDtoRequest)
-      .pipe(
-        map(x => {
-          return new Diary(
-            parseISO(x.date),
-            x.title,
-            x.content,
-            parseISO(x.created_at),
-            parseISO(x.updated_at)
-          );
-        })
-      );
+      } as PutDiaryEntryDtoRequest,
+      {
+        withCredentials: true,
+      }
+    );
   }
 
   deleteDiaryEntry(id: string): Observable<void> {
-    return this.http.delete<void>(`${diary}/${id}`);
+    return this.http.delete<void>(`${diary}/${id}`, {
+      withCredentials: true,
+    });
   }
 }
 
