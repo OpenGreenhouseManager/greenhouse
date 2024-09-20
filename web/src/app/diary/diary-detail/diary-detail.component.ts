@@ -42,7 +42,7 @@ export class DiaryDetailComponent {
   }
 
   getDate(date: Date | undefined): string {
-    if (date === undefined) {
+    if (!date) {
       return '';
     }
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
