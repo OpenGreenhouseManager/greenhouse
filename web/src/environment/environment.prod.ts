@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  baseUrl: 'http://localhost:5100',
+  baseUrl: 'http://greenhouse_backend_release-auth_service-1:5100',
 };
