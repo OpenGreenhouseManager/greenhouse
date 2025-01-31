@@ -3,7 +3,7 @@ FROM --platform=$BUILDPLATFORM node:23.6.1-bullseye-slim as builder
 RUN mkdir /greenhouse_web
 WORKDIR /greenhouse_web
 
-RUN npm install -g @angular/cli@18
+RUN npm install -g @angular/cli@19
 
 COPY package.json package-lock.json ./
 RUN npm ci
