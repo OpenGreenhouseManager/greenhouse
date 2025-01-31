@@ -24,16 +24,15 @@
               <div class="editGroup">
                 <label for="Content">Content</label>
                 <textarea
-                  pInputTextarea
+                  pTextarea
                   [autoResize]="true"
                   id="Content"
                   [(ngModel)]="diary().content"></textarea>
               </div>
               <div class="editGroup">
                 <label for="Date">Date</label>
-                <p-calendar
+                <p-datepicker
                   [style]="{ width: '100%' }"
-                  [inputStyle]="{ width: '100%' }"
                   inputId="calendar-24h"
                   [(ngModel)]="diary().date"
                   [showTime]="true"
