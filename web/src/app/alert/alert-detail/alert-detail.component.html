@@ -1,0 +1,19 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    <h1>
+      Alert {{ identifier }} from {{ display(dataSource || 'not found') }}
+      @if (alias()) {
+        ({{ alias() }})
+      }
+    </h1>
+  </div>
+  <div class="content">
+    @if (!alerts()) {
+      ERROR LOADING ALERTS
+    } @else {
+      <grn-alert-detail-list [alerts]="alerts()!"></grn-alert-detail-list>
+      <grn-alert-detail-info [alerts]="alerts()!"></grn-alert-detail-info>
+    }
+  </div>
+</main>

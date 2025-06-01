@@ -28,3 +28,11 @@ html * {
 grn-root {
   height: 97vh;
 }
+
+.p-tag.p-tag-error {
+  background-color: #f44336;
+}
+.p-tag.p-tag-fatal {
+  background-color: #b71c1c !important; // darker red
+  color: #fff !important;
+}

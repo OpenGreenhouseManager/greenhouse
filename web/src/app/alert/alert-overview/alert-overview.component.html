@@ -1,0 +1,141 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    <h1>Alert</h1>
+  </div>
+  <div class="content">
+    <p-dropdown
+      [options]="intervals"
+      [(ngModel)]="selectedInterval"
+      optionLabel="label" />
+    <p-table
+      #dt2
+      [value]="alerts()"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [paginator]="true"
+      [globalFilterFields]="[
+        'identifier',
+        'source',
+        'first',
+        'last',
+        'severity',
+      ]"
+      [customSort]="true"
+      (sortFunction)="customSort($event)"
+      [tableStyle]="{ width: '85rem' }">
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="count" style="width: 5rem">Count</th>
+          <th pSortableColumn="identifier" style="width: 20rem">
+            <div class="flex justify-between items-center">
+              Identifier
+              <p-sortIcon field="identifier" />
+              <p-columnFilter
+                type="text"
+                field="identifier"
+                display="menu"
+                class="ml-auto"></p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="source" style="width: 20rem">
+            <div class="flex justify-between items-center">
+              Source
+              <p-sortIcon field="source" />
+              <p-columnFilter
+                type="text"
+                field="source"
+                display="menu"
+                class="ml-auto"></p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="first" style="width: 20rem">
+            <div class="flex justify-between items-center">
+              First
+              <p-sortIcon field="first" />
+              <p-columnFilter
+                type="date"
+                field="first"
+                display="menu"
+                class="ml-auto"></p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="last" style="width: 20rem">
+            <div class="flex justify-between items-center">
+              Last
+              <p-sortIcon field="last" />
+              <p-columnFilter
+                type="date"
+                field="last"
+                display="menu"
+                class="ml-auto"></p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="severity" style="width: 15rem">
+            <div class="flex justify-between items-center">
+              Severity
+              <p-sortIcon field="severity" />
+              <p-columnFilter
+                field="severity"
+                matchMode="equals"
+                display="menu"
+                class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select
+                    [(ngModel)]="selectedSeverity"
+                    [options]="severityOptions"
+                    (onChange)="filter($event.value)"
+                    placeholder="Select Severity"
+                    [showClear]="true">
+                    <ng-template let-option #item>
+                      <p-tag
+                        [value]="option.value"
+                        [severity]="severityToColor(option.label)" />
+                    </ng-template>
+                  </p-select>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-item>
+        <tr (click)="showDetails(item)">
+          <td>
+            {{ item.count }}
+          </td>
+          <td>
+            {{ item.identifier }}
+          </td>
+          <td>
+            <div class="tableCell">
+              <span>{{ display(item.source) }}</span>
+              <p-button
+                icon="pi pi-pencil"
+                label="Alias"
+                variant="text"
+                (click)="editAlias($event, item.source)" />
+            </div>
+          </td>
+          <td>
+            {{ prittyDate(item.first) }}
+          </td>
+          <td>
+            {{ prittyDate(item.last) }}
+          </td>
+          <td>
+            <p-tag
+              [value]="Severity[item.severity]"
+              [severity]="severityToColor(item.severity)">
+            </p-tag>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">No alerts found.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</main>

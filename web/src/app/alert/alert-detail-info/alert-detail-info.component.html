@@ -1,0 +1,11 @@
+<p-card>
+  <div class="timeStatistic">
+    <div>
+      <span>Last seen: {{ lastSeen() }}</span>
+    </div>
+    <div>
+      <span>First seen: {{ firstSeen() }}</span>
+    </div>
+  </div>
+  <p-chart type="bar" [data]="data" [options]="options" class="h-[30rem]" />
+</p-card>

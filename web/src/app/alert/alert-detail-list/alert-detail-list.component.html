@@ -1,0 +1,96 @@
+<p-table
+  #dt2
+  [value]="alerts()"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  [paginator]="true"
+  [globalFilterFields]="['created_at', 'value', 'note', 'severity']"
+  [customSort]="true"
+  (sortFunction)="customSort($event)"
+  [tableStyle]="{ width: '85rem' }">
+  <ng-template #header>
+    <tr>
+      <th pSortableColumn="created_at" style="width: 20rem">
+        <div class="flex justify-between items-center">
+          Created at
+          <p-sortIcon field="created_at" />
+          <p-columnFilter
+            type="date"
+            field="created_at"
+            display="menu"
+            class="ml-auto"></p-columnFilter>
+        </div>
+      </th>
+      <th style="width: 20rem">
+        <div class="flex justify-between items-center">
+          Value
+          <p-columnFilter
+            type="text"
+            field="value"
+            display="menu"
+            class="ml-auto"></p-columnFilter>
+        </div>
+      </th>
+      <th style="width: 20rem">
+        <div class="flex justify-between items-center">
+          Note
+          <p-columnFilter
+            type="text"
+            field="note"
+            display="menu"
+            class="ml-auto"></p-columnFilter>
+        </div>
+      </th>
+      <th pSortableColumn="severity" style="width: 15rem">
+        <div class="flex justify-between items-center">
+          Severity
+          <p-sortIcon field="severity" />
+          <p-columnFilter
+            field="severity"
+            matchMode="equals"
+            display="menu"
+            class="ml-auto">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <p-select
+                [(ngModel)]="selectedSeverity"
+                [options]="severityOptions"
+                (onChange)="filter($event.value)"
+                placeholder="Select Severity"
+                [showClear]="true">
+                <ng-template let-option #item>
+                  <p-tag
+                    [value]="option.value"
+                    [severity]="severityToColor(option.label)" />
+                </ng-template>
+              </p-select>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-item>
+    <tr>
+      <td>
+        {{ prittyDate(item.created_at) }}
+      </td>
+      <td>
+        <pre>{{ item.value | json }}</pre>
+      </td>
+      <td>
+        {{ item.note }}
+      </td>
+      <td>
+        <p-tag
+          [value]="Severity[item.severity]"
+          [severity]="severityToColor(item.severity)">
+        </p-tag>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td colspan="6">No alerts found.</td>
+    </tr>
+  </ng-template>
+</p-table>
