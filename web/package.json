@@ -28,6 +28,7 @@
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-prettier": "5.4.0",
     "ngx-cookie-service": "19.1.2",
+    "ngx-json-viewer": "^3.2.1",
     "prettier": "3.5.3",
     "primeicons": "7.0.0",
     "primeng": "19.1.3",

@@ -9,6 +9,9 @@ import { DiaryDetailComponent } from './diary/diary-detail/diary-detail.componen
 import { DiaryEditComponent } from './diary/diary-edit/diary-edit.component';
 import { AlertOverviewComponent } from './alert/alert-overview/alert-overview.component';
 import { AlertDetailComponent } from './alert/alert-detail/alert-detail.component';
+import { DeviceOverviewComponent } from './device/device-overview/device-overview.component';
+import { DeviceDetailComponent } from './device/device-detail/device-detail.component';
+import { DeviceEditComponent } from './device/device-edit/device-edit.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -22,7 +25,22 @@ export const routes: Routes = [
   },
   {
     path: 'smart_devices',
-    component: DashboardComponent,
+    component: DeviceOverviewComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'smart_devices/add',
+    component: DeviceEditComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'smart_devices/:id',
+    component: DeviceDetailComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'smart_devices/:id/edit',
+    component: DeviceEditComponent,
     canActivate: [AuthGuard],
   },
   {

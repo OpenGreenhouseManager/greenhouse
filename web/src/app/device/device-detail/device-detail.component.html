@@ -1,0 +1,118 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    <h1>Device Details</h1>
+    <div class="status-indicator">
+      <div
+        class="status-dot"
+        [style.background-color]="getStatusColor(device?.status)"
+        [title]="getStatusText(device?.status)"></div>
+      <span class="status-text">{{ getStatusText(device?.status) }}</span>
+    </div>
+    <p-button
+      label="Edit Device"
+      icon="pi pi-pencil"
+      (onClick)="editDevice()"
+      class="edit-button" />
+  </div>
+  <div class="device-detail-container">
+    @if (loading()) {
+      <div class="loading">
+        <p-progressSpinner></p-progressSpinner>
+        <p>Loading device details...</p>
+      </div>
+    }
+    @if (error()) {
+      <div class="error">
+        <p-message
+          severity="error"
+          [text]="
+            error() || 'An error occurred while loading device data'
+          "></p-message>
+      </div>
+    }
+    @if (!loading() && !error()) {
+      <div class="content">
+        <div class="device-info-card">
+          <grn-card title="Device Information" icon="pi-info-circle">
+            @if (device) {
+              <div class="device-info">
+                <div class="info-row">
+                  <span class="label">ID:</span>
+                  <span class="value">{{ device.id }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Name:</span>
+                  <span class="value">{{ device.name }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Address:</span>
+                  <span class="value">{{ device.address }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Description:</span>
+                  <span class="value">{{ device.description }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Can Script:</span>
+                  <span class="value">
+                    <i
+                      [class]="
+                        device.canscript
+                          ? 'pi pi-check text-green-500'
+                          : 'pi pi-times text-red-500'
+                      "></i>
+                    {{ device.canscript ? 'Yes' : 'No' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </grn-card>
+        </div>
+      </div>
+    }
+    <div class="content">
+      <div class="device-config-card">
+        <grn-card title="Device Configuration" icon="pi-cog">
+          @if (deviceConfig) {
+            <div class="device-config">
+              <div class="info-row">
+                <span class="label">Mode:</span>
+                <span class="value">
+                  <span class="mode-badge">
+                    {{ deviceConfig.mode }}
+                  </span>
+                </span>
+              </div>
+              @if (deviceConfig.input_type) {
+                <div class="info-row">
+                  <span class="label">Input Type:</span>
+                  <span class="value">{{ deviceConfig.input_type }}</span>
+                </div>
+              }
+              @if (deviceConfig.output_type) {
+                <div class="info-row">
+                  <span class="label">Output Type:</span>
+                  <span class="value">{{ deviceConfig.output_type }}</span>
+                </div>
+              }
+              @if (deviceConfig.additional_config) {
+                <div class="info-row">
+                  <span class="label">Additional Config:</span>
+                  <div class="value">
+                    <ngx-json-viewer
+                      [json]="deviceConfig.additional_config"></ngx-json-viewer>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-config">
+              <p>No configuration data available for this device.</p>
+            </div>
+          }
+        </grn-card>
+      </div>
+    </div>
+  </div>
+</main>

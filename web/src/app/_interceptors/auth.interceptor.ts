@@ -23,8 +23,8 @@ export function authInterceptor(
         cookieService.delete('auth-token');
         router.navigate(['/login']);
       }
-      
+
       return throwError(() => error);
     })
   );
-} 
+}

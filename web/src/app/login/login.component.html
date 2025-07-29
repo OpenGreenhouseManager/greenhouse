@@ -3,7 +3,12 @@
     <div class="container">
       <div class="form-group">
         <label for="username">Username</label>
-        <input id="username" type="text" pInputText [(ngModel)]="username" />
+        <input
+          id="username"
+          type="text"
+          pInputText
+          [(ngModel)]="username"
+          (keyup.enter)="login()" />
       </div>
       <div class="form-group">
         <label for="password">Password</label>
@@ -14,7 +19,8 @@
           [toggleMask]="true"
           inputStyleClass="w-full"
           [style]="{ width: '100%' }"
-          [inputStyle]="{ width: '100%' }" />
+          [inputStyle]="{ width: '100%' }"
+          (keyup.enter)="login()" />
       </div>
       @if (error()) {
         <div class="form-group">

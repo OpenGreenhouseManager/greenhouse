@@ -1,0 +1,57 @@
+<grn-nav-bar></grn-nav-bar>
+<main>
+  <div class="heading">
+    @if (edit()) {
+      <h1>Edit Device</h1>
+    } @else {
+      <h1>Add Device</h1>
+    }
+  </div>
+  <div class="outer-container">
+    <div class="content-width">
+      <grn-card title="Edit" class="card">
+        <div class="content">
+          <div class="container-width-restriction">
+            <div class="container">
+              <div class="editGroup">
+                <label for="Name">Name</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Name"
+                  [(ngModel)]="device().name" />
+              </div>
+              <div class="editGroup">
+                <label for="Description">Description</label>
+                <textarea
+                  pTextarea
+                  [autoResize]="true"
+                  id="Description"
+                  [(ngModel)]="device().description"></textarea>
+              </div>
+              <div class="editGroup">
+                <label for="Address">Address</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Address"
+                  [(ngModel)]="device().address" />
+              </div>
+              <div class="editGroup">
+                <label for="CanScript">Can Script</label>
+                <p-checkbox
+                  id="CanScript"
+                  [(ngModel)]="device().can_script"
+                  [binary]="true"
+                  inputId="CanScript"></p-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </grn-card>
+      <p-button type="button" (click)="saveDevice()">
+        <i class="pi pi-save"></i><span class="button_label">Save</span>
+      </p-button>
+    </div>
+  </div>
+</main>
