@@ -61,4 +61,21 @@ export class DeviceService {
       withCredentials: true,
     });
   }
+
+  registerDevice(deviceId: string): void {
+    this.http
+      .put<DeviceResponseDto>(
+        `${device}/${deviceId}/activate`,
+        {},
+        { withCredentials: true }
+      )
+      .subscribe({
+        next: response => {
+          console.log(response);
+        },
+        error: error => {
+          console.error(error);
+        },
+      });
+  }
 }

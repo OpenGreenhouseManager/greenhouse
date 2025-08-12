@@ -42,6 +42,7 @@ export interface ConfigResponseDto<T = unknown> {
   mode: Mode;
   input_type?: Type;
   output_type?: Type;
+  scripting_api?: ScriptingApi;
   additional_config: T;
 }
 
@@ -49,4 +50,9 @@ export enum Type {
   Number = 'Number',
   String = 'String',
   Stream = 'Stream',
+}
+
+export class ScriptingApi {
+  url!: string;
+  token!: string;
 }

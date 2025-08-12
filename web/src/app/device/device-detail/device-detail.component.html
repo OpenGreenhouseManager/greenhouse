@@ -1,13 +1,20 @@
 <grn-nav-bar></grn-nav-bar>
 <main>
   <div class="heading">
-    <h1>Device Details</h1>
-    <div class="status-indicator">
-      <div
-        class="status-dot"
-        [style.background-color]="getStatusColor(device?.status)"
-        [title]="getStatusText(device?.status)"></div>
-      <span class="status-text">{{ getStatusText(device?.status) }}</span>
+    <div class="heading-left">
+      <p-button
+        type="button"
+        (click)="goBack()"
+        icon="pi pi-arrow-left"
+        styleClass="p-button-text"></p-button>
+      <h1>Device Details</h1>
+      <div class="status-indicator">
+        <div
+          class="status-dot"
+          [style.background-color]="getStatusColor(device()!.status)"
+          [title]="getStatusText(device()!.status)"></div>
+        <span class="status-text">{{ getStatusText(device()!.status) }}</span>
+      </div>
     </div>
     <p-button
       label="Edit Device"
@@ -35,34 +42,34 @@
       <div class="content">
         <div class="device-info-card">
           <grn-card title="Device Information" icon="pi-info-circle">
-            @if (device) {
+            @if (device()) {
               <div class="device-info">
                 <div class="info-row">
                   <span class="label">ID:</span>
-                  <span class="value">{{ device.id }}</span>
+                  <span class="value">{{ device()!.id }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">Name:</span>
-                  <span class="value">{{ device.name }}</span>
+                  <span class="value">{{ device()!.name }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">Address:</span>
-                  <span class="value">{{ device.address }}</span>
+                  <span class="value">{{ device()!.address }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">Description:</span>
-                  <span class="value">{{ device.description }}</span>
+                  <span class="value">{{ device()!.description }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">Can Script:</span>
                   <span class="value">
                     <i
                       [class]="
-                        device.canscript
+                        device()!.canscript
                           ? 'pi pi-check text-green-500'
                           : 'pi pi-times text-red-500'
                       "></i>
-                    {{ device.canscript ? 'Yes' : 'No' }}
+                    {{ device()!.canscript ? 'Yes' : 'No' }}
                   </span>
                 </div>
               </div>
@@ -74,34 +81,58 @@
     <div class="content">
       <div class="device-config-card">
         <grn-card title="Device Configuration" icon="pi-cog">
-          @if (deviceConfig) {
+          @if (deviceConfig()!) {
             <div class="device-config">
               <div class="info-row">
                 <span class="label">Mode:</span>
                 <span class="value">
                   <span class="mode-badge">
-                    {{ deviceConfig.mode }}
+                    {{ deviceConfig()!.mode }}
                   </span>
                 </span>
               </div>
-              @if (deviceConfig.input_type) {
+              @if (deviceConfig()!.input_type) {
                 <div class="info-row">
                   <span class="label">Input Type:</span>
-                  <span class="value">{{ deviceConfig.input_type }}</span>
+                  <span class="value">{{ deviceConfig()!.input_type }}</span>
                 </div>
               }
-              @if (deviceConfig.output_type) {
+              @if (deviceConfig()!.output_type) {
                 <div class="info-row">
                   <span class="label">Output Type:</span>
-                  <span class="value">{{ deviceConfig.output_type }}</span>
+                  <span class="value">{{ deviceConfig()!.output_type }}</span>
                 </div>
               }
-              @if (deviceConfig.additional_config) {
+              @if (deviceConfig()!.scripting_api) {
+                <div class="info-row">
+                  <span class="label">Scripting API:</span>
+                  <span class="value">{{
+                    deviceConfig()!.scripting_api?.url
+                  }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Token:</span>
+                  <span class="value">{{
+                    deviceConfig()!.scripting_api?.token
+                  }}</span>
+                </div>
+              } @else {
+                <div class="info-row">
+                  <p-button
+                    label="Register Device"
+                    [disabled]="loadingActivation()"
+                    icon="pi pi-pencil"
+                    (onClick)="registerDevice()"></p-button>
+                </div>
+              }
+              @if (deviceConfig()!.additional_config) {
                 <div class="info-row">
                   <span class="label">Additional Config:</span>
                   <div class="value">
                     <ngx-json-viewer
-                      [json]="deviceConfig.additional_config"></ngx-json-viewer>
+                      [json]="
+                        deviceConfig()!.additional_config
+                      "></ngx-json-viewer>
                   </div>
                 </div>
               }

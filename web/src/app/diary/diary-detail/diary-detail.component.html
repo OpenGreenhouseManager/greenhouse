@@ -1,7 +1,14 @@
 <grn-nav-bar></grn-nav-bar>
 <main>
   <div class="heading">
-    <h1>Diary</h1>
+    <div class="heading-left">
+      <p-button
+        type="button"
+        (click)="goBack()"
+        icon="pi pi-arrow-left"
+        styleClass="p-button-text"></p-button>
+      <h1>Diary</h1>
+    </div>
     <p-button type="button" (click)="editEntry()">
       <i class="pi pi-pencil"></i><span class="button_label">Edit Entry</span>
     </p-button>

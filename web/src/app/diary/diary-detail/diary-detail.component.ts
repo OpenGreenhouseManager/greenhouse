@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { CardComponent } from '../../card/card.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -34,11 +34,16 @@ export class DiaryDetailComponent {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private diaryService: DiaryService
+    private diaryService: DiaryService,
+    private location: Location
   ) {}
 
   editEntry() {
     this.router.navigate(['diary', this.id, 'edit']);
+  }
+
+  goBack() {
+    this.router.navigate(['diary']);
   }
 
   getDate(date: Date | undefined): string {

@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
@@ -48,7 +48,8 @@ export class AlertDetailComponent {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private location: Location
   ) {}
 
   getDate(date: Date | undefined): string {
@@ -66,5 +67,9 @@ export class AlertDetailComponent {
 
   searchForAlias(identifier: string): string | null {
     return localStorage.getItem(`alias_${identifier}`);
+  }
+
+  goBack() {
+    this.location.back();
   }
 }

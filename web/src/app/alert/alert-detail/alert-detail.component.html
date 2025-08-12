@@ -1,12 +1,19 @@
 <grn-nav-bar></grn-nav-bar>
 <main>
   <div class="heading">
-    <h1>
-      Alert {{ identifier }} from {{ display(dataSource || 'not found') }}
-      @if (alias()) {
-        ({{ alias() }})
-      }
-    </h1>
+    <div class="heading-left">
+      <p-button
+        type="button"
+        (click)="goBack()"
+        icon="pi pi-arrow-left"
+        styleClass="p-button-text"></p-button>
+      <h1>
+        Alert {{ identifier }} from {{ display(dataSource || 'not found') }}
+        @if (alias()) {
+          ({{ alias() }})
+        }
+      </h1>
+    </div>
   </div>
   <div class="content">
     @if (!alerts()) {
