@@ -1,4 +1,4 @@
-import { environment } from '../../environment/environment';
+import { environment } from '../../environments/environment';
 
 export const register = environment.baseUrl + '/api/register';
 export const login = environment.baseUrl + '/api/login';

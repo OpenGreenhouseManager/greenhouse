@@ -1,5 +1,9 @@
 FROM --platform=$BUILDPLATFORM node:23.6.1-bullseye-slim as builder
 
+ARG API_BASE_URL
+ARG ANGULAR_CONFIGURATION=staging
+ENV env=${ANGULAR_CONFIGURATION}
+
 RUN mkdir /greenhouse_web
 WORKDIR /greenhouse_web
 
@@ -9,7 +13,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+CMD ng serve --host 0.0.0.0 --configuration "$env"
 
 FROM builder as dev-envs
 
@@ -24,4 +28,4 @@ usermod -aG docker vscode
 COPY --from=builder / /
 EXPOSE 4200
 
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+CMD ng serve --host 0.0.0.0 --configuration "$env" 
