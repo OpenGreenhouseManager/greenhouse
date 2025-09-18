@@ -5,6 +5,7 @@ export interface DeviceResponseDto {
   description: string;
   canscript: boolean;
   status?: DeviceStatusDto;
+  scraping: boolean;
 }
 
 export interface PutDeviceDtoRequest {
@@ -19,6 +20,7 @@ export interface PostDeviceDtoRequest {
   description: string;
   address: string;
   can_script: boolean;
+  scraping: boolean;
 }
 
 export enum DeviceStatusDto {

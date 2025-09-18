@@ -47,7 +47,8 @@ export class DeviceEditComponent {
                   deviceDto.name,
                   deviceDto.description,
                   deviceDto.address,
-                  deviceDto.canscript
+                  deviceDto.canscript,
+                  deviceDto.scraping,
                 )
             )
           )
@@ -87,6 +88,7 @@ export class DeviceEditComponent {
         description: deviceData.description,
         address: deviceData.address,
         can_script: deviceData.can_script,
+        scraping: deviceData.scraping,
       });
     }
     observable.subscribe(response =>
