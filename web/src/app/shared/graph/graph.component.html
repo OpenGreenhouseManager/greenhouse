@@ -1,0 +1,33 @@
+<grn-card title="Device Information" icon="pi-info-circle">
+  <div class="graph-controls">
+    <p-datepicker
+      [(ngModel)]="startDate"
+      [showTime]="true"
+      appendTo="body"
+      [maxDate]="endDate()"
+      hourFormat="24" />
+
+    <p-datepicker
+      [(ngModel)]="endDate"
+      [showTime]="true"
+      appendTo="body"
+      [minDate]="startDate()"
+      [maxDate]="now()"
+      hourFormat="24" />
+  </div>
+  <div class="graph" style="height: 100%; width: 100%">
+    <p-chart
+      type="line"
+      [data]="timeseries()"
+      [options]="chartOptions"></p-chart>
+    <p-progress-spinner
+      ariaLabel="loading"
+      *ngIf="loading()"
+      class="chartMessage" />
+    <p-message
+      *ngIf="error()"
+      severity="error"
+      [text]="error()!"
+      class="chartMessage"></p-message>
+  </div>
+</grn-card>

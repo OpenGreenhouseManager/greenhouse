@@ -15,12 +15,18 @@
       </h1>
     </div>
   </div>
-  <div class="content">
+  <div class="alert-detail-container">
     @if (!alerts()) {
-      ERROR LOADING ALERTS
+      <div class="error">
+        <p-message severity="error" text="ERROR LOADING ALERTS"></p-message>
+      </div>
     } @else {
-      <grn-alert-detail-list [alerts]="alerts()!"></grn-alert-detail-list>
-      <grn-alert-detail-info [alerts]="alerts()!"></grn-alert-detail-info>
+      <div class="content">
+        <grn-alert-detail-list [alerts]="alerts()!"></grn-alert-detail-list>
+      </div>
+      <div class="content">
+        <grn-alert-detail-info [alerts]="alerts()!"></grn-alert-detail-info>
+      </div>
     }
   </div>
 </main>

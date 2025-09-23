@@ -11,9 +11,9 @@
       <div class="status-indicator">
         <div
           class="status-dot"
-          [style.background-color]="getStatusColor(device()!.status)"
-          [title]="getStatusText(device()!.status)"></div>
-        <span class="status-text">{{ getStatusText(device()!.status) }}</span>
+          [style.background-color]="getStatusColor(device()?.status)"
+          [title]="getStatusText(device()?.status)"></div>
+        <span class="status-text">{{ getStatusText(device()?.status) }}</span>
       </div>
     </div>
     <p-button
@@ -77,73 +77,85 @@
           </grn-card>
         </div>
       </div>
-    }
-    <div class="content">
-      <div class="device-config-card">
-        <grn-card title="Device Configuration" icon="pi-cog">
-          @if (deviceConfig()!) {
-            <div class="device-config">
-              <div class="info-row">
-                <span class="label">Mode:</span>
-                <span class="value">
-                  <span class="mode-badge">
-                    {{ deviceConfig()!.mode }}
+      <div class="content">
+        <div class="device-config-card">
+          <grn-card title="Device Configuration" icon="pi-cog">
+            @if (deviceConfig()!) {
+              <div class="device-config">
+                <div class="info-row">
+                  <span class="label">Mode:</span>
+                  <span class="value">
+                    <span class="mode-badge">
+                      {{ deviceConfig()!.mode }}
+                    </span>
                   </span>
-                </span>
-              </div>
-              @if (deviceConfig()!.input_type) {
-                <div class="info-row">
-                  <span class="label">Input Type:</span>
-                  <span class="value">{{ deviceConfig()!.input_type }}</span>
                 </div>
-              }
-              @if (deviceConfig()!.output_type) {
-                <div class="info-row">
-                  <span class="label">Output Type:</span>
-                  <span class="value">{{ deviceConfig()!.output_type }}</span>
-                </div>
-              }
-              @if (deviceConfig()!.scripting_api) {
-                <div class="info-row">
-                  <span class="label">Scripting API:</span>
-                  <span class="value">{{
-                    deviceConfig()!.scripting_api?.url
-                  }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">Token:</span>
-                  <span class="value">{{
-                    deviceConfig()!.scripting_api?.token
-                  }}</span>
-                </div>
-              } @else {
-                <div class="info-row">
-                  <p-button
-                    label="Register Device"
-                    [disabled]="loadingActivation()"
-                    icon="pi pi-pencil"
-                    (onClick)="registerDevice()"></p-button>
-                </div>
-              }
-              @if (deviceConfig()!.additional_config) {
-                <div class="info-row">
-                  <span class="label">Additional Config:</span>
-                  <div class="value">
-                    <ngx-json-viewer
-                      [json]="
-                        deviceConfig()!.additional_config
-                      "></ngx-json-viewer>
+                @if (deviceConfig()!.input_type) {
+                  <div class="info-row">
+                    <span class="label">Input Type:</span>
+                    <span class="value">{{ deviceConfig()!.input_type }}</span>
                   </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="no-config">
-              <p>No configuration data available for this device.</p>
-            </div>
-          }
-        </grn-card>
+                }
+                @if (deviceConfig()!.output_type) {
+                  <div class="info-row">
+                    <span class="label">Output Type:</span>
+                    <span class="value">{{ deviceConfig()!.output_type }}</span>
+                  </div>
+                }
+                @if (deviceConfig()!.scripting_api) {
+                  <div class="info-row">
+                    <span class="label">Scripting API:</span>
+                    <span class="value">{{
+                      deviceConfig()!.scripting_api?.url
+                    }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Token:</span>
+                    <span class="value">{{
+                      deviceConfig()!.scripting_api?.token
+                    }}</span>
+                  </div>
+                } @else {
+                  <div class="info-row">
+                    <p-button
+                      label="Register Device"
+                      [disabled]="loadingActivation()"
+                      icon="pi pi-pencil"
+                      (onClick)="registerDevice()"></p-button>
+                  </div>
+                }
+                @if (deviceConfig()!.additional_config) {
+                  <div class="info-row">
+                    <span class="label">Additional Config:</span>
+                    <div class="value">
+                      <ngx-json-viewer
+                        [json]="
+                          deviceConfig()!.additional_config
+                        "></ngx-json-viewer>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="no-config">
+                <p>No configuration data available for this device.</p>
+              </div>
+            }
+          </grn-card>
+        </div>
       </div>
-    </div>
+
+      @if (hasAlert()) {
+        <div class="content">
+          <grn-alert-list [dataSourceId]="dataSourceId()!"></grn-alert-list>
+        </div>
+      }
+
+      @if (hasGraph()) {
+        <div class="content">
+          <grn-graph [config]="config()!"></grn-graph>
+        </div>
+      }
+    }
   </div>
 </main>

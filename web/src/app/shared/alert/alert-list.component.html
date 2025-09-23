@@ -1,0 +1,12 @@
+<grn-card title="Alert List" icon="pi-bell">
+  <p-accordion>
+    @for (alert of alertsSplitByIdentifier(); track alert[0]) {
+      <p-accordion-panel [value]="alert[0]">
+        <p-accordion-header>{{ alert[0] }}</p-accordion-header>
+        <p-accordion-content>
+          <grn-alert-detail-list [alerts]="alert[1]"></grn-alert-detail-list>
+        </p-accordion-content>
+      </p-accordion-panel>
+    }
+  </p-accordion>
+</grn-card>

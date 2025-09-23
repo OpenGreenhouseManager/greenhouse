@@ -97,7 +97,7 @@ export class AlertOverviewComponent implements OnInit {
     }
   }
 
-  prittyDate(date: Date): string {
+  prettyDate(date: Date): string {
     return date.toLocaleDateString('de-DE', {
       year: 'numeric',
       month: '2-digit',

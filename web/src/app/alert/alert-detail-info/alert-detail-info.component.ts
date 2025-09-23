@@ -24,6 +24,8 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
+import { CardComponent } from '../../card/card.component';
+import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
 
 @Component({
   selector: 'grn-alert-detail-info',
@@ -37,13 +39,14 @@ import {
     InputGroupAddonModule,
     CardModule,
     ChartModule,
+    CardComponent,
   ],
   templateUrl: './alert-detail-info.component.html',
   styleUrl: './alert-detail-info.component.scss',
 })
 export class AlertDetailInfoComponent implements OnInit {
   data: unknown;
-  options: unknown;
+  options = barChartOptions;
   platformId = inject(PLATFORM_ID);
 
   alerts = input.required<Alert[]>();
@@ -106,15 +109,6 @@ export class AlertDetailInfoComponent implements OnInit {
 
   initChart() {
     if (isPlatformBrowser(this.platformId)) {
-      const documentStyle = getComputedStyle(document.documentElement);
-      const textColor = documentStyle.getPropertyValue('--p-text-color');
-      const textColorSecondary = documentStyle.getPropertyValue(
-        '--p-text-muted-color'
-      );
-      const surfaceBorder = documentStyle.getPropertyValue(
-        '--p-content-border-color'
-      );
-
       const days = 8;
 
       this.data = {
@@ -123,67 +117,30 @@ export class AlertDetailInfoComponent implements OnInit {
           {
             type: 'bar',
             label: 'Info',
-            backgroundColor: '#0ea5e9',
+            backgroundColor: chartColors.info,
             data: this.getCount(Severity.Info, days),
           },
           {
             type: 'bar',
             label: 'Warning',
-            backgroundColor: '#f97316',
+            backgroundColor: chartColors.warning,
             data: this.getCount(Severity.Warning, days),
           },
           {
             type: 'bar',
             label: 'Error',
-            backgroundColor: '#f44336',
+            backgroundColor: chartColors.error,
             data: this.getCount(Severity.Error, days),
           },
           {
             type: 'bar',
             label: 'Fatal',
-            backgroundColor: '#b71c1c',
+            backgroundColor: chartColors.fatal,
             data: this.getCount(Severity.Fatal, days),
           },
         ],
       };
 
-      this.options = {
-        maintainAspectRatio: false,
-        aspectRatio: 0.8,
-        plugins: {
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-          },
-          legend: {
-            labels: {
-              color: textColor,
-            },
-          },
-        },
-        scales: {
-          x: {
-            stacked: true,
-            ticks: {
-              color: textColorSecondary,
-            },
-            grid: {
-              color: surfaceBorder,
-              drawBorder: false,
-            },
-          },
-          y: {
-            stacked: true,
-            ticks: {
-              color: textColorSecondary,
-            },
-            grid: {
-              color: surfaceBorder,
-              drawBorder: false,
-            },
-          },
-        },
-      };
       this.cd.markForCheck();
     }
   }

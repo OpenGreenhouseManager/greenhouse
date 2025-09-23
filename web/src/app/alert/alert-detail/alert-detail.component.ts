@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { MessageModule } from 'primeng/message';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertService } from '../services/alert-service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -25,6 +26,7 @@ import { AlertDetailListComponent } from '../alert-detail-list/alert-detail-list
     ButtonModule,
     InputGroupModule,
     InputGroupAddonModule,
+    MessageModule,
   ],
   templateUrl: './alert-detail.component.html',
   styleUrl: './alert-detail.component.scss',

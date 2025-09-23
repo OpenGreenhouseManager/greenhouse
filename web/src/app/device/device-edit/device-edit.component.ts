@@ -48,7 +48,7 @@ export class DeviceEditComponent {
                   deviceDto.description,
                   deviceDto.address,
                   deviceDto.canscript,
-                  deviceDto.scraping,
+                  deviceDto.scraping
                 )
             )
           )

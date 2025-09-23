@@ -1,12 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { CardComponent } from '../../card/card.component';
 import { DeviceService } from '../services/device-service';
 import {
   DeviceResponseDto,
   ConfigResponseDto,
   DeviceStatusDto,
+  Type,
+  Mode,
 } from '../../dtos/device';
 import { catchError, forkJoin, of } from 'rxjs';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -14,6 +16,8 @@ import { MessageModule } from 'primeng/message';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { ButtonModule } from 'primeng/button';
+import { GraphComponent } from '../../shared/graph/graph.component';
+import { AlertListComponent } from '../../shared/alert/alert-list.component';
 
 @Component({
   selector: 'app-device-detail',
@@ -26,6 +30,8 @@ import { ButtonModule } from 'primeng/button';
     NavBarComponent,
     NgxJsonViewerModule,
     ButtonModule,
+    GraphComponent,
+    AlertListComponent,
   ],
   templateUrl: './device-detail.component.html',
   styleUrl: './device-detail.component.scss',
@@ -37,11 +43,34 @@ export class DeviceDetailComponent implements OnInit {
   error = signal<string | null>(null);
   loadingActivation = signal(false);
 
+  public hasAlert = computed(() => {
+    return this.dataSourceId() !== null;
+  });
+
+  public config = computed(() => {
+    if (!this.device()) {
+      return null;
+    }
+    return {
+      device_id: this.device()!.id,
+    };
+  });
+
+  public hasGraph = computed(() => {
+    return (
+      this.device()?.scraping &&
+      this.deviceConfig()?.output_type === Type.Number &&
+      (this.deviceConfig()?.mode === Mode.Output ||
+        this.deviceConfig()?.mode === Mode.InputOutput)
+    );
+  });
+
+  public dataSourceId = signal<string | null>(null);
+
   constructor(
     private deviceService: DeviceService,
     private router: Router,
-    private route: ActivatedRoute,
-    private location: Location
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -84,6 +113,7 @@ export class DeviceDetailComponent implements OnInit {
         if (this.device()) {
           this.device()!.status = result.status?.status;
         }
+        this.dataSourceId.set(result.status?.datasource_id || null);
         this.loading.set(false);
 
         if (!result.device && !result.config) {

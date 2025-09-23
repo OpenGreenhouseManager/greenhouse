@@ -65,7 +65,7 @@ export class AlertDetailListComponent {
     }
   }
 
-  prittyDate(date: Date): string {
+  prettyDate(date: Date): string {
     return date.toLocaleDateString('de-DE', {
       year: 'numeric',
       month: '2-digit',
@@ -74,5 +74,26 @@ export class AlertDetailListComponent {
       minute: '2-digit',
       second: '2-digit',
     });
+  }
+
+  severityToString(severity: unknown): string {
+    if (typeof severity !== 'number') {
+      if (severity === 'Warning') {
+        return 'warn';
+      }
+      return (severity as string).toLowerCase();
+    }
+    switch (severity) {
+      case Severity.Info:
+        return 'info';
+      case Severity.Warning:
+        return 'warn';
+      case Severity.Error:
+        return 'error';
+      case Severity.Fatal:
+        return 'fatal';
+      default:
+        return 'gray';
+    }
   }
 }
