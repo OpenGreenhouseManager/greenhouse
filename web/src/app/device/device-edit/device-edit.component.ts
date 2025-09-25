@@ -1,18 +1,18 @@
-import { Component, computed } from '@angular/core';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { CommonModule, Location } from '@angular/common';
-import { CardComponent } from '../../card/card.component';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
-import { FormsModule } from '@angular/forms';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DeviceService } from '../services/device-service';
-import { Device } from '../models/device';
-import { TextareaModule } from 'primeng/textarea';
+import { Component, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
 import { map, of } from 'rxjs';
+import { CardComponent } from '../../card/card.component';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
+import { Device } from '../models/device';
+import { DeviceService } from '../services/device-service';
 
 @Component({
   selector: 'grn-device-edit',
@@ -92,7 +92,7 @@ export class DeviceEditComponent {
       });
     }
     observable.subscribe(response =>
-      this.router.navigate(['/smart_devices', response.id])
+      this.router.navigate(['/smart_devices', this.id])
     );
   }
 }

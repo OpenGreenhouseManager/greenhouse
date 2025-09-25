@@ -39,4 +39,24 @@
       </div>
     </div>
   </grn-card>
+
+  <!-- Guest Disclaimer Dialog -->
+  <p-dialog
+    header="Guest Account"
+    [(visible)]="showGuestDialog"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="p-fluid"
+    (onHide)="onGuestDialogClose()">
+    <p>
+      This is a guest account. You can use it to browse the website. You can't
+      change data.
+    </p>
+    <ng-template pTemplate="footer">
+      <p-button label="OK" icon="pi pi-check" (click)="onGuestDialogClose()">
+      </p-button>
+    </ng-template>
+  </p-dialog>
 </main>

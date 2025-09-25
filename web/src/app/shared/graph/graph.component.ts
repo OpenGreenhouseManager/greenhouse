@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { GraphService } from './graph.service';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { differenceInSeconds, subHours } from 'date-fns';
+import { ChartModule } from 'primeng/chart';
+import { DatePickerModule } from 'primeng/datepicker';
+import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { combineLatest, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { CardComponent } from '../../card/card.component';
-import { ChartModule } from 'primeng/chart';
 import { chartOptions } from './chart_option';
-import { combineLatest, of } from 'rxjs';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageModule } from 'primeng/message';
-import { differenceInSeconds, subHours } from 'date-fns';
-import { FormsModule } from '@angular/forms';
-import { DatePickerModule } from 'primeng/datepicker';
+import { GraphService } from './graph.service';
 export interface GraphConfig {
   device_id: string;
   sub_property?: string;
@@ -104,8 +104,7 @@ export class GraphComponent {
             datasets: [
               {
                 data: timeseries.map(
-                  t =>
-                    (t.value as { Number: number }).Number + Math.random() * 100
+                  t => (t.value as { Number: number }).Number
                 ),
               },
             ],
