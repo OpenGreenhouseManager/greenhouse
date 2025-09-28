@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TimeseriesDto } from '../../dtos/timeseries';
 import { device } from '../../urls/urls';
@@ -15,7 +15,7 @@ export interface TimeseriesQuery {
   providedIn: 'root',
 })
 export class GraphService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   getTimeseries(
     deviceId: string,

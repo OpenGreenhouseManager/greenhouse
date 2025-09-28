@@ -6,13 +6,18 @@
       borderRadius: '10px',
     }">
     <ng-template pTemplate="header">
-      <div class="header" [ngClass]="{ center: centerTitle() }">
-        <h1>{{ title() }}</h1>
-        <i [class]="icon_class()" (click)="iconClicked.emit()"></i>
+      <div class="header p-2">
+        <h1 class="w-full text-2xl {{ centerTitle() ? 'text-center' : '' }}">
+          {{ title() }}
+        </h1>
+        <i
+          [class]="icon_class()"
+          class="gridster-item-content"
+          (click)="iconClicked.emit()"></i>
       </div>
     </ng-template>
     <ng-template pTemplate="content">
-      <div class="content">
+      <div class="content gridster-item-content p-3">
         <ng-content styleClass="card-content"></ng-content>
       </div>
     </ng-template>

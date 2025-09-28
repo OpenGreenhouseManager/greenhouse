@@ -1,7 +1,48 @@
 <grn-nav-bar></grn-nav-bar>
 <main>
   <div class="heading">
-    <h1>Smart Devices</h1>
+    <h1>Dashboard</h1>
+    <div class="flex items-center gap-2">
+      @if (editMode()) {
+        <p-button type="button" (click)="addEntry()">
+          <i class="pi pi-plus"></i><span class="button_label">Add Entry</span>
+        </p-button>
+      }
+      <p-button type="button" (click)="editMode.set(!editMode())">
+        <i class="pi pi-pencil"></i><span class="button_label">Edit Mode</span>
+      </p-button>
+    </div>
   </div>
-  <div class="content"></div>
+  <div class="content">
+    <gridster [options]="options">
+      @for (item of dashboard; track item) {
+        <gridster-item [item]="item">
+          @if (editMode()) {
+            <button
+              class="remove-button gridster-item-content"
+              (mousedown)="removeItem($event, item)"
+              (touchstart)="removeItem($event, item)">
+              <i class="pi pi-trash"></i>
+            </button>
+          }
+          @if (item.type === 'graph') {
+            <grn-graph
+              [config]="item.options"
+              [header]="item.options.name"></grn-graph>
+          } @else if (item.type === 'alertList') {
+            <grn-alert-list
+              [dataSourceId]="item.options.dataSourceId"></grn-alert-list>
+          }
+        </gridster-item>
+      }
+    </gridster>
+  </div>
 </main>
+<grn-add-dashboard-component-dialog
+  [visible]="dialogVisible()"
+  (dialogClose)="onDialogClose()"
+  (componentAdded)="
+    onComponentAdded($event)
+  "></grn-add-dashboard-component-dialog>
+
+<p-confirmdialog />

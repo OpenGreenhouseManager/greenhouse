@@ -9,6 +9,11 @@ main {
   align-items: center;
   height: 100%;
   width: 100%;
+
+  grn-card {
+    height: fit-content;
+    width: fit-content;
+  }
 }
 
 .login {

@@ -1,19 +1,19 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { AggregatedAlert } from '../models/aggregated-alert';
+import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { AlertAggrigatedDto } from '../../dtos/alert/aggrigated-alert';
+import { AlertDto } from '../../dtos/alert/alert';
+import { AlertQuery } from '../../dtos/alert/alert-query';
 import { IntervalQuery } from '../../dtos/alert/interval-query';
 import { alert } from '../../urls/urls';
-import { AlertQuery } from '../../dtos/alert/alert-query';
-import { AlertDto } from '../../dtos/alert/alert';
+import { AggregatedAlert } from '../models/aggregated-alert';
 import { Alert, Severity } from '../models/alert';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AlertService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   getAlerts(start: Date, end: Date): Observable<AggregatedAlert[]> {
     const query: IntervalQuery = {

@@ -1,15 +1,15 @@
-import { Component } from '@angular/core';
-import { NavBarComponent } from '../nav_bar/nav_bar.component';
 import { CommonModule } from '@angular/common';
-import { CardComponent } from '../card/card.component';
 import { HttpClient } from '@angular/common/http';
-import { GenerateOneTimeTokenRequestDto } from '../dtos/generate_one_time_token_request';
-import { otp } from '../urls/urls';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputTextModule } from 'primeng/inputtext';
+import { CardComponent } from '../card/card.component';
+import { GenerateOneTimeTokenRequestDto } from '../dtos/generate_one_time_token_request';
+import { NavBarComponent } from '../nav_bar/nav_bar.component';
+import { otp } from '../urls/urls';
 
 enum SettingsTabs {
   Dashboard,
@@ -40,7 +40,7 @@ export class SettingsComponent {
   otp: string = '';
   isCopied: boolean = false;
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   changeTab(tab: SettingsTabs) {
     this.currentTab = tab;

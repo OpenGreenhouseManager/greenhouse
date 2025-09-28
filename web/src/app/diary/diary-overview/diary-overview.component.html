@@ -13,14 +13,13 @@
           <i class="pi pi-chevron-left"></i>
         </div>
         <div class="container">
-          <span
-            class="list_item"
-            *ngFor="let diary of diaries() | keyvalue"
-            (click)="diaryClicked(diary?.key)">
-            <i class="pi pi-book"></i>
-            <h2>{{ diary?.value?.title || '' }}</h2>
-            <span>{{ getTime(diary?.value?.date) }}</span>
-          </span>
+          @for (diary of diaries() | keyvalue; track diary) {
+            <span class="list_item" (click)="diaryClicked(diary?.key)">
+              <i class="pi pi-book"></i>
+              <h2>{{ diary?.value?.title || '' }}</h2>
+              <span>{{ getTime(diary?.value?.date) }}</span>
+            </span>
+          }
         </div>
         <div class="chevron" (click)="addDate()">
           <i class="pi pi-chevron-right"></i>

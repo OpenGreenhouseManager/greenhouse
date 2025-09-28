@@ -1,3 +1,4 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectorRef,
   Component,
@@ -7,15 +8,7 @@ import {
   OnInit,
   PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { Alert, Severity } from '../models/alert';
-import { CardModule } from 'primeng/card';
-import { ChartModule } from 'primeng/chart';
 import {
   addDays,
   endOfDay,
@@ -24,14 +17,20 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { ChartModule } from 'primeng/chart';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../../card/card.component';
 import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
+import { Alert, Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-info',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     InputTextModule,
     ButtonModule,
@@ -45,6 +44,8 @@ import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
   styleUrl: './alert-detail-info.component.scss',
 })
 export class AlertDetailInfoComponent implements OnInit {
+  private cd = inject(ChangeDetectorRef);
+
   data: unknown;
   options = barChartOptions;
   platformId = inject(PLATFORM_ID);
@@ -74,8 +75,6 @@ export class AlertDetailInfoComponent implements OnInit {
     });
     return formatDistance(firstAlert.created_at, new Date());
   });
-
-  constructor(private cd: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.initChart();

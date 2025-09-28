@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
@@ -31,11 +31,9 @@ export class LoginComponent {
   public error = signal(false);
   public showGuestDialog = signal(false);
 
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-    private cookieService: CookieService
-  ) {}
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private cookieService = inject(CookieService);
 
   private decodeJWT(token: string): any {
     try {

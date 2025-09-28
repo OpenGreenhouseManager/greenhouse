@@ -2,4 +2,38 @@
   width: 100%;
   height: 100%;
   overflow: hidden; /* Prevent any overflow at the component level */
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-top: 0px;
+
+  p-datepicker {
+    max-width: 50%;
+  }
+}
+
+.graph {
+  position: relative;
+  flex: 1; /* Take remaining space */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-chart {
+  flex: 1; /* Take remaining space in graph container */
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.chartMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

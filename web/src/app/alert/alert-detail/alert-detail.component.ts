@@ -1,24 +1,23 @@
-import { Component, computed } from '@angular/core';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { CommonModule, Location } from '@angular/common';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import { Location } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { ActivatedRoute, Router } from '@angular/router';
-import { AlertService } from '../services/alert-service';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { AlertDetailInfoComponent } from '../alert-detail-info/alert-detail-info.component';
 import { AlertDetailListComponent } from '../alert-detail-list/alert-detail-list.component';
+import { AlertService } from '../services/alert-service';
 
 @Component({
   selector: 'grn-alert-detail',
   standalone: true,
   imports: [
     NavBarComponent,
-    CommonModule,
     AlertDetailListComponent,
     AlertDetailInfoComponent,
     FormsModule,
@@ -32,6 +31,10 @@ import { AlertDetailListComponent } from '../alert-detail-list/alert-detail-list
   styleUrl: './alert-detail.component.scss',
 })
 export class AlertDetailComponent {
+  private route = inject(ActivatedRoute);
+  private alertService = inject(AlertService);
+  private location = inject(Location);
+
   identifier = this.route.snapshot.paramMap.get('identifier');
   dataSource = this.route.snapshot.paramMap.get('data-source');
   alias = computed(() => {
@@ -46,13 +49,6 @@ export class AlertDetailComponent {
       datasource_id: this.dataSource || undefined,
     })
   );
-
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private alertService: AlertService,
-    private location: Location
-  ) {}
 
   getDate(date: Date | undefined): string {
     if (!date) {

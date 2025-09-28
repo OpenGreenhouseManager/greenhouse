@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { AlertService } from './alert.service';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
@@ -13,12 +12,7 @@ import { AccordionModule } from 'primeng/accordion';
 @Component({
   selector: 'grn-alert-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    AlertDetailListComponent,
-    AccordionModule,
-  ],
+  imports: [CardComponent, AlertDetailListComponent, AccordionModule],
   templateUrl: './alert-list.component.html',
   styleUrl: './alert-list.component.scss',
 })

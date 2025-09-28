@@ -1,22 +1,21 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { InputTextModule } from 'primeng/inputtext';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { DeviceService } from '../services/device-service';
-import { DeviceResponseDto, DeviceStatusDto } from '../../dtos/device';
-import { SortEvent } from 'primeng/api';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { DeviceResponseDto, DeviceStatusDto } from '../../dtos/device';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
+import { DeviceService } from '../services/device-service';
 
 @Component({
   selector: 'grn-device-overview',
   standalone: true,
   imports: [
-    CommonModule,
     InputTextModule,
     FormsModule,
     TableModule,
@@ -36,10 +35,8 @@ export class DeviceOverviewComponent implements OnInit {
   loading = signal(true);
   searchTerm = signal('');
 
-  constructor(
-    private deviceService: DeviceService,
-    private router: Router
-  ) {}
+  private deviceService = inject(DeviceService);
+  private router = inject(Router);
 
   ngOnInit() {
     this.loadDevices();

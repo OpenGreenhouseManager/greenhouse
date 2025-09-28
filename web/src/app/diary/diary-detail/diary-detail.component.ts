@@ -1,22 +1,20 @@
-import { Component } from '@angular/core';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { CommonModule, Location } from '@angular/common';
-import { CardComponent } from '../../card/card.component';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { ActivatedRoute, Router } from '@angular/router';
+import { InputTextModule } from 'primeng/inputtext';
+import { CardComponent } from '../../card/card.component';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { DiaryService } from '../services/diary-service';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'grn-diary-detail',
   standalone: true,
   imports: [
     NavBarComponent,
-    CommonModule,
     CardComponent,
     FormsModule,
     InputTextModule,
@@ -28,15 +26,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
   styleUrl: './diary-detail.component.scss',
 })
 export class DiaryDetailComponent {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private diaryService = inject(DiaryService);
+
   private id = this.route.snapshot.paramMap.get('id');
   diary = toSignal(this.diaryService.getDiary(this.id?.toString() || ''));
-
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private diaryService: DiaryService,
-    private location: Location
-  ) {}
 
   editEntry() {
     this.router.navigate(['diary', this.id, 'edit']);

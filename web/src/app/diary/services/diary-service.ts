@@ -1,21 +1,22 @@
 import { HttpClient } from '@angular/common/http';
-import { diary } from '../../urls/urls';
+import { inject, Injectable } from '@angular/core';
+import { formatISO, parseISO } from 'date-fns';
+import { map, Observable } from 'rxjs';
 import {
   DiaryEntryDtoResponse,
   GetDiaryDtoResponse,
   PostDiaryEntryDtoRequest,
   PutDiaryEntryDtoRequest,
 } from '../../dtos/diary';
+import { diary } from '../../urls/urls';
 import { Diary } from '../models/diary';
-import { Injectable } from '@angular/core';
-import { formatISO, parseISO } from 'date-fns';
-import { map, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DiaryService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
+
   getDiary(id: string | null): Observable<Diary> {
     if (id === null) {
       return new Observable<Diary>();

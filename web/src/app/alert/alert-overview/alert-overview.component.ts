@@ -1,44 +1,36 @@
-import { Component, effect, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { InputTextModule } from 'primeng/inputtext';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AlertService } from '../services/alert-service';
 import { endOfDay, startOfDay, subDays, subHours } from 'date-fns';
-import { AggregatedAlert } from '../models/aggregated-alert';
-import { AlertInterval } from '../models/alert-interval';
-import { TagModule } from 'primeng/tag';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { SelectModule } from 'primeng/select';
+import { SortEvent } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
-import { SortEvent } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
+import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
+import { AggregatedAlert } from '../models/aggregated-alert';
 import { Severity } from '../models/alert';
+import { AlertInterval } from '../models/alert-interval';
+import { AlertService } from '../services/alert-service';
+
 @Component({
   selector: 'grn-alert-overview',
   standalone: true,
   imports: [
     TableModule,
-    TagModule,
-    IconFieldModule,
-    InputTextModule,
-    InputIconModule,
     FormsModule,
-    MultiSelectModule,
-    SelectModule,
-    CommonModule,
+    Select,
     NavBarComponent,
-    DropdownModule,
-    ButtonModule,
+    Button,
+    SeverityTagComponent,
   ],
   templateUrl: './alert-overview.component.html',
-  styleUrl: './alert-overview.component.scss',
+  styleUrls: ['./alert-overview.component.scss'],
 })
 export class AlertOverviewComponent implements OnInit {
+  private router = inject(Router);
+  private alertService = inject(AlertService);
+
   Severity = Severity;
 
   alerts = signal<AggregatedAlert[]>([]);
@@ -70,11 +62,6 @@ export class AlertOverviewComponent implements OnInit {
       label: Severity[key as keyof typeof Severity],
       value: key,
     }));
-
-  constructor(
-    private router: Router,
-    private alertService: AlertService
-  ) {}
 
   ngOnInit() {}
 
@@ -132,21 +119,6 @@ export class AlertOverviewComponent implements OnInit {
       } else {
         localStorage.setItem(`alias_${identifier}`, newAlias);
       }
-    }
-  }
-
-  severityToColor(severity: Severity): string {
-    switch (severity) {
-      case Severity.Info:
-        return 'info';
-      case Severity.Warning:
-        return 'warn';
-      case Severity.Error:
-        return 'error';
-      case Severity.Fatal:
-        return 'fatal';
-      default:
-        return 'gray';
     }
   }
 

@@ -4,7 +4,7 @@
     <h1>Alert</h1>
   </div>
   <div class="content">
-    <p-dropdown
+    <p-select
       [options]="intervals"
       [(ngModel)]="selectedInterval"
       optionLabel="label" />
@@ -88,9 +88,7 @@
                     placeholder="Select Severity"
                     [showClear]="true">
                     <ng-template let-option #item>
-                      <p-tag
-                        [value]="option.value"
-                        [severity]="severityToColor(option.label)" />
+                      <grn-severity-tag [severity]="option.value" />
                     </ng-template>
                   </p-select>
                 </ng-template>
@@ -124,10 +122,7 @@
             {{ prettyDate(item.last) }}
           </td>
           <td>
-            <p-tag
-              [value]="Severity[item.severity]"
-              [severity]="severityToColor(item.severity)">
-            </p-tag>
+            <grn-severity-tag [severity]="item.severity" />
           </td>
         </tr>
       </ng-template>

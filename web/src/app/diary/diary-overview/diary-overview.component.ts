@@ -1,23 +1,23 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { CommonModule } from '@angular/common';
-import { CardComponent } from '../../card/card.component';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { Router } from '@angular/router';
-import { DiaryService } from '../services/diary-service';
 import {
-  startOfDay,
+  addDays,
   endOfDay,
   isToday,
   isYesterday,
+  startOfDay,
   subDays,
-  addDays,
 } from 'date-fns';
+import { ButtonModule } from 'primeng/button';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputTextModule } from 'primeng/inputtext';
+import { CardComponent } from '../../card/card.component';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { Diary } from '../models/diary';
+import { DiaryService } from '../services/diary-service';
 
 @Component({
   selector: 'grn-diary-overview',
@@ -48,10 +48,8 @@ export class DiaryOverviewComponent implements OnInit {
     return this.selectedDate().toLocaleDateString();
   });
 
-  constructor(
-    private router: Router,
-    private diaryService: DiaryService
-  ) {}
+  private router = inject(Router);
+  private diaryService = inject(DiaryService);
 
   ngOnInit() {
     this.updateDiaries();

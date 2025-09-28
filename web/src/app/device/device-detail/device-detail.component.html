@@ -145,15 +145,24 @@
         </div>
       </div>
 
+      @if (hasGraph()) {
+        @for (
+          config of configs();
+          track config.device_id + '_' + config.sub_property
+        ) {
+          <div class="content">
+            <grn-graph
+              [config]="config"
+              [header]="
+                device()!.name + ': ' + config.sub_property
+              "></grn-graph>
+          </div>
+        }
+      }
+
       @if (hasAlert()) {
         <div class="content">
           <grn-alert-list [dataSourceId]="dataSourceId()!"></grn-alert-list>
-        </div>
-      }
-
-      @if (hasGraph()) {
-        <div class="content">
-          <grn-graph [config]="config()!"></grn-graph>
         </div>
       }
     }

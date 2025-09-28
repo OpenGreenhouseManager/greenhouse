@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 
@@ -10,10 +10,8 @@ import { CookieService } from 'ngx-cookie-service';
   styleUrl: './nav_bar.component.scss',
 })
 export class NavBarComponent {
-  constructor(
-    private router: Router,
-    private cookieService: CookieService
-  ) {}
+  private router = inject(Router);
+  private cookieService = inject(CookieService);
 
   signOut() {
     this.cookieService.delete('auth-token');

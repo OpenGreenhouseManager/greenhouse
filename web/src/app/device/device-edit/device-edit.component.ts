@@ -1,5 +1,5 @@
-import { CommonModule, Location } from '@angular/common';
-import { Component, computed } from '@angular/core';
+import { Location } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,7 +19,6 @@ import { DeviceService } from '../services/device-service';
   standalone: true,
   imports: [
     NavBarComponent,
-    CommonModule,
     CardComponent,
     FormsModule,
     InputTextModule,
@@ -32,6 +31,11 @@ import { DeviceService } from '../services/device-service';
   styleUrl: './device-edit.component.scss',
 })
 export class DeviceEditComponent {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private deviceService = inject(DeviceService);
+  private location = inject(Location);
+
   private id = this.route.snapshot.paramMap.get('id');
   edit = computed(() => this.id !== null);
 
@@ -55,16 +59,8 @@ export class DeviceEditComponent {
       : of(new Device()),
     {
       initialValue: new Device(),
-      rejectErrors: true,
     }
   );
-
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private deviceService: DeviceService,
-    private location: Location
-  ) {}
 
   goBack() {
     this.location.back();

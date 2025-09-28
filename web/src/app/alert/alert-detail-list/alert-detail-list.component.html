@@ -61,9 +61,7 @@
                 placeholder="Select Severity"
                 [showClear]="true">
                 <ng-template pTemplate="item" let-option>
-                  <p-tag
-                    [value]="option.value"
-                    [severity]="severityToColor(option.label)" />
+                  <grn-severity-tag [severity]="option.value" />
                 </ng-template>
               </p-select>
             </ng-template>
@@ -84,10 +82,7 @@
         {{ item.note }}
       </td>
       <td>
-        <p-tag
-          [value]="severityToString(item.severity)"
-          [severity]="severityToString(item.severity)">
-        </p-tag>
+        <grn-severity-tag [severity]="item.severity" />
       </td>
     </tr>
   </ng-template>

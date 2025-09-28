@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AlertDto } from '../../dtos/alert/alert';
 import { alert } from '../../urls/urls';
@@ -15,7 +15,7 @@ export interface AlertQuery {
   providedIn: 'root',
 })
 export class AlertService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   getAlerts(query: AlertQuery): Observable<AlertDto[]> {
     let params = new HttpParams();

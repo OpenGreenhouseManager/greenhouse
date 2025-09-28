@@ -128,8 +128,8 @@ export const barChartOptions = {
 export const chartColors = {
   primary: '#717744',
   secondary: '#766153',
-  info: '#0ea5e9',
-  warning: '#f97316',
+  info: '#66A9A9',
+  warning: '#f59e0b',
   error: '#f44336',
   fatal: '#b71c1c',
   success: '#22c55e',

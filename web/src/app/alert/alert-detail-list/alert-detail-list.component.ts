@@ -1,15 +1,15 @@
-import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import { Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { Alert, Severity } from '../models/alert';
-import { TableModule } from 'primeng/table';
-import { SortEvent } from 'primeng/api';
+import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
+import { TableModule } from 'primeng/table';
+import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
+import { Alert, Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-list',
@@ -23,7 +23,7 @@ import { TagModule } from 'primeng/tag';
     InputGroupAddonModule,
     TableModule,
     SelectModule,
-    TagModule,
+    SeverityTagComponent,
   ],
   templateUrl: './alert-detail-list.component.html',
   styleUrl: './alert-detail-list.component.scss',
@@ -50,21 +50,6 @@ export class AlertDetailListComponent {
     });
   }
 
-  severityToColor(severity: Severity): string {
-    switch (severity) {
-      case Severity.Info:
-        return 'info';
-      case Severity.Warning:
-        return 'warn';
-      case Severity.Error:
-        return 'error';
-      case Severity.Fatal:
-        return 'fatal';
-      default:
-        return 'gray';
-    }
-  }
-
   prettyDate(date: Date): string {
     return date.toLocaleDateString('de-DE', {
       year: 'numeric',
@@ -74,26 +59,5 @@ export class AlertDetailListComponent {
       minute: '2-digit',
       second: '2-digit',
     });
-  }
-
-  severityToString(severity: unknown): string {
-    if (typeof severity !== 'number') {
-      if (severity === 'Warning') {
-        return 'warn';
-      }
-      return (severity as string).toLowerCase();
-    }
-    switch (severity) {
-      case Severity.Info:
-        return 'info';
-      case Severity.Warning:
-        return 'warn';
-      case Severity.Error:
-        return 'error';
-      case Severity.Fatal:
-        return 'fatal';
-      default:
-        return 'gray';
-    }
   }
 }

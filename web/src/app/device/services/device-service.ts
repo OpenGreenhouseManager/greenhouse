@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  ConfigResponseDto,
   DeviceResponseDto,
   DeviceStatusResponseDto,
-  ConfigResponseDto,
   PostDeviceDtoRequest,
   PutDeviceDtoRequest,
 } from '../../dtos/device';
@@ -14,7 +14,7 @@ import { device } from '../../urls/urls';
   providedIn: 'root',
 })
 export class DeviceService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   getAllDevices(): Observable<DeviceResponseDto[]> {
     return this.http.get<DeviceResponseDto[]>(device, {
@@ -75,5 +75,11 @@ export class DeviceService {
           console.error(error);
         },
       });
+  }
+
+  getDeviceOptions(deviceId: string): Observable<string[]> {
+    return this.http.get<string[]>(`${device}/${deviceId}/options`, {
+      withCredentials: true,
+    });
   }
 }

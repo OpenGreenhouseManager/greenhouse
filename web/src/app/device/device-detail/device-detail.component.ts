@@ -1,29 +1,29 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { CardComponent } from '../../card/card.component';
-import { DeviceService } from '../services/device-service';
-import {
-  DeviceResponseDto,
-  ConfigResponseDto,
-  DeviceStatusDto,
-  Type,
-  Mode,
-} from '../../dtos/device';
-import { catchError, forkJoin, of } from 'rxjs';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageModule } from 'primeng/message';
-import { NavBarComponent } from '../../nav_bar/nav_bar.component';
+
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { ButtonModule } from 'primeng/button';
-import { GraphComponent } from '../../shared/graph/graph.component';
+import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { catchError, combineLatest, forkJoin, of, switchMap } from 'rxjs';
+import { CardComponent } from '../../card/card.component';
+import {
+  ConfigResponseDto,
+  DeviceResponseDto,
+  DeviceStatusDto,
+  Mode,
+  Type,
+} from '../../dtos/device';
+import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { AlertListComponent } from '../../shared/alert/alert-list.component';
+import { GraphComponent } from '../../shared/graph/graph.component';
+import { DeviceService } from '../services/device-service';
 
 @Component({
   selector: 'app-device-detail',
   standalone: true,
   imports: [
-    CommonModule,
     CardComponent,
     ProgressSpinnerModule,
     MessageModule,
@@ -37,6 +37,10 @@ import { AlertListComponent } from '../../shared/alert/alert-list.component';
   styleUrl: './device-detail.component.scss',
 })
 export class DeviceDetailComponent implements OnInit {
+  private deviceService = inject(DeviceService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
   device = signal<DeviceResponseDto | null>(null);
   deviceConfig = signal<ConfigResponseDto | null>(null);
   loading = signal(true);
@@ -47,31 +51,51 @@ export class DeviceDetailComponent implements OnInit {
     return this.dataSourceId() !== null;
   });
 
-  public config = computed(() => {
-    if (!this.device()) {
-      return null;
+  public configList = toSignal(
+    combineLatest([
+      toObservable(this.device),
+      toObservable(this.deviceConfig),
+    ]).pipe(
+      switchMap(([device, deviceConfig]) => {
+        if (!device) return of([]);
+        if (!deviceConfig) return of([]);
+
+        if (deviceConfig.output_type === Type.Number) {
+          return of(['']);
+        }
+        return this.deviceService.getDeviceOptions(device.id);
+      })
+    )
+  );
+
+  public configs = computed(() => {
+    const configList = this.configList();
+    const device = this.device();
+
+    if (!configList || !device) {
+      console.log('configList', configList);
+      console.log('device', device);
+      return [];
     }
-    return {
-      device_id: this.device()!.id,
-    };
+
+    return configList.map((option: string) => {
+      console.log(option);
+      return {
+        device_id: device.id,
+        sub_property: option ?? undefined,
+      };
+    });
   });
 
   public hasGraph = computed(() => {
     return (
       this.device()?.scraping &&
-      this.deviceConfig()?.output_type === Type.Number &&
       (this.deviceConfig()?.mode === Mode.Output ||
         this.deviceConfig()?.mode === Mode.InputOutput)
     );
   });
 
   public dataSourceId = signal<string | null>(null);
-
-  constructor(
-    private deviceService: DeviceService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
 
   ngOnInit(): void {
     const deviceId = this.route.snapshot.paramMap.get('id');

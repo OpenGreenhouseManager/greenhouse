@@ -1,14 +1,14 @@
-import { Component, signal } from '@angular/core';
-import { CardComponent } from '../card/card.component';
-import { InputTextModule } from 'primeng/inputtext';
-import { FormsModule } from '@angular/forms';
-import { PasswordModule } from 'primeng/password';
-import { ButtonModule } from 'primeng/button';
 import { HttpClient } from '@angular/common/http';
-import { RegisterRequestDto, RegisterResponseDto } from '../dtos/register';
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { register } from '../urls/urls';
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { CardComponent } from '../card/card.component';
+import { RegisterRequestDto, RegisterResponseDto } from '../dtos/register';
+import { register } from '../urls/urls';
 
 @Component({
   selector: 'grn-register',
@@ -32,10 +32,8 @@ export class RegisterComponent {
 
   public error = signal(false);
   public passwordError = signal(false);
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {}
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
   public register() {
     if (this.password !== this.passwordRepeat) {

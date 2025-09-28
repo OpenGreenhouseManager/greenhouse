@@ -1,4 +1,7 @@
-<grn-card title="Device Information" icon="pi-info-circle">
+<grn-card
+  [title]="header()"
+  icon="pi-info-circle"
+  (iconClicked)="this.dialogVisible = true">
   <div class="graph-controls">
     <p-datepicker
       [(ngModel)]="startDate"
@@ -20,14 +23,28 @@
       type="line"
       [data]="timeseries()"
       [options]="chartOptions"></p-chart>
-    <p-progress-spinner
-      ariaLabel="loading"
-      *ngIf="loading()"
-      class="chartMessage" />
-    <p-message
-      *ngIf="error()"
-      severity="error"
-      [text]="error()!"
-      class="chartMessage"></p-message>
+    @if (loading()) {
+      <p-progress-spinner ariaLabel="loading" class="chartMessage" />
+    }
+    @if (error()) {
+      <p-message
+        severity="error"
+        [text]="error()!"
+        class="chartMessage"></p-message>
+    }
   </div>
 </grn-card>
+
+<p-dialog
+  [header]="'Device Information'"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  [appendTo]="'body'"
+  class="gridster-item-content">
+  <div class="flex flex-col gap-4">
+    <p>Device ID: {{ config().device_id }}</p>
+    <p>Sub Property: {{ config().sub_property }}</p>
+  </div>
+</p-dialog>
