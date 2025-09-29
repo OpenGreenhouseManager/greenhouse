@@ -76,6 +76,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": ["grn.mauderer.work"]
+          },
           "configurations": {
             "production": {
               "buildTarget": "greenhouse_web:build:production"
