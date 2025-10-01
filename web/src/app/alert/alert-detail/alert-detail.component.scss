@@ -37,7 +37,6 @@ main {
 }
 
 .alert-detail-container {
-  padding: 1rem;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: masonry; /* ⚠️ not supported in Chrome/Edge yet */

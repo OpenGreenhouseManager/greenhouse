@@ -1,21 +1,19 @@
 :host {
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Prevent any overflow at the component level */
   display: flex;
   flex-direction: column;
 }
 
 p-accordion {
+  overflow: auto;
   flex: 1; /* Take remaining space */
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .p-accordion {
   flex: 1; /* Take remaining space */
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }

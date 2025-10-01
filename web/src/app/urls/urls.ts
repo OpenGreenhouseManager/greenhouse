@@ -7,3 +7,4 @@ export const otp =
 export const diary = environment.baseUrl + '/api/diary';
 export const alert = environment.baseUrl + '/api/alert';
 export const device = environment.baseUrl + '/api/device';
+export const userPreferences = environment.baseUrl + '/api/user/preferences';

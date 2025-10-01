@@ -9,6 +9,7 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
+import { AlertAliasService } from '../../services/alert-alias.service';
 import { AlertDetailInfoComponent } from '../alert-detail-info/alert-detail-info.component';
 import { AlertDetailListComponent } from '../alert-detail-list/alert-detail-list.component';
 import { AlertService } from '../services/alert-service';
@@ -33,6 +34,7 @@ import { AlertService } from '../services/alert-service';
 export class AlertDetailComponent {
   private route = inject(ActivatedRoute);
   private alertService = inject(AlertService);
+  private alertAliasService = inject(AlertAliasService);
   private location = inject(Location);
 
   identifier = this.route.snapshot.paramMap.get('identifier');
@@ -64,7 +66,7 @@ export class AlertDetailComponent {
   }
 
   searchForAlias(identifier: string): string | null {
-    return localStorage.getItem(`alias_${identifier}`);
+    return this.alertAliasService.getAliasSync(identifier);
   }
 
   goBack() {

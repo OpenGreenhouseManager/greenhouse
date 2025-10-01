@@ -9,6 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { NavBarComponent } from '../nav_bar/nav_bar.component';
+import { UserPreferencesService } from '../services/user-preferences.service';
 import { AlertListComponent } from '../shared/alert/alert-list.component';
 import { GraphComponent, GraphConfig } from '../shared/graph/graph.component';
 import {
@@ -52,10 +53,11 @@ type DashboardItem = GraphDashboardItem | AlertListDashboardItem;
 })
 export class DashboardComponent {
   options: GridsterConfig;
-  dashboard: DashboardItem[];
+  dashboard: DashboardItem[] = [];
   dialogVisible = signal(false);
   editMode = signal(false);
   private confirmationService = inject(ConfirmationService);
+  private userPreferencesService = inject(UserPreferencesService);
 
   constructor() {
     this.options = {
@@ -70,7 +72,6 @@ export class DashboardComponent {
       pushResizeItems: true,
       swap: true,
       swapWhileDragging: true,
-      pushItems: true,
       minCols: 16,
       minRows: 9,
       maxCols: 16,
@@ -79,20 +80,55 @@ export class DashboardComponent {
       disableScrollVertical: true,
     };
 
-    const savedLayout = localStorage.getItem('dashboard-layout');
-    if (savedLayout) {
-      console.log('loading dashboard');
-      console.log(savedLayout);
-      this.dashboard = JSON.parse(savedLayout);
-    } else {
-      console.log('no saved dashboard, using default');
-      this.dashboard = [];
-    }
+    // Load dashboard from backend preferences instead of localStorage
+    this.loadDashboard();
+  }
+
+  private loadDashboard() {
+    this.userPreferencesService.getUserPreferences().subscribe({
+      next: preferences => {
+        if (preferences.dashboard_preferences) {
+          console.log('loading dashboard from backend');
+          console.log(preferences.dashboard_preferences);
+          this.dashboard = JSON.parse(preferences.dashboard_preferences);
+          console.log('dashboard loaded from backend', this.dashboard);
+        } else {
+          console.log('no saved dashboard, using default');
+          this.dashboard = [];
+        }
+      },
+      error: error => {
+        console.error('Error loading dashboard preferences:', error);
+        this.dashboard = [];
+      },
+    });
   }
 
   saveDashboard(e: any) {
     setTimeout(() => {
-      localStorage.setItem('dashboard-layout', JSON.stringify(this.dashboard));
+      // Save to backend instead of localStorage
+      this.userPreferencesService.getUserPreferences().subscribe({
+        next: currentPreferences => {
+          const updatedPreferences = {
+            ...currentPreferences,
+            dashboard_preferences: JSON.stringify(this.dashboard),
+          };
+
+          this.userPreferencesService
+            .updateUserPreferences(updatedPreferences)
+            .subscribe({
+              next: () => {
+                console.log('Dashboard preferences saved successfully');
+              },
+              error: error => {
+                console.error('Error saving dashboard preferences:', error);
+              },
+            });
+        },
+        error: error => {
+          console.error('Error getting current preferences:', error);
+        },
+      });
     }, 300);
   }
 

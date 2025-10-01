@@ -7,6 +7,7 @@ import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
+import { AlertAliasService } from '../../services/alert-alias.service';
 import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
 import { AggregatedAlert } from '../models/aggregated-alert';
 import { Severity } from '../models/alert';
@@ -30,6 +31,7 @@ import { AlertService } from '../services/alert-service';
 export class AlertOverviewComponent implements OnInit {
   private router = inject(Router);
   private alertService = inject(AlertService);
+  private alertAliasService = inject(AlertAliasService);
 
   Severity = Severity;
 
@@ -106,7 +108,7 @@ export class AlertOverviewComponent implements OnInit {
   }
 
   searchForAlias(identifier: string): string | null {
-    return localStorage.getItem(`alias_${identifier}`);
+    return this.alertAliasService.getAliasSync(identifier);
   }
 
   editAlias(event: MouseEvent, identifier: string) {
@@ -114,11 +116,14 @@ export class AlertOverviewComponent implements OnInit {
     const alias = this.searchForAlias(identifier);
     const newAlias = prompt('Edit Alias', alias || '');
     if (newAlias !== null) {
-      if (newAlias.trim() === '') {
-        localStorage.removeItem(`alias_${identifier}`);
-      } else {
-        localStorage.setItem(`alias_${identifier}`, newAlias);
-      }
+      this.alertAliasService.setAlias(identifier, newAlias).subscribe({
+        next: () => {
+          console.log('Alias updated successfully');
+        },
+        error: error => {
+          console.error('Error updating alias:', error);
+        },
+      });
     }
   }
 
