@@ -1,8 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { AlertAggrigatedDto } from '../../dtos/alert/aggrigated-alert';
-import { AlertDto } from '../../dtos/alert/alert';
+import { AlertsAggrigatedDto } from '../../dtos/alert/aggrigated-alert';
+import { AlertsDto } from '../../dtos/alert/alert';
 import { AlertQuery } from '../../dtos/alert/alert-query';
 import { IntervalQuery } from '../../dtos/alert/interval-query';
 import { alert } from '../../urls/urls';
@@ -22,15 +22,15 @@ export class AlertService {
     };
 
     return this.http
-      .get<AlertAggrigatedDto[]>(alert, {
+      .get<AlertsAggrigatedDto>(alert, {
         withCredentials: true,
         params: query as HttpParams,
       })
       .pipe(
         map(x => {
           const a: AggregatedAlert[] = [];
-          for (let i = 0; i < x.length; i++) {
-            const alert = x[i];
+          for (let i = 0; i < x.alerts.length; i++) {
+            const alert = x.alerts[i];
             a.push({
               count: alert.count,
               identifier: alert.identifier,
@@ -47,15 +47,15 @@ export class AlertService {
 
   queryAlerts(query: AlertQuery): Observable<Alert[]> {
     return this.http
-      .get<AlertDto[]>(alert + '/filter', {
+      .get<AlertsDto>(alert + '/filter', {
         withCredentials: true,
         params: query as HttpParams,
       })
       .pipe(
         map(x => {
           const a: Alert[] = [];
-          for (let i = 0; i < x.length; i++) {
-            const alert = x[i];
+          for (let i = 0; i < x.alerts.length; i++) {
+            const alert = x.alerts[i];
             a.push({
               id: alert.id,
               severity: this.convertSeverity(alert.severity),

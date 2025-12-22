@@ -92,7 +92,7 @@ export class GraphComponent {
               catchError(error => {
                 this.loading.set(false);
                 this.error.set(error.message);
-                return of([]);
+                return of({ timeseries: [] });
               })
             );
         })
@@ -101,12 +101,12 @@ export class GraphComponent {
         map(timeseries => {
           this.loading.set(false);
           return {
-            labels: timeseries.map(t =>
+            labels: timeseries.timeseries.map(t =>
               new Date(t.timestamp).toLocaleTimeString()
             ),
             datasets: [
               {
-                data: timeseries.map(
+                data: timeseries.timeseries.map(
                   t => (t.value as { Number: number }).Number
                 ),
               },

@@ -8,6 +8,10 @@ export interface DeviceResponseDto {
   scraping: boolean;
 }
 
+export interface DevicesResponseDto {
+  devices: DeviceResponseDto[];
+}
+
 export interface PutDeviceDtoRequest {
   name: string;
   description: string;
@@ -57,4 +61,8 @@ export enum Type {
 export class ScriptingApi {
   url!: string;
   token!: string;
+}
+
+export interface DeviceOptionsResponseDto {
+  operations: string[];
 }

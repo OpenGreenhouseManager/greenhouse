@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TimeseriesDto } from '../../dtos/timeseries';
+import { TimeseriesResponseDto } from '../../dtos/timeseries';
 import { device } from '../../urls/urls';
 
 export interface TimeseriesQuery {
@@ -20,7 +20,7 @@ export class GraphService {
   getTimeseries(
     deviceId: string,
     query: TimeseriesQuery
-  ): Observable<TimeseriesDto[]> {
+  ): Observable<TimeseriesResponseDto> {
     let params = new HttpParams()
       .set('start', query.start.toISOString())
       .set('end', query.end.toISOString());
@@ -31,9 +31,12 @@ export class GraphService {
       params = params.set('step', query.step);
     }
 
-    return this.http.get<TimeseriesDto[]>(`${device}/${deviceId}/timeseries`, {
-      withCredentials: true,
-      params,
-    });
+    return this.http.get<TimeseriesResponseDto>(
+      `${device}/${deviceId}/timeseries`,
+      {
+        withCredentials: true,
+        params,
+      }
+    );
   }
 }

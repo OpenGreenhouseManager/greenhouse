@@ -6,3 +6,7 @@ export interface AlertAggrigatedDto {
   first: string;
   last: string;
 }
+
+export interface AlertsAggrigatedDto {
+  alerts: AlertAggrigatedDto[];
+}

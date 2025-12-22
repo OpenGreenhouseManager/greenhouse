@@ -7,3 +7,7 @@ export interface AlertDto {
   created_at: string;
   datasource_id: string;
 }
+
+export interface AlertsDto {
+  alerts: AlertDto[];
+}

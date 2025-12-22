@@ -3,7 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ConfigResponseDto,
+  DeviceOptionsResponseDto,
   DeviceResponseDto,
+  DevicesResponseDto,
   DeviceStatusResponseDto,
   PostDeviceDtoRequest,
   PutDeviceDtoRequest,
@@ -16,8 +18,8 @@ import { device } from '../../urls/urls';
 export class DeviceService {
   private http = inject(HttpClient);
 
-  getAllDevices(): Observable<DeviceResponseDto[]> {
-    return this.http.get<DeviceResponseDto[]>(device, {
+  getAllDevices(): Observable<DevicesResponseDto> {
+    return this.http.get<DevicesResponseDto>(device, {
       withCredentials: true,
     });
   }
@@ -77,9 +79,12 @@ export class DeviceService {
       });
   }
 
-  getDeviceOptions(deviceId: string): Observable<string[]> {
-    return this.http.get<string[]>(`${device}/${deviceId}/options`, {
-      withCredentials: true,
-    });
+  getDeviceOptions(deviceId: string): Observable<DeviceOptionsResponseDto> {
+    return this.http.get<DeviceOptionsResponseDto>(
+      `${device}/${deviceId}/options`,
+      {
+        withCredentials: true,
+      }
+    );
   }
 }

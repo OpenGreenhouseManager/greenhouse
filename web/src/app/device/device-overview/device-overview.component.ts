@@ -47,7 +47,7 @@ export class DeviceOverviewComponent implements OnInit {
     this.deviceService.getAllDevices().subscribe({
       next: devices => {
         // Load status for each device
-        const statusRequests = devices.map(device =>
+        const statusRequests = devices.devices.map(device =>
           this.deviceService.getDeviceStatus(device.id).pipe(
             map(statusResponse => ({ device, status: statusResponse.status })),
             catchError(() => of({ device, status: undefined }))
@@ -76,7 +76,7 @@ export class DeviceOverviewComponent implements OnInit {
           },
           error: error => {
             console.error('Error loading device statuses:', error);
-            this.devices.set(devices);
+            this.devices.set(devices.devices);
             this.loading.set(false);
           },
         });

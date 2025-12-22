@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AlertDto } from '../../dtos/alert/alert';
+import { AlertsDto } from '../../dtos/alert/alert';
 import { alert } from '../../urls/urls';
 
 export interface AlertQuery {
@@ -17,7 +17,7 @@ export interface AlertQuery {
 export class AlertService {
   private http = inject(HttpClient);
 
-  getAlerts(query: AlertQuery): Observable<AlertDto[]> {
+  getAlerts(query: AlertQuery): Observable<AlertsDto> {
     let params = new HttpParams();
     if (query.severity) {
       params = params.set('severity', query.severity);
@@ -31,7 +31,7 @@ export class AlertService {
     if (query.datasource_id) {
       params = params.set('datasource_id', query.datasource_id);
     }
-    return this.http.get<AlertDto[]>(`${alert}/filter`, {
+    return this.http.get<AlertsDto>(`${alert}/filter`, {
       withCredentials: true,
       params,
     });

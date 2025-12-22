@@ -1,13 +1,13 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { AlertService } from './alert.service';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, map, switchMap } from 'rxjs/operators';
-import { CardComponent } from '../../card/card.component';
-import { combineLatest, of } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { subHours } from 'date-fns';
-import { Alert, Severity } from '../../alert/models/alert';
-import { AlertDetailListComponent } from '../../alert/alert-detail-list/alert-detail-list.component';
 import { AccordionModule } from 'primeng/accordion';
+import { combineLatest, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { AlertDetailListComponent } from '../../alert/alert-detail-list/alert-detail-list.component';
+import { Alert, Severity } from '../../alert/models/alert';
+import { CardComponent } from '../../card/card.component';
+import { AlertService } from './alert.service';
 
 @Component({
   selector: 'grn-alert-list',
@@ -58,7 +58,7 @@ export class AlertListComponent {
               catchError(error => {
                 this.loading.set(false);
                 this.error.set(error.message);
-                return of([]);
+                return of({ alerts: [] });
               })
             );
         })
@@ -66,7 +66,7 @@ export class AlertListComponent {
       .pipe(
         map(alerts => {
           this.loading.set(false);
-          return alerts.map(
+          return alerts.alerts.map(
             a =>
               ({
                 id: a.id,

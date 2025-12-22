@@ -8,3 +8,7 @@ export type Type =
   | { Boolean: boolean }
   | { Object: Record<string, Type> }
   | { Array: Type[] };
+
+export interface TimeseriesResponseDto {
+  timeseries: TimeseriesDto[];
+}
