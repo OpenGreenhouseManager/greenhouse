@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { differenceInSeconds, subHours } from 'date-fns';
+import { differenceInSeconds, fromUnixTime, subDays } from 'date-fns';
 import { ChartModule } from 'primeng/chart';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
@@ -43,7 +43,7 @@ export class GraphComponent {
   public loading = signal(false);
   public error = signal<string | null>(null);
   public dialogVisible = false;
-  public startDate = signal(subHours(new Date(), 1));
+  public startDate = signal(subDays(new Date(), 1));
   public endDate = signal(new Date());
 
   // calculate the step size based on the duration and the max data points
@@ -102,7 +102,7 @@ export class GraphComponent {
           this.loading.set(false);
           return {
             labels: timeseries.timeseries.map(t =>
-              new Date(t.timestamp).toLocaleTimeString()
+              fromUnixTime(t.timestamp).toLocaleTimeString()
             ),
             datasets: [
               {
