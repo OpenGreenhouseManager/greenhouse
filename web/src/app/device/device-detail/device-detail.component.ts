@@ -17,7 +17,10 @@ import {
 } from '../../dtos/device';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { AlertListComponent } from '../../shared/alert/alert-list.component';
-import { GraphComponent } from '../../shared/graph/graph.component';
+import {
+  GraphComponent,
+  GraphConfig,
+} from '../../shared/graph/graph.component';
 import { DeviceService } from '../services/device-service';
 
 @Component({
@@ -76,10 +79,18 @@ export class DeviceDetailComponent implements OnInit {
       return [];
     }
 
-    return configList.operations.map((option: string) => {
+    return configList.operations.map((option: string, index: number) => {
       return {
-        device_id: device.id,
-        sub_property: option ?? undefined,
+        trackingId: index,
+        config: {
+          graph_data: [
+            {
+              device_id: device.id,
+              sub_property: option ?? undefined,
+            },
+          ],
+          axis_mode: 'merged',
+        } satisfies GraphConfig,
       };
     });
   });

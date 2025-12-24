@@ -146,15 +146,16 @@
       </div>
 
       @if (hasGraph()) {
-        @for (
-          config of configs();
-          track config.device_id + '_' + config.sub_property
-        ) {
+        @for (config of configs(); track config.trackingId) {
           <div class="content">
             <grn-graph
-              [config]="config"
+              [config]="config.config"
               [header]="
-                device()!.name + ': ' + config.sub_property
+                device()!.name +
+                ': ' +
+                config.config.graph_data[0].device_id +
+                '_' +
+                config.config.graph_data[0].sub_property
               "></grn-graph>
           </div>
         }

@@ -29,6 +29,10 @@
             <grn-graph
               [config]="item.options"
               [header]="item.options.name"></grn-graph>
+          } @else if (item.type === 'multiGraph') {
+            <grn-graph
+              [config]="item.options"
+              [header]="item.options.name"></grn-graph>
           } @else if (item.type === 'alertList') {
             <grn-alert-list
               [dataSourceId]="item.options.dataSourceId"></grn-alert-list>

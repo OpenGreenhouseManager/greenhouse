@@ -19,10 +19,7 @@
       hourFormat="24" />
   </div>
   <div class="graph" style="height: 100%; width: 100%">
-    <p-chart
-      type="line"
-      [data]="timeseries()"
-      [options]="chartOptions"></p-chart>
+    <p-chart type="line" [data]="timeseries()" [options]="options()"></p-chart>
     @if (loading()) {
       <p-progress-spinner ariaLabel="loading" class="chartMessage" />
     }
@@ -44,7 +41,9 @@
   [appendTo]="'body'"
   class="gridster-item-content">
   <div class="flex flex-col gap-4">
-    <p>Device ID: {{ config().device_id }}</p>
-    <p>Sub Property: {{ config().sub_property }}</p>
+    @for (data of config().graph_data; track data.device_id) {
+      <p>Device ID: {{ data.device_id }}</p>
+      <p>Sub Property: {{ data.sub_property }}</p>
+    }
   </div>
 </p-dialog>

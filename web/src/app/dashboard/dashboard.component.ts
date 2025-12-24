@@ -23,6 +23,11 @@ interface GraphDashboardItem extends GridsterItem {
   options: GraphConfig & { name: string };
 }
 
+interface MultiGraphDashboardItem extends GridsterItem {
+  type: 'multiGraph';
+  options: GraphConfig & { name: string };
+}
+
 interface AlertListDashboardItem extends GridsterItem {
   type: 'alertList';
   options: {
@@ -32,7 +37,10 @@ interface AlertListDashboardItem extends GridsterItem {
 }
 
 // Union type for all dashboard items
-type DashboardItem = GraphDashboardItem | AlertListDashboardItem;
+type DashboardItem =
+  | GraphDashboardItem
+  | MultiGraphDashboardItem
+  | AlertListDashboardItem;
 
 @Component({
   selector: 'grn-dashboard',
@@ -153,11 +161,32 @@ export class DashboardComponent {
         x: 0,
         type: 'graph',
         options: {
-          device_id: componentData.deviceId!,
-          sub_property: componentData.subProperty!,
+          graph_data: [
+            {
+              device_id: componentData.deviceId!,
+              sub_property: componentData.subProperty!,
+            },
+          ],
           name: componentData.name,
         },
       } as GraphDashboardItem;
+    } else if (componentData.type === 'multiGraph') {
+      newItem = {
+        cols: 4,
+        rows: 3,
+        y: 0,
+        x: 0,
+        type: 'multiGraph',
+        options: {
+          graph_data:
+            componentData.graphData?.map(d => ({
+              device_id: d.deviceId,
+              sub_property: d.subProperty,
+            })) ?? [],
+          axis_mode: componentData.axisMode ?? 'merged',
+          name: componentData.name,
+        },
+      } as MultiGraphDashboardItem;
     } else if (componentData.type === 'alertList') {
       newItem = {
         cols: 3,

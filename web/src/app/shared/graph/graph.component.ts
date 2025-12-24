@@ -7,13 +7,19 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { combineLatest, of } from 'rxjs';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { combineLatest, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { CardComponent } from '../../card/card.component';
-import { chartOptions } from './chart_option';
+import { chartColors, chartOptions } from './chart_option';
 import { GraphService } from './graph.service';
 
 export interface GraphConfig {
+  graph_data: GraphData[];
+  axis_mode?: 'merged' | 'separate';
+}
+
+export interface GraphData {
   device_id: string;
   sub_property?: string;
 }
@@ -31,6 +37,7 @@ const MAX_DATA_POINTS = 100;
     FormsModule,
     DatePickerModule,
     DialogModule,
+    SelectButtonModule,
   ],
   templateUrl: './graph.component.html',
   styleUrl: './graph.component.scss',
@@ -39,7 +46,6 @@ export class GraphComponent {
   public config = input.required<GraphConfig>();
   public header = input.required<string>();
   private graphService = inject(GraphService);
-  public chartOptions = chartOptions;
   public loading = signal(false);
   public error = signal<string | null>(null);
   public dialogVisible = false;
@@ -68,7 +74,43 @@ export class GraphComponent {
 
   public now = signal(new Date());
 
-  // Convert the device signal to an observable, then switch to the timeseries observable
+  // Chart.js options computed from current state
+  public options = computed(() => {
+    const base = structuredClone(chartOptions) as any;
+    // Enable legend if more than one dataset will be shown
+    base.plugins = base.plugins || {};
+    base.plugins.legend = base.plugins.legend || {};
+    base.plugins.legend.display = true;
+
+    // Configure secondary Y axis if requested
+    base.scales = base.scales || {};
+    base.scales.x = base.scales.x || {};
+    base.scales.y = {
+      ...(base.scales.y || {}),
+      type: 'linear',
+      position: 'left',
+    };
+    if (this.config().axis_mode === 'separate') {
+      base.scales.y1 = {
+        type: 'linear',
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          ...(base.scales.y?.ticks || {}),
+        },
+      };
+    } else {
+      // Ensure single axis mode
+      if (base.scales.y1) {
+        delete base.scales.y1;
+      }
+    }
+    return base;
+  });
+
+  // Convert inputs to an observable, then fetch one or more timeseries and map to Chart.js dataset structure
   public timeseries = toSignal(
     combineLatest([
       toObservable(this.config),
@@ -81,37 +123,73 @@ export class GraphComponent {
           this.loading.set(true);
           this.error.set(null);
 
-          return this.graphService
-            .getTimeseries(deviceConfig.device_id, {
-              start: startDate,
-              end: endDate,
-              step: steps,
-              sub_property: deviceConfig.sub_property,
-            })
-            .pipe(
-              catchError(error => {
-                this.loading.set(false);
-                this.error.set(error.message);
-                return of({ timeseries: [] });
+          return forkJoin(
+            deviceConfig.graph_data.map(s =>
+              this.graphService.getTimeseries(s.device_id, {
+                start: startDate,
+                end: endDate,
+                step: steps,
+                sub_property: s.sub_property,
               })
-            );
+            )
+          ).pipe(
+            map(responses => ({ responses })),
+            catchError(error => {
+              this.loading.set(false);
+              this.error.set(error.message);
+              return of({ responses: [] });
+            })
+          );
         })
       )
       .pipe(
-        map(timeseries => {
+        map(({ responses }) => {
           this.loading.set(false);
-          return {
-            labels: timeseries.timeseries.map(t =>
+          // If no data, return empty chart
+          if (
+            !responses ||
+            (Array.isArray(responses) && responses.length === 0)
+          ) {
+            return { labels: [], datasets: [] };
+          }
+
+          const labels =
+            responses[0].timeseries.map(t =>
               fromUnixTime(t.timestamp).toLocaleTimeString()
-            ),
-            datasets: [
-              {
-                data: timeseries.timeseries.map(
-                  t => (t.value as { Number: number }).Number
-                ),
-              },
-            ],
-          };
+            ) ?? [];
+
+          const palette = [
+            chartColors.primary,
+            chartColors.secondary,
+            chartColors.info,
+            chartColors.warning,
+            chartColors.success,
+            chartColors.error,
+            chartColors.fatal,
+          ];
+
+          const useSeparateAxes = this.config().axis_mode === 'separate';
+
+          const datasets = responses.map((r, idx) => {
+            const data = r.timeseries.map(
+              t => (t.value as { Number: number }).Number
+            );
+            const color = palette[idx % palette.length];
+            const label =
+              (this.config().graph_data[idx].sub_property
+                ? `${this.config().graph_data[idx].device_id}:${this.config().graph_data[idx].sub_property}`
+                : this.config().graph_data[idx].device_id) ||
+              `Series ${idx + 1}`;
+            return {
+              label: label || `Series ${idx + 1}`,
+              data,
+              borderColor: color,
+              backgroundColor: color + '33',
+              yAxisID: useSeparateAxes ? (idx === 0 ? 'y' : 'y1') : 'y',
+            };
+          });
+
+          return { labels, datasets };
         })
       )
   );
