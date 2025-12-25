@@ -151,11 +151,7 @@
             <grn-graph
               [config]="config.config"
               [header]="
-                device()!.name +
-                ': ' +
-                config.config.graph_data[0].device_id +
-                '_' +
-                config.config.graph_data[0].sub_property
+                device()!.name + ': ' + config.config.graph_data[0].sub_property
               "></grn-graph>
           </div>
         }

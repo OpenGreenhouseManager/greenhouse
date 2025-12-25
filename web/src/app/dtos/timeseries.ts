@@ -7,7 +7,8 @@ export type Type =
   | { Number: number }
   | { Boolean: boolean }
   | { Object: Record<string, Type> }
-  | { Array: Type[] };
+  | { Array: Type[] }
+  | { Measurement: { value: number; unit: string } };
 
 export interface TimeseriesResponseDto {
   timeseries: TimeseriesDto[];

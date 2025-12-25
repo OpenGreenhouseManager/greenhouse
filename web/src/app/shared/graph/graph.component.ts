@@ -89,6 +89,11 @@ export class GraphComponent {
       ...(base.scales.y || {}),
       type: 'linear',
       position: 'left',
+      title: {
+        ...(base.scales.y?.title || {}),
+        display: false,
+        text: '',
+      },
     };
     if (this.config().axis_mode === 'separate') {
       base.scales.y1 = {
@@ -100,11 +105,66 @@ export class GraphComponent {
         ticks: {
           ...(base.scales.y?.ticks || {}),
         },
+        title: {
+          display: false,
+          text: '',
+        },
       };
     } else {
       // Ensure single axis mode
       if (base.scales.y1) {
         delete base.scales.y1;
+      }
+    }
+
+    // Derive units from current datasets and set axis titles accordingly
+    const series = (this.timeseries?.() as any) || { datasets: [] };
+    const datasets = Array.isArray(series.datasets) ? series.datasets : [];
+    const unitsSet = new Set(
+      datasets
+        .map((d: any) => d?.unit)
+        .filter((u: string | undefined) => !!u && typeof u === 'string')
+    ) as Set<string>;
+
+    // Tooltip callback to append units to values
+    base.plugins.tooltip = base.plugins.tooltip || {};
+    base.plugins.tooltip.callbacks = base.plugins.tooltip.callbacks || {};
+    base.plugins.tooltip.callbacks.label = (context: any) => {
+      const ds = context.dataset || {};
+      const unit = ds.unit ? ` ${ds.unit}` : '';
+      const value = context.parsed?.y ?? context.raw;
+      const label = ds.label ? `${ds.label}: ` : '';
+      return `${label}${value}${unit}`;
+    };
+
+    if (this.config().axis_mode === 'separate') {
+      const left = datasets.find((d: any) => d?.yAxisID === 'y');
+      const right = datasets.find((d: any) => d?.yAxisID === 'y1');
+      if (left?.unit) {
+        base.scales.y.title.display = true;
+        base.scales.y.title.text = left.unit;
+      } else {
+        base.scales.y.title.display = false;
+        base.scales.y.title.text = '';
+      }
+      if (base.scales.y1) {
+        if (right?.unit) {
+          base.scales.y1.title.display = true;
+          base.scales.y1.title.text = right.unit;
+        } else {
+          base.scales.y1.title.display = false;
+          base.scales.y1.title.text = '';
+        }
+      }
+    } else {
+      // merged axis: only show unit if all defined units are identical
+      if (unitsSet.size === 1) {
+        const [unit] = Array.from(unitsSet);
+        base.scales.y.title.display = true;
+        base.scales.y.title.text = unit;
+      } else {
+        base.scales.y.title.display = false;
+        base.scales.y.title.text = '';
       }
     }
     return base;
@@ -171,21 +231,44 @@ export class GraphComponent {
           const useSeparateAxes = this.config().axis_mode === 'separate';
 
           const datasets = responses.map((r, idx) => {
-            const data = r.timeseries.map(
-              t => (t.value as { Number: number }).Number
-            );
+            // Determine unit (if Measurement) for this dataset
+            const firstMeasurement = r.timeseries.find(
+              t => (t.value as any)?.Measurement
+            ) as any;
+            const unit: string =
+              firstMeasurement?.value?.Measurement?.unit ??
+              firstMeasurement?.Measurement?.unit ??
+              '';
+
+            // Map value, supporting Number and Measurement; null for others
+            const data = r.timeseries.map(t => {
+              const v = t.value as any;
+              if (v && typeof v === 'object') {
+                if ('Measurement' in v && v.Measurement) {
+                  return v.Measurement.value as number;
+                }
+                if ('Number' in v) {
+                  return v.Number as number;
+                }
+              }
+              return null;
+            });
             const color = palette[idx % palette.length];
-            const label =
+            let label =
               (this.config().graph_data[idx].sub_property
                 ? `${this.config().graph_data[idx].device_id}:${this.config().graph_data[idx].sub_property}`
                 : this.config().graph_data[idx].device_id) ||
               `Series ${idx + 1}`;
+            if (unit) {
+              label = `${label} (${unit})`;
+            }
             return {
               label: label || `Series ${idx + 1}`,
               data,
               borderColor: color,
               backgroundColor: color + '33',
               yAxisID: useSeparateAxes ? (idx === 0 ? 'y' : 'y1') : 'y',
+              unit,
             };
           });
 
