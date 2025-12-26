@@ -126,7 +126,14 @@
                 }
                 @if (deviceConfig()!.additional_config) {
                   <div class="info-row">
-                    <span class="label">Additional Config:</span>
+                    <span class="label">
+                      Additional Config:
+                      <p-button
+                        size="small"
+                        icon="pi pi-pencil"
+                        styleClass="p-button-text p-button-sm ml-2"
+                        (onClick)="openEditAdditionalConfig()"></p-button>
+                    </span>
                     <div class="value">
                       <ngx-json-viewer
                         [json]="
@@ -164,4 +171,50 @@
       }
     }
   </div>
+
+  <p-dialog
+    header="Edit Additional Config"
+    [modal]="true"
+    [visible]="editAdditionalConfigVisible()"
+    class="w-full md:w-9/12 lg:w-7/12"
+    [dismissableMask]="true"
+    [closeOnEscape]="true"
+    (onHide)="onCancelEditAdditional()">
+    <div class="flex flex-col gap-3">
+      @if (saveConfigError()) {
+        <p-message severity="error" [text]="saveConfigError()!"></p-message>
+      }
+      @if (originalAdditionalConfigKeys().length > 0) {
+        <div class="text-sm">
+          Allowed top-level keys:
+          <span class="font-mono">{{
+            originalAdditionalConfigKeys().join(', ')
+          }}</span>
+        </div>
+      }
+      <textarea
+        pTextarea
+        [ngModel]="additionalConfigDraft()"
+        (ngModelChange)="additionalConfigDraft.set($event)"
+        [autoResize]="true"
+        rows="12"
+        placeholder="{ /* JSON object */ }"></textarea>
+      <div class="flex justify-end gap-2 mt-2">
+        <p-button
+          label="Format"
+          severity="secondary"
+          icon="pi pi-align-left"
+          (click)="formatAdditionalConfig()"></p-button>
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          (click)="onCancelEditAdditional()"></p-button>
+        <p-button
+          label="Save"
+          icon="pi pi-save"
+          [loading]="saveConfigLoading()"
+          (click)="saveAdditionalConfig()"></p-button>
+      </div>
+    </div>
+  </p-dialog>
 </main>

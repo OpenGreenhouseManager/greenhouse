@@ -3,9 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Dialog } from 'primeng/dialog';
+import { TextareaModule } from 'primeng/textarea';
 import { catchError, combineLatest, forkJoin, of, switchMap } from 'rxjs';
 import { CardComponent } from '../../card/card.component';
 import {
@@ -31,8 +34,11 @@ import { DeviceService } from '../services/device-service';
     ProgressSpinnerModule,
     MessageModule,
     NavBarComponent,
+    FormsModule,
     NgxJsonViewerModule,
     ButtonModule,
+    Dialog,
+    TextareaModule,
     GraphComponent,
     AlertListComponent,
   ],
@@ -49,6 +55,13 @@ export class DeviceDetailComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   loadingActivation = signal(false);
+
+  // Edit Additional Config dialog state
+  editAdditionalConfigVisible = signal(false);
+  additionalConfigDraft = signal<string>('');
+  saveConfigLoading = signal(false);
+  saveConfigError = signal<string | null>(null);
+  originalAdditionalConfigKeys = signal<string[]>([]);
 
   public hasAlert = computed(() => {
     return this.dataSourceId() !== null;
@@ -214,6 +227,108 @@ export class DeviceDetailComponent implements OnInit {
           },
         });
       }, 1000);
+    }
+  }
+
+  openEditAdditionalConfig(): void {
+    const current = this.deviceConfig()?.additional_config ?? {};
+    try {
+      this.additionalConfigDraft.set(JSON.stringify(current, null, 2));
+    } catch {
+      this.additionalConfigDraft.set('');
+    }
+    // capture original top-level keys if object
+    if (current && typeof current === 'object' && !Array.isArray(current)) {
+      this.originalAdditionalConfigKeys.set(
+        Object.keys(current as Record<string, unknown>)
+      );
+    } else {
+      this.originalAdditionalConfigKeys.set([]);
+    }
+    this.saveConfigError.set(null);
+    this.editAdditionalConfigVisible.set(true);
+  }
+
+  onCancelEditAdditional(): void {
+    this.editAdditionalConfigVisible.set(false);
+    this.saveConfigLoading.set(false);
+    this.saveConfigError.set(null);
+  }
+
+  saveAdditionalConfig(): void {
+    if (!this.device()) {
+      this.saveConfigError.set('Device not loaded');
+      return;
+    }
+    let parsed: unknown;
+    try {
+      parsed =
+        this.additionalConfigDraft() === ''
+          ? {}
+          : JSON.parse(this.additionalConfigDraft());
+    } catch (e) {
+      this.saveConfigError.set('Invalid JSON. Please fix and try again.');
+      return;
+    }
+
+    // Enforce same top-level keys if we had an object with known keys
+    const requiredKeys = this.originalAdditionalConfigKeys();
+    if (
+      requiredKeys.length > 0 &&
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    ) {
+      const newKeys = Object.keys(parsed as Record<string, unknown>);
+      const missing = requiredKeys.filter(k => !newKeys.includes(k));
+      const extra = newKeys.filter(k => !requiredKeys.includes(k));
+      if (missing.length > 0 || extra.length > 0) {
+        const parts: string[] = [];
+        if (missing.length > 0) parts.push(`missing: ${missing.join(', ')}`);
+        if (extra.length > 0) parts.push(`unexpected: ${extra.join(', ')}`);
+        this.saveConfigError.set(
+          `Keys must match original set (${requiredKeys.join(', ')}); ${parts.join(' | ')}`
+        );
+        return;
+      }
+    }
+
+    this.saveConfigLoading.set(true);
+    this.saveConfigError.set(null);
+    this.deviceService
+      .updateDeviceAdditionalConfig(this.device()!.id, parsed)
+      .subscribe({
+        next: () => {
+          // update local state and close dialog
+          const cfg = this.deviceConfig();
+          if (cfg) {
+            (cfg as ConfigResponseDto).additional_config =
+              parsed as unknown as Record<string, unknown>;
+            this.deviceConfig.set({ ...cfg });
+          }
+          this.saveConfigLoading.set(false);
+          this.editAdditionalConfigVisible.set(false);
+        },
+        error: error => {
+          console.error('Failed to update additional config', error);
+          this.saveConfigError.set('Failed to save configuration');
+          this.saveConfigLoading.set(false);
+        },
+      });
+  }
+
+  formatAdditionalConfig(): void {
+    try {
+      const parsed =
+        this.additionalConfigDraft() === ''
+          ? {}
+          : JSON.parse(this.additionalConfigDraft());
+      this.additionalConfigDraft.set(JSON.stringify(parsed, null, 2));
+      this.saveConfigError.set(null);
+    } catch {
+      this.saveConfigError.set(
+        'Cannot format: current content is not valid JSON.'
+      );
     }
   }
 }

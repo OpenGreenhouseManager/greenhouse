@@ -79,6 +79,20 @@ export class DeviceService {
       });
   }
 
+  updateDeviceAdditionalConfig(
+    deviceId: string,
+    additionalConfig: unknown
+  ): Observable<string> {
+    return this.http.put<string>(
+      `${device}/${deviceId}/config`,
+      { additional_config: additionalConfig },
+      {
+        withCredentials: true,
+        responseType: 'text' as unknown as 'json',
+      }
+    );
+  }
+
   getDeviceOptions(deviceId: string): Observable<DeviceOptionsResponseDto> {
     return this.http.get<DeviceOptionsResponseDto>(
       `${device}/${deviceId}/options`,
