@@ -1,0 +1,40 @@
+:host {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.compass {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dial {
+  position: relative;
+  width: min(220px, 60%);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.dial .dial-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+}

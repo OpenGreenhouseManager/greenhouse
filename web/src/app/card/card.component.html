@@ -6,7 +6,7 @@
       borderRadius: '10px',
     }">
     <ng-template pTemplate="header">
-      <div class="header p-2">
+      <div class="header p-1">
         <h1 class="w-full text-2xl {{ centerTitle() ? 'text-center' : '' }}">
           {{ title() }}
         </h1>
@@ -17,7 +17,7 @@
       </div>
     </ng-template>
     <ng-template pTemplate="content">
-      <div class="content gridster-item-content p-3">
+      <div class="content gridster-item-content p-1">
         <ng-content styleClass="card-content"></ng-content>
       </div>
     </ng-template>

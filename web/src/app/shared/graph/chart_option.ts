@@ -3,35 +3,50 @@ export const baseChartOptions = {
   maintainAspectRatio: false,
   resizeDelay: 0, // Immediate resize
   devicePixelRatio: 1, // Prevent high DPI scaling issues
+  layout: {
+    padding: 0,
+  },
   scales: {
     x: {
       display: true,
       ticks: {
+        padding: 2,
         font: {
           size: 8,
           family: 'sans-serif',
         },
         color: '#080b05',
-        maxTicksLimit: 5,
+        maxTicksLimit: 4,
+        maxRotation: 0,
+        autoSkipPadding: 2,
       },
       grid: {
         color: '#71774456',
         drawBorder: false,
+        lineWidth: 0.5,
+      },
+      border: {
+        display: false,
       },
     },
     y: {
       display: true,
       ticks: {
+        padding: 2,
         font: {
           size: 8,
           family: 'sans-serif',
         },
         color: '#080b05',
-        maxTicksLimit: 5,
+        maxTicksLimit: 4,
       },
       grid: {
         color: '#71774456',
         drawBorder: false,
+        lineWidth: 0.5,
+      },
+      border: {
+        display: false,
       },
     },
   },
@@ -45,10 +60,10 @@ export const chartOptions = {
       display: false,
       position: 'top' as const,
       labels: {
-        boxWidth: 12,
-        padding: 10,
+        boxWidth: 8,
+        padding: 4,
         font: {
-          size: 10,
+          size: 8,
           family: 'sans-serif',
         },
         color: '#080b05', // Use app text color
@@ -63,13 +78,16 @@ export const chartOptions = {
       borderColor: '#71774456',
       borderWidth: 1,
       cornerRadius: 6,
+      padding: 6,
+      titleMarginBottom: 4,
+      displayColors: false,
     },
   },
 
   elements: {
     point: {
-      radius: 2, // Smaller points for tight spaces
-      hoverRadius: 4,
+      radius: 1, // Smaller points for tight spaces
+      hoverRadius: 3,
       backgroundColor: '#717744',
       borderColor: '#717744',
     },

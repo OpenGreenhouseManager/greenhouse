@@ -1,7 +1,12 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { differenceInSeconds, fromUnixTime, subDays } from 'date-fns';
+import {
+  differenceInCalendarDays,
+  differenceInSeconds,
+  fromUnixTime,
+  subDays,
+} from 'date-fns';
 import { ChartModule } from 'primeng/chart';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
@@ -80,7 +85,6 @@ export class GraphComponent {
     // Enable legend if more than one dataset will be shown
     base.plugins = base.plugins || {};
     base.plugins.legend = base.plugins.legend || {};
-    base.plugins.legend.display = true;
 
     // Configure secondary Y axis if requested
     base.scales = base.scales || {};
@@ -95,6 +99,26 @@ export class GraphComponent {
         text: '',
       },
     };
+    // Formatter to round numbers to at most two decimal places
+    const formatNumber = (val: unknown): string => {
+      if (val === null || val === undefined) return '';
+      const num =
+        typeof val === 'number'
+          ? val
+          : typeof val === 'string'
+            ? Number(val)
+            : NaN;
+      if (!Number.isFinite(num)) return String(val as any);
+      return new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 2,
+      }).format(num);
+    };
+
+    // Apply tick formatter on primary Y axis
+    base.scales.y.ticks = {
+      ...(base.scales.y?.ticks || {}),
+      callback: (value: unknown) => formatNumber(value),
+    };
     if (this.config().axis_mode === 'separate') {
       base.scales.y1 = {
         type: 'linear',
@@ -104,6 +128,7 @@ export class GraphComponent {
         },
         ticks: {
           ...(base.scales.y?.ticks || {}),
+          callback: (value: unknown) => formatNumber(value),
         },
         title: {
           display: false,
@@ -126,6 +151,9 @@ export class GraphComponent {
         .filter((u: string | undefined) => !!u && typeof u === 'string')
     ) as Set<string>;
 
+    // Show legend only if we actually have more than one dataset
+    base.plugins.legend.display = datasets.length > 1;
+
     // Tooltip callback to append units to values
     base.plugins.tooltip = base.plugins.tooltip || {};
     base.plugins.tooltip.callbacks = base.plugins.tooltip.callbacks || {};
@@ -134,7 +162,7 @@ export class GraphComponent {
       const unit = ds.unit ? ` ${ds.unit}` : '';
       const value = context.parsed?.y ?? context.raw;
       const label = ds.label ? `${ds.label}: ` : '';
-      return `${label}${value}${unit}`;
+      return `${label}${formatNumber(value)}${unit}`;
     };
 
     if (this.config().axis_mode === 'separate') {
@@ -213,10 +241,25 @@ export class GraphComponent {
             return { labels: [], datasets: [] };
           }
 
+          const isMultiDayRange =
+            differenceInCalendarDays(this.endDate(), this.startDate()) >= 1;
           const labels =
-            responses[0].timeseries.map(t =>
-              fromUnixTime(t.timestamp).toLocaleTimeString()
-            ) ?? [];
+            responses[0].timeseries.map(t => {
+              const d = fromUnixTime(t.timestamp);
+              return isMultiDayRange
+                ? d.toLocaleString(undefined, {
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })
+                : d.toLocaleTimeString(undefined, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  });
+            }) ?? [];
 
           const palette = [
             chartColors.primary,
@@ -256,7 +299,7 @@ export class GraphComponent {
             const color = palette[idx % palette.length];
             let label =
               (this.config().graph_data[idx].sub_property
-                ? `${this.config().graph_data[idx].device_id}:${this.config().graph_data[idx].sub_property}`
+                ? `${this.config().graph_data[idx].sub_property}`
                 : this.config().graph_data[idx].device_id) ||
               `Series ${idx + 1}`;
             if (unit) {

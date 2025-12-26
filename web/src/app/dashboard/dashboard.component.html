@@ -36,6 +36,18 @@
           } @else if (item.type === 'alertList') {
             <grn-alert-list
               [dataSourceId]="item.options.dataSourceId"></grn-alert-list>
+          } @else if (item.type === 'latestValue') {
+            <grn-latest-value-card
+              [header]="item.options.name"
+              [deviceId]="item.options.deviceId"
+              [subProperty]="
+                item.options.subProperty || ''
+              "></grn-latest-value-card>
+          } @else if (item.type === 'compass') {
+            <grn-compass-card
+              [header]="item.options.name"
+              [deviceId]="item.options.deviceId"
+              [subProperty]="item.options.subProperty || ''"></grn-compass-card>
           }
         </gridster-item>
       }

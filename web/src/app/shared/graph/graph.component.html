@@ -40,10 +40,10 @@
   [dismissableMask]="true"
   [appendTo]="'body'"
   class="gridster-item-content">
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-1">
     @for (data of config().graph_data; track data.device_id) {
-      <p>Device ID: {{ data.device_id }}</p>
-      <p>Sub Property: {{ data.sub_property }}</p>
+      <p class="pt-3">Device ID: {{ data.device_id }}</p>
+      <p class="pl-4">Sub Property: {{ data.sub_property }}</p>
     }
   </div>
 </p-dialog>

@@ -19,7 +19,7 @@ import { DeviceService } from '../device/services/device-service';
 import { DeviceResponseDto } from '../dtos/device';
 
 export interface DashboardComponentCreate {
-  type: 'graph' | 'multiGraph' | 'alertList';
+  type: 'graph' | 'multiGraph' | 'alertList' | 'latestValue' | 'compass';
   deviceId?: string;
   subProperty?: string;
   graphData?: { deviceId: string; subProperty?: string }[];
@@ -47,7 +47,13 @@ export interface DashboardComponentCreate {
         >
         <p-select
           id="componentType"
-          [options]="['graph', 'multiGraph', 'alertList']"
+          [options]="[
+            'graph',
+            'multiGraph',
+            'latestValue',
+            'compass',
+            'alertList',
+          ]"
           [(ngModel)]="selectedComponentType"
           [appendTo]="'body'"
           class="w-full" />
@@ -57,7 +63,11 @@ export interface DashboardComponentCreate {
         <input pInputText id="name" [(ngModel)]="name" />
       </div>
 
-      @if (selectedComponentType === 'graph') {
+      @if (
+        selectedComponentType === 'graph' ||
+        selectedComponentType === 'latestValue' ||
+        selectedComponentType === 'compass'
+      ) {
         <div class="flex items-center gap-4 mb-4">
           <label for="deviceId" class="font-semibold w-24">Device</label>
           <p-autocomplete
@@ -169,7 +179,12 @@ export class AddDashboardComponentDialogComponent {
   componentAdded = output<DashboardComponentCreate>();
   deviceService = inject(DeviceService);
 
-  selectedComponentType: 'graph' | 'multiGraph' | 'alertList' = 'graph';
+  selectedComponentType:
+    | 'graph'
+    | 'multiGraph'
+    | 'alertList'
+    | 'latestValue'
+    | 'compass' = 'graph';
   deviceIdInput = signal<string>('');
   deviceSearch = '';
   devices = signal<DeviceResponseDto[]>([]);
@@ -254,7 +269,11 @@ export class AddDashboardComponentDialogComponent {
 
     if (!this.name) return false;
 
-    if (this.selectedComponentType === 'graph') {
+    if (
+      this.selectedComponentType === 'graph' ||
+      this.selectedComponentType === 'latestValue' ||
+      this.selectedComponentType === 'compass'
+    ) {
       return this.deviceIdInput().trim() !== '';
     }
 
@@ -415,7 +434,11 @@ export class AddDashboardComponentDialogComponent {
       name: this.name.trim(),
     };
 
-    if (this.selectedComponentType === 'graph') {
+    if (
+      this.selectedComponentType === 'graph' ||
+      this.selectedComponentType === 'latestValue' ||
+      this.selectedComponentType === 'compass'
+    ) {
       component.deviceId = this.deviceId();
       component.subProperty = this.subProperty.trim();
     } else if (this.selectedComponentType === 'multiGraph') {

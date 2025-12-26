@@ -19,11 +19,11 @@
 
 html {
   background-color: var(--grn-background-color);
-  height: 97vh;
+  height: 99.99vh;
 }
 
 body {
-  height: 97vh;
+  height: 99.99vh;
 }
 
 html * {
@@ -32,10 +32,10 @@ html * {
 }
 
 grn-root {
-  height: 97vh;
+  height: 99.99vh;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 1rem 1rem 0 1rem;
 }
 
 /* Ensure PrimeNG cards fill their container height */
