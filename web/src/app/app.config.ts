@@ -1,13 +1,13 @@
 import { provideRouter } from '@angular/router';
 
-import { routes } from './app.routes';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { definePreset } from '@primeuix/themes';
+import Lara from '@primeuix/themes/lara';
 import { providePrimeNG } from 'primeng/config';
-import Lara from '@primeng/themes/lara';
-import { definePreset } from '@primeng/themes';
 import { authInterceptor } from './_interceptors/auth.interceptor';
+import { routes } from './app.routes';
 
 const MyTheme = definePreset(Lara, {
   primitive: {

@@ -1,9 +1,9 @@
 import { Component, inject, OnDestroy, signal } from '@angular/core';
 import {
+  Gridster,
   GridsterConfig,
   GridsterItem,
-  GridsterItemComponent,
-  GridsterModule,
+  GridsterItemConfig,
   GridType,
 } from 'angular-gridster2';
 import { ConfirmationService } from 'primeng/api';
@@ -21,17 +21,17 @@ import {
 } from './add-dashboard-component-dialog.component';
 
 // Define discriminated union types for dashboard items
-interface GraphDashboardItem extends GridsterItem {
+interface GraphDashboardItem extends GridsterItemConfig {
   type: 'graph';
   options: GraphConfig & { name: string };
 }
 
-interface MultiGraphDashboardItem extends GridsterItem {
+interface MultiGraphDashboardItem extends GridsterItemConfig {
   type: 'multiGraph';
   options: GraphConfig & { name: string };
 }
 
-interface AlertListDashboardItem extends GridsterItem {
+interface AlertListDashboardItem extends GridsterItemConfig {
   type: 'alertList';
   options: {
     dataSourceId: string;
@@ -39,7 +39,7 @@ interface AlertListDashboardItem extends GridsterItem {
   };
 }
 
-interface LatestValueDashboardItem extends GridsterItem {
+interface LatestValueDashboardItem extends GridsterItemConfig {
   type: 'latestValue';
   options: {
     deviceId: string;
@@ -48,7 +48,7 @@ interface LatestValueDashboardItem extends GridsterItem {
   };
 }
 
-interface CompassDashboardItem extends GridsterItem {
+interface CompassDashboardItem extends GridsterItemConfig {
   type: 'compass';
   options: {
     deviceId: string;
@@ -70,8 +70,8 @@ type DashboardItem =
   standalone: true,
   imports: [
     NavBarComponent,
-    GridsterModule,
-    GridsterItemComponent,
+    GridsterItem,
+    Gridster,
     GraphComponent,
     AlertListComponent,
     LatestValueCardComponent,
@@ -93,7 +93,7 @@ export class DashboardComponent implements OnDestroy {
   private userPreferencesService = inject(UserPreferencesService);
   private readonly onWindowResize = () => {
     this.options.fixedRowHeight = Math.floor(window.innerHeight / 9);
-    this.options.api?.resize?.();
+    this.options['api']?.resize?.();
   };
 
   constructor() {
