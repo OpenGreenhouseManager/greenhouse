@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import {
+import type { Observable } from 'rxjs';
+import type {
   ConfigResponseDto,
   DeviceOptionsResponseDto,
   DeviceResponseDto,
@@ -73,9 +73,7 @@ export class DeviceService {
       )
       .subscribe({
         next: () => {},
-        error: error => {
-          console.error(error);
-        },
+        error: () => {},
       });
   }
 

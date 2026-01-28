@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -16,7 +17,7 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../../card/card.component';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
-import { Diary } from '../models/diary';
+import type { Diary } from '../models/diary';
 import { DiaryService } from '../services/diary-service';
 
 @Component({

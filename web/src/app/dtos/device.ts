@@ -4,7 +4,7 @@ export interface DeviceResponseDto {
   address: string;
   description: string;
   canscript: boolean;
-  status?: DeviceStatusDto;
+  status?: DeviceStatusDto | undefined;
   scraping: boolean;
 }
 
@@ -28,6 +28,7 @@ export interface PostDeviceDtoRequest {
 }
 
 export enum DeviceStatusDto {
+  Offline = 'Offline',
   Online = 'Online',
   Panic = 'Panic',
 }
@@ -48,7 +49,7 @@ export interface ConfigResponseDto<T = unknown> {
   mode: Mode;
   input_type?: Type;
   output_type?: Type;
-  scripting_api?: ScriptingApi;
+  scripting_api?: ScriptingApi | undefined;
   additional_config: T;
 }
 

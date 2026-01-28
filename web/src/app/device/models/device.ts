@@ -1,9 +1,9 @@
 export class Device {
   constructor(
-    public name: string = '',
-    public description: string = '',
-    public address: string = '',
-    public can_script: boolean = false,
-    public scraping: boolean = true
+    public name = '',
+    public description = '',
+    public address = '',
+    public can_script = false,
+    public scraping = true
   ) {}
 }

@@ -100,15 +100,8 @@
           }
         },
         "test": {
-          "builder": "@angular/build:karma",
-          "options": {
-            "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss"],
-            "scripts": [],
-            "karmaConfig": "karma.conf.js"
-          }
+          "builder": "@angular/build:unit-test",
+          "options": { "browsers": ["chromium"] }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

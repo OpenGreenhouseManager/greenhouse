@@ -45,6 +45,6 @@ export class DiaryDetailComponent {
     if (!date) {
       return '';
     }
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
 }

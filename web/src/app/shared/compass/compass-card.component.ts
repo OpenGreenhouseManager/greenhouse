@@ -39,7 +39,7 @@ export class CompassCardComponent {
             map(res => {
               const last = (res?.timeseries ?? []).at(-1);
               if (!last) return null as number | null;
-              const v: any = last.value;
+              const v = last.value;
               if (v && typeof v === 'object') {
                 if ('Measurement' in v && v.Measurement) {
                   return normalizeAngle(v.Measurement.value as number);

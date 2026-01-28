@@ -1,11 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
+import type { OnInit } from '@angular/core';
 import {
   ChangeDetectorRef,
   Component,
   computed,
   inject,
   input,
-  OnInit,
   PLATFORM_ID,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +25,8 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../../card/card.component';
 import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
-import { Alert, Severity } from '../models/alert';
+import type { Alert } from '../models/alert';
+import { Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-info',

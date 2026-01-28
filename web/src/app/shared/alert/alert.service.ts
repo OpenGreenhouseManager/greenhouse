@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { AlertsDto } from '../../dtos/alert/alert';
+import type { Observable } from 'rxjs';
+import type { AlertsDto } from '../../dtos/alert/alert';
 import { alert } from '../../urls/urls';
 
 export interface AlertQuery {

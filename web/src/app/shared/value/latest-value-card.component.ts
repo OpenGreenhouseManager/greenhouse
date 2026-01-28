@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap, timer } from 'rxjs';
 import { CardComponent } from '../../card/card.component';
+import type { TimeseriesQuery } from '../graph/graph.service';
 import { GraphService } from '../graph/graph.service';
 
 type LatestValue = {
@@ -34,27 +35,28 @@ export class LatestValueCardComponent {
         this.error.set(null);
         const end = new Date();
         const start = new Date(end.getTime() - 30000);
+        const sub_property = this.subProperty();
         return this.graphService
           .getTimeseries(this.deviceId(), {
             start,
             end,
-            sub_property: this.subProperty() || undefined,
+            sub_property,
             step: '30s',
-          })
+          } satisfies TimeseriesQuery)
           .pipe(
             map(res => {
               const last = (res?.timeseries ?? []).at(-1);
               if (!last) return { value: null } as LatestValue;
-              const v: any = last.value;
+              const v = last.value;
               if (v && typeof v === 'object') {
                 if ('Measurement' in v && v.Measurement) {
                   return {
-                    value: v.Measurement.value as number,
-                    unit: v.Measurement.unit as string,
+                    value: v.Measurement.value,
+                    unit: v.Measurement.unit,
                   } as LatestValue;
                 }
                 if ('Number' in v) {
-                  return { value: v.Number as number } as LatestValue;
+                  return { value: v.Number } as LatestValue;
                 }
                 if ('Boolean' in v) {
                   return {
@@ -64,7 +66,7 @@ export class LatestValueCardComponent {
               }
               return { value: null } as LatestValue;
             }),
-            catchError(err => {
+            catchError((err: Error) => {
               this.error.set(err?.message ?? 'Failed to load value');
               return of({ value: null } as LatestValue);
             })

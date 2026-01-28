@@ -1,7 +1,7 @@
 import { provideRouter } from '@angular/router';
 
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig } from '@angular/core';
+import type { ApplicationConfig } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';

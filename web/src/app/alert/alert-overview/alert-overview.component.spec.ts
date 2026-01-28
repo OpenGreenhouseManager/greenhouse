@@ -1,8 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { AlertOverviewComponent } from './alert-overview.component';
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterModule } from '@angular/router';
+import { AlertOverviewComponent } from './alert-overview.component';
 
 describe('AlertOverviewComponent', () => {
   let component: AlertOverviewComponent;
@@ -11,7 +13,7 @@ describe('AlertOverviewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AlertOverviewComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient()],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AlertOverviewComponent);

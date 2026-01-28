@@ -1,8 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { DiaryOverviewComponent } from './diary-overview.component';
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterModule } from '@angular/router';
+import { DiaryOverviewComponent } from './diary-overview.component';
 
 describe('DiaryOverviewComponent', () => {
   let component: DiaryOverviewComponent;
@@ -11,7 +13,7 @@ describe('DiaryOverviewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DiaryOverviewComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient()],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DiaryOverviewComponent);

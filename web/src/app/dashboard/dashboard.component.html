@@ -15,7 +15,7 @@
   </div>
   <div class="content">
     <gridster [options]="options">
-      @for (item of dashboard; track item) {
+      @for (item of dashboard(); track item.options.name) {
         <gridster-item [item]="item">
           @if (editMode()) {
             <button

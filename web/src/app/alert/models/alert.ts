@@ -10,7 +10,7 @@ export interface Alert {
   severity: Severity;
   identifier: string;
   value: string;
-  note?: string;
+  note?: string | undefined;
   created_at: Date;
   datasource_id: string;
 }

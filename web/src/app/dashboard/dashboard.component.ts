@@ -1,11 +1,7 @@
-import { Component, inject, OnDestroy, signal } from '@angular/core';
-import {
-  Gridster,
-  GridsterConfig,
-  GridsterItem,
-  GridsterItemConfig,
-  GridType,
-} from 'angular-gridster2';
+import type { OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import type { GridsterConfig, GridsterItemConfig } from 'angular-gridster2';
+import { Gridster, GridsterItem, GridType } from 'angular-gridster2';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -13,14 +9,12 @@ import { NavBarComponent } from '../nav_bar/nav_bar.component';
 import { UserPreferencesService } from '../services/user-preferences.service';
 import { AlertListComponent } from '../shared/alert/alert-list.component';
 import { CompassCardComponent } from '../shared/compass/compass-card.component';
-import { GraphComponent, GraphConfig } from '../shared/graph/graph.component';
+import type { GraphConfig } from '../shared/graph/graph.component';
+import { GraphComponent } from '../shared/graph/graph.component';
 import { LatestValueCardComponent } from '../shared/value/latest-value-card.component';
-import {
-  AddDashboardComponentDialogComponent,
-  DashboardComponentCreate,
-} from './add-dashboard-component-dialog.component';
+import type { DashboardComponentCreate } from './add-dashboard-component-dialog.component';
+import { AddDashboardComponentDialogComponent } from './add-dashboard-component-dialog.component';
 
-// Define discriminated union types for dashboard items
 interface GraphDashboardItem extends GridsterItemConfig {
   type: 'graph';
   options: GraphConfig & { name: string };
@@ -43,7 +37,7 @@ interface LatestValueDashboardItem extends GridsterItemConfig {
   type: 'latestValue';
   options: {
     deviceId: string;
-    subProperty?: string;
+    subProperty?: string | undefined;
     name: string;
   };
 }
@@ -52,7 +46,7 @@ interface CompassDashboardItem extends GridsterItemConfig {
   type: 'compass';
   options: {
     deviceId: string;
-    subProperty?: string;
+    subProperty?: string | undefined;
     name: string;
   };
 }
@@ -84,9 +78,9 @@ type DashboardItem =
   styleUrl: './dashboard.component.scss',
   providers: [ConfirmationService],
 })
-export class DashboardComponent implements OnDestroy {
+export class DashboardComponent implements OnDestroy, OnInit {
   options: GridsterConfig;
-  dashboard: DashboardItem[] = [];
+  dashboard = signal<DashboardItem[]>([]);
   dialogVisible = signal(false);
   editMode = signal(false);
   private confirmationService = inject(ConfirmationService);
@@ -117,7 +111,9 @@ export class DashboardComponent implements OnDestroy {
       disableScrollHorizontal: true,
       disableScrollVertical: false,
     };
+  }
 
+  ngOnInit() {
     window.addEventListener('resize', this.onWindowResize);
 
     // Load dashboard from backend preferences instead of localStorage
@@ -128,18 +124,13 @@ export class DashboardComponent implements OnDestroy {
     this.userPreferencesService.getUserPreferences().subscribe({
       next: preferences => {
         if (preferences.dashboard_preferences) {
-          console.log('loading dashboard from backend');
-          console.log(preferences.dashboard_preferences);
-          this.dashboard = JSON.parse(preferences.dashboard_preferences);
-          console.log('dashboard loaded from backend', this.dashboard);
+          this.dashboard.set(JSON.parse(preferences.dashboard_preferences));
         } else {
-          console.log('no saved dashboard, using default');
-          this.dashboard = [];
+          this.dashboard.set([]);
         }
       },
-      error: error => {
-        console.error('Error loading dashboard preferences:', error);
-        this.dashboard = [];
+      error: () => {
+        this.dashboard.set([]);
       },
     });
   }
@@ -148,37 +139,30 @@ export class DashboardComponent implements OnDestroy {
     window.removeEventListener('resize', this.onWindowResize);
   }
 
-  saveDashboard(e: any) {
+  saveDashboard(_: unknown) {
     setTimeout(() => {
       // Save to backend instead of localStorage
       this.userPreferencesService.getUserPreferences().subscribe({
         next: currentPreferences => {
           const updatedPreferences = {
             ...currentPreferences,
-            dashboard_preferences: JSON.stringify(this.dashboard),
+            dashboard_preferences: JSON.stringify(this.dashboard()),
           };
 
           this.userPreferencesService
             .updateUserPreferences(updatedPreferences)
             .subscribe({
-              next: () => {
-                console.log('Dashboard preferences saved successfully');
-              },
-              error: error => {
-                console.error('Error saving dashboard preferences:', error);
-              },
+              next: () => {},
+              error: () => {},
             });
         },
-        error: error => {
-          console.error('Error getting current preferences:', error);
-        },
+        error: () => {},
       });
     }, 300);
   }
 
   addEntry() {
     this.dialogVisible.set(true);
-    console.log('dialogVisible', this.dialogVisible());
   }
 
   onDialogClose() {
@@ -190,6 +174,10 @@ export class DashboardComponent implements OnDestroy {
     let newItem: DashboardItem;
 
     if (componentData.type === 'graph') {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return;
+      }
       newItem = {
         cols: 3,
         rows: 3,
@@ -199,13 +187,13 @@ export class DashboardComponent implements OnDestroy {
         options: {
           graph_data: [
             {
-              device_id: componentData.deviceId!,
-              sub_property: componentData.subProperty!,
+              device_id: data.deviceId,
+              sub_property: data.subProperty,
             },
           ],
           name: componentData.name,
         },
-      } as GraphDashboardItem;
+      } satisfies GraphDashboardItem;
     } else if (componentData.type === 'multiGraph') {
       newItem = {
         cols: 4,
@@ -217,12 +205,12 @@ export class DashboardComponent implements OnDestroy {
           graph_data:
             componentData.graphData?.map(d => ({
               device_id: d.deviceId,
-              sub_property: d.subProperty,
+              sub_property: d.subProperty ?? undefined,
             })) ?? [],
           axis_mode: componentData.axisMode ?? 'merged',
           name: componentData.name,
         },
-      } as MultiGraphDashboardItem;
+      } satisfies MultiGraphDashboardItem;
     } else if (componentData.type === 'alertList') {
       newItem = {
         cols: 3,
@@ -234,8 +222,12 @@ export class DashboardComponent implements OnDestroy {
           dataSourceId: componentData.dataSourceId!,
           name: componentData.name,
         },
-      } as AlertListDashboardItem;
+      } satisfies AlertListDashboardItem;
     } else if (componentData.type === 'latestValue') {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return;
+      }
       newItem = {
         cols: 2,
         rows: 2,
@@ -243,12 +235,16 @@ export class DashboardComponent implements OnDestroy {
         x: 0,
         type: 'latestValue',
         options: {
-          deviceId: componentData.deviceId!,
-          subProperty: componentData.subProperty || undefined,
+          deviceId: data.deviceId,
+          subProperty: data.subProperty || undefined,
           name: componentData.name,
         },
-      } as LatestValueDashboardItem;
+      } satisfies LatestValueDashboardItem;
     } else if (componentData.type === 'compass') {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return;
+      }
       newItem = {
         cols: 3,
         rows: 3,
@@ -256,17 +252,17 @@ export class DashboardComponent implements OnDestroy {
         x: 0,
         type: 'compass',
         options: {
-          deviceId: componentData.deviceId!,
-          subProperty: componentData.subProperty || undefined,
+          deviceId: data.deviceId,
+          subProperty: data.subProperty || undefined,
           name: componentData.name,
         },
-      } as CompassDashboardItem;
+      } satisfies CompassDashboardItem;
     } else {
       throw new Error('Invalid component type');
     }
 
     // Simple positioning - add to the end
-    this.dashboard.push(newItem);
+    this.dashboard.update(items => [...items, newItem]);
     this.saveDashboard(null);
   }
 
@@ -277,7 +273,7 @@ export class DashboardComponent implements OnDestroy {
       header: 'Remove Item',
       message: 'Are you sure you want to remove this item?',
       accept: () => {
-        this.dashboard.splice(this.dashboard.indexOf(item), 1);
+        this.dashboard.update(items => items.filter(i => i !== item));
         this.saveDashboard(null);
       },
     });

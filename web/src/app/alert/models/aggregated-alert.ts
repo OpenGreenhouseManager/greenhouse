@@ -1,4 +1,4 @@
-import { Severity } from './alert';
+import type { Severity } from './alert';
 
 export interface AggregatedAlert {
   count: number;

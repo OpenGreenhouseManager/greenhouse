@@ -36,9 +36,9 @@ enum SettingsTabs {
 export class SettingsComponent {
   currentTab: SettingsTabs = SettingsTabs.Dashboard;
   settingsTabs = SettingsTabs;
-  otpUsername: string = '';
-  otp: string = '';
-  isCopied: boolean = false;
+  otpUsername = '';
+  otp = '';
+  isCopied = false;
 
   private http = inject(HttpClient);
 

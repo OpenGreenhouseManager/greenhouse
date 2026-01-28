@@ -9,6 +9,11 @@ main {
     margin-top: 0.67em;
     margin-bottom: 0.67em;
 
+    /* Mobile: Stack heading vertically if needed */
+    @media (max-width: 768px) {
+      gap: 0.5rem;
+    }
+
     .heading-left {
       display: flex;
       flex-direction: row;
@@ -59,6 +64,7 @@ main {
   align-items: start;
   justify-content: space-evenly;
   gap: 1rem;
+
   width: 100%;
   height: 100%;
 
@@ -69,6 +75,11 @@ main {
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  /* Mobile: Stack graphs vertically */
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
   }
 
   .loading {
@@ -93,15 +104,12 @@ main {
     display: inline-block; /* necessary for column flow */
     width: 100%; /* take full column width */
     break-inside: avoid; /* prevent splitting */
-    margin-bottom: 1rem; /* spacing */
   }
 
   .device-info-card,
   .device-config-card {
     .device-info,
     .device-config {
-      width: calc(40vw - 25px - 0.5rem);
-
       .info-row {
         display: flex;
         margin-bottom: 1rem;

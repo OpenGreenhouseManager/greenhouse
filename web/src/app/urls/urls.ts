@@ -1,10 +1,9 @@
 import { environment } from '../../environments/environment';
 
-export const register = environment.baseUrl + '/api/register';
-export const login = environment.baseUrl + '/api/login';
-export const otp =
-  environment.baseUrl + '/api/settings/generate_one_time_token';
-export const diary = environment.baseUrl + '/api/diary';
-export const alert = environment.baseUrl + '/api/alert';
-export const device = environment.baseUrl + '/api/device';
-export const userPreferences = environment.baseUrl + '/api/user/preferences';
+export const register = `${environment.baseUrl}/api/register`;
+export const login = `${environment.baseUrl}/api/login`;
+export const otp = `${environment.baseUrl}/api/settings/generate_one_time_token`;
+export const diary = `${environment.baseUrl}/api/diary`;
+export const alert = `${environment.baseUrl}/api/alert`;
+export const device = `${environment.baseUrl}/api/device`;
+export const userPreferences = `${environment.baseUrl}/api/user/preferences`;

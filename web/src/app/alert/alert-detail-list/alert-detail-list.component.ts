@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SortEvent } from 'primeng/api';
+import type { SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
@@ -9,7 +9,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
-import { Alert, Severity } from '../models/alert';
+import type { Alert } from '../models/alert';
+import { Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-list',

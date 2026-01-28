@@ -1,13 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { TimeseriesResponseDto } from '../../dtos/timeseries';
+import type { Observable } from 'rxjs';
+import type { TimeseriesResponseDto } from '../../dtos/timeseries';
 import { device } from '../../urls/urls';
 
 export interface TimeseriesQuery {
   start: Date;
   end: Date;
-  sub_property?: string;
+  sub_property?: string | undefined;
   step?: string;
 }
 

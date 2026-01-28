@@ -87,7 +87,7 @@ export class DeviceEditComponent {
         scraping: deviceData.scraping,
       });
     }
-    observable.subscribe(response =>
+    observable.subscribe(() =>
       this.router.navigate(['/smart_devices', this.id])
     );
   }

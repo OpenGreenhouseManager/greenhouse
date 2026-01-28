@@ -56,7 +56,7 @@ export class AlertDetailComponent {
     if (!date) {
       return '';
     }
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
 
   display(identifier: string): string {

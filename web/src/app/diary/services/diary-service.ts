@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { formatISO, parseISO } from 'date-fns';
 import { map, Observable } from 'rxjs';
-import {
+import type {
   DiaryEntryDtoResponse,
   GetDiaryDtoResponse,
   PostDiaryEntryDtoRequest,
@@ -43,7 +43,7 @@ export class DiaryService {
   getDiaries(start: Date, end: Date): Observable<Map<string, Diary>> {
     return this.http
       .get<GetDiaryDtoResponse>(
-        diary + '/' + start.toISOString() + '/' + end.toISOString(),
+        `${diary}/${start.toISOString()}/${end.toISOString()}`,
         {
           withCredentials: true,
         }
@@ -53,6 +53,9 @@ export class DiaryService {
           const a = new Map<string, Diary>();
           for (let i = 0; i < x.entries.length; i++) {
             const diary = x.entries[i];
+            if (!diary) {
+              continue;
+            }
             a.set(
               diary.id,
               new Diary(
@@ -132,7 +135,7 @@ export class MockSrevice {
     },
   ];
 
-  static getDiary(id: string): Diary {
+  static getDiary(id: string): Diary | undefined {
     return this.mockDiaries
       .filter(diary => diary.id === id)
       .map(
@@ -156,6 +159,9 @@ export class MockSrevice {
     const b = new Map<string, Diary>();
     for (let i = 0; i < a.length; i++) {
       const diary = a[i];
+      if (!diary) {
+        continue;
+      }
       b.set(
         diary.id,
         new Diary(

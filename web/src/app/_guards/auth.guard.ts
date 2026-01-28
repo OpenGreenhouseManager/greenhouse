@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import {
+import type {
   ActivatedRouteSnapshot,
   CanActivate,
-  Router,
   RouterStateSnapshot,
 } from '@angular/router';
+import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({ providedIn: 'root' })
@@ -12,7 +12,7 @@ export class AuthGuard implements CanActivate {
   private router = inject(Router);
   private cookieService = inject(CookieService);
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+  canActivate(_: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
     if (this.cookieService.get('auth-token')) {
       return true;
     }

@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import type { Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './_guards/auth.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';

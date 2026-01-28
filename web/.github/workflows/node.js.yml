@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [24]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
       # {2}
@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js $
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
@@ -33,17 +33,21 @@ jobs:
         run: npm ci
 
       # {5}
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # {6}
       - name: Run lint
         run: npm run lint
 
-      # {6}
+      # {7}
       - name: Check formatting
         run: npm run format:check
 
-      # {7}
+      # {8}
       - name: Run tests
         run: npm run test:ci
 
-      # {8}
+      # {9}
       - name: Build
         run: npm run build

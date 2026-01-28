@@ -1,29 +1,23 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { FormsModule } from '@angular/forms';
+import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Dialog } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { catchError, combineLatest, forkJoin, of, switchMap } from 'rxjs';
 import { CardComponent } from '../../card/card.component';
-import {
-  ConfigResponseDto,
-  DeviceResponseDto,
-  DeviceStatusDto,
-  Mode,
-  Type,
-} from '../../dtos/device';
+import type { ConfigResponseDto, DeviceResponseDto } from '../../dtos/device';
+import { DeviceStatusDto, Mode, Type } from '../../dtos/device';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { AlertListComponent } from '../../shared/alert/alert-list.component';
-import {
-  GraphComponent,
-  GraphConfig,
-} from '../../shared/graph/graph.component';
+import type { GraphConfig } from '../../shared/graph/graph.component';
+import { GraphComponent } from '../../shared/graph/graph.component';
 import { DeviceService } from '../services/device-service';
 
 @Component({
@@ -92,20 +86,27 @@ export class DeviceDetailComponent implements OnInit {
       return [];
     }
 
-    return configList.operations.map((option: string, index: number) => {
-      return {
-        trackingId: index,
-        config: {
-          graph_data: [
-            {
-              device_id: device.id,
-              sub_property: option ?? undefined,
-            },
-          ],
-          axis_mode: 'merged',
-        } satisfies GraphConfig,
-      };
-    });
+    return configList.operations
+      .map((option: string, index: number) => {
+        return {
+          trackingId: index,
+          config: {
+            graph_data: [
+              {
+                device_id: device.id,
+                sub_property: option ?? undefined,
+              },
+            ],
+            axis_mode: 'merged',
+          } satisfies GraphConfig,
+        };
+      })
+      .sort(
+        (a, b) =>
+          a.config.graph_data[0]?.sub_property.localeCompare(
+            b.config.graph_data[0]?.sub_property ?? ''
+          ) ?? 0
+      );
   });
 
   public hasGraph = computed(() => {
@@ -134,20 +135,17 @@ export class DeviceDetailComponent implements OnInit {
 
     forkJoin({
       device: this.deviceService.getDeviceById(deviceId).pipe(
-        catchError(error => {
-          console.error('Error loading device:', error);
+        catchError(() => {
           return of(null);
         })
       ),
       config: this.deviceService.getDeviceConfig(deviceId).pipe(
-        catchError(error => {
-          console.error('Error loading device config:', error);
+        catchError(() => {
           return of(null);
         })
       ),
       status: this.deviceService.getDeviceStatus(deviceId).pipe(
-        catchError(error => {
-          console.error('Error loading device status:', error);
+        catchError(() => {
           return of(null);
         })
       ),
@@ -155,8 +153,9 @@ export class DeviceDetailComponent implements OnInit {
       next: result => {
         this.device.set(result.device);
         this.deviceConfig.set(result.config);
-        if (this.device()) {
-          this.device()!.status = result.status?.status;
+        const device = this.device();
+        if (device) {
+          device.status = result.status?.status ?? DeviceStatusDto.Offline;
         }
         this.dataSourceId.set(result.status?.datasource_id || null);
         this.loading.set(false);
@@ -165,8 +164,7 @@ export class DeviceDetailComponent implements OnInit {
           this.error.set('Failed to load device data');
         }
       },
-      error: error => {
-        console.error('Error loading device data:', error);
+      error: () => {
         this.error.set('An error occurred while loading device data');
         this.loading.set(false);
       },
@@ -218,11 +216,15 @@ export class DeviceDetailComponent implements OnInit {
       setTimeout(() => {
         this.deviceService.getDeviceConfig(this.device()!.id).subscribe({
           next: response => {
-            this.deviceConfig()!.scripting_api = response.scripting_api;
+            const config = this.deviceConfig();
+            if (!config) {
+              return;
+            }
+            config.scripting_api = response.scripting_api;
+            this.deviceConfig.set(config);
             this.loadingActivation.set(true);
           },
-          error: error => {
-            console.error(error);
+          error: () => {
             this.loadingActivation.set(false);
           },
         });
@@ -266,7 +268,7 @@ export class DeviceDetailComponent implements OnInit {
         this.additionalConfigDraft() === ''
           ? {}
           : JSON.parse(this.additionalConfigDraft());
-    } catch (e) {
+    } catch {
       this.saveConfigError.set('Invalid JSON. Please fix and try again.');
       return;
     }
@@ -302,15 +304,13 @@ export class DeviceDetailComponent implements OnInit {
           // update local state and close dialog
           const cfg = this.deviceConfig();
           if (cfg) {
-            (cfg as ConfigResponseDto).additional_config =
-              parsed as unknown as Record<string, unknown>;
+            cfg.additional_config = parsed as Record<string, unknown>;
             this.deviceConfig.set({ ...cfg });
           }
           this.saveConfigLoading.set(false);
           this.editAdditionalConfigVisible.set(false);
         },
-        error: error => {
-          console.error('Failed to update additional config', error);
+        error: () => {
           this.saveConfigError.set('Failed to save configuration');
           this.saveConfigLoading.set(false);
         },

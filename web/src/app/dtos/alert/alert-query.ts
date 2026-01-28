@@ -5,8 +5,8 @@ export enum Severity {
   Fatal = 3,
 }
 export interface AlertQuery {
-  severity?: Severity;
-  identifier?: string;
-  created_at?: string;
-  datasource_id?: string;
+  severity?: Severity | undefined;
+  identifier?: string | undefined;
+  created_at?: string | undefined;
+  datasource_id?: string | undefined;
 }

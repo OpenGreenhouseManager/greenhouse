@@ -7,7 +7,8 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { CardComponent } from '../card/card.component';
-import { RegisterRequestDto, RegisterResponseDto } from '../dtos/register';
+import type { RegisterResponseDto } from '../dtos/register';
+import { RegisterRequestDto } from '../dtos/register';
 import { register } from '../urls/urls';
 
 @Component({
@@ -25,10 +26,10 @@ import { register } from '../urls/urls';
   styleUrl: './register.component.scss',
 })
 export class RegisterComponent {
-  username: string = '';
-  password: string = '';
-  passwordRepeat: string = '';
-  otp: string = '';
+  username = '';
+  password = '';
+  passwordRepeat = '';
+  otp = '';
 
   public error = signal(false);
   public passwordError = signal(false);

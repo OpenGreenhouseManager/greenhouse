@@ -5,7 +5,8 @@ import { AccordionModule } from 'primeng/accordion';
 import { combineLatest, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AlertDetailListComponent } from '../../alert/alert-detail-list/alert-detail-list.component';
-import { Alert, Severity } from '../../alert/models/alert';
+import type { Alert } from '../../alert/models/alert';
+import { Severity } from '../../alert/models/alert';
 import { CardComponent } from '../../card/card.component';
 import { AlertService } from './alert.service';
 

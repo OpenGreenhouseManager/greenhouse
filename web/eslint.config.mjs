@@ -52,7 +52,7 @@ export default [
         'warn',
         {
           type: 'attribute',
-          prefix: ['app', 'alert', 'device', 'diary', 'graph'], // Allow multiple prefixes
+          prefix: ['grn', 'app', 'alert', 'device', 'diary', 'graph'], // Allow multiple prefixes
           style: 'camelCase',
         },
       ],
@@ -60,7 +60,7 @@ export default [
         'warn',
         {
           type: 'element',
-          prefix: ['app', 'alert', 'device', 'diary', 'graph'], // Allow multiple prefixes
+          prefix: ['grn', 'app', 'alert', 'device', 'diary', 'graph'], // Allow multiple prefixes
           style: 'kebab-case',
         },
       ],

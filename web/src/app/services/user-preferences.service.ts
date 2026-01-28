@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { UserPreferencesDto } from '../dtos/user-preferences';
+import type { Observable } from 'rxjs';
+import type { UserPreferencesDto } from '../dtos/user-preferences';
 import { userPreferences } from '../urls/urls';
 
 @Injectable({

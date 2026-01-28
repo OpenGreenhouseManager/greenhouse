@@ -1,14 +1,16 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SortEvent } from 'primeng/api';
+import type { SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { DeviceResponseDto, DeviceStatusDto } from '../../dtos/device';
+import type { DeviceResponseDto } from '../../dtos/device';
+import { DeviceStatusDto } from '../../dtos/device';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { DeviceService } from '../services/device-service';
 
@@ -74,15 +76,13 @@ export class DeviceOverviewComponent implements OnInit {
             this.devices.set(devicesWithStatus);
             this.loading.set(false);
           },
-          error: error => {
-            console.error('Error loading device statuses:', error);
+          error: () => {
             this.devices.set(devices.devices);
             this.loading.set(false);
           },
         });
       },
-      error: error => {
-        console.error('Error loading devices:', error);
+      error: () => {
         this.loading.set(false);
       },
     });

@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { GraphComponent } from './graph.component';
@@ -16,9 +17,14 @@ describe('GraphComponent', () => {
     fixture = TestBed.createComponent(GraphComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('config', {
-      device_id: 'test-device-id',
-      sub_property: 'test-property',
+      graph_data: [
+        {
+          device_id: 'test-device-id',
+          sub_property: 'test-property',
+        },
+      ],
     });
+    fixture.componentRef.setInput('header', 'Test Graph Header');
     fixture.detectChanges();
   });
 
