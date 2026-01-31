@@ -1,0 +1,44 @@
+<gridster [options]="options">
+  @for (item of dashboard(); track item.options.name) {
+    <gridster-item [item]="item">
+      @if (editMode()) {
+        <button
+          class="remove-button gridster-item-content"
+          (mousedown)="removeItem($event, item)"
+          (touchstart)="removeItem($event, item)">
+          <i class="pi pi-trash"></i>
+        </button>
+      }
+      @switch (item.type) {
+        @case ('graph') {
+          <grn-graph
+            [config]="item.options"
+            [header]="item.options.name"></grn-graph>
+        }
+        @case ('multiGraph') {
+          <grn-graph
+            [config]="item.options"
+            [header]="item.options.name"></grn-graph>
+        }
+        @case ('alertList') {
+          <grn-alert-list
+            [dataSourceId]="item.options.dataSourceId"></grn-alert-list>
+        }
+        @case ('latestValue') {
+          <grn-latest-value-card
+            [header]="item.options.name"
+            [deviceId]="item.options.deviceId"
+            [subProperty]="
+              item.options.subProperty || ''
+            "></grn-latest-value-card>
+        }
+        @case ('compass') {
+          <grn-compass-card
+            [header]="item.options.name"
+            [deviceId]="item.options.deviceId"
+            [subProperty]="item.options.subProperty || ''"></grn-compass-card>
+        }
+      }
+    </gridster-item>
+  }
+</gridster>

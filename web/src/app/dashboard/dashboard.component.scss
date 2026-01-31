@@ -6,47 +6,6 @@
   flex-direction: column;
 }
 
-gridster {
-  width: 100%;
-  height: 100%;
-  background-color: var(--grn-background-color);
-  flex: 1; /* Take remaining space */
-  overflow: auto; /* Enable internal scrolling */
-}
-
-gridster-item {
-  z-index: 0 !important;
-  background-color: transparent;
-  display: flex !important;
-  overflow: visible !important;
-  .remove-button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    transform: translate(75%, -75%);
-    z-index: 1001 !important;
-    height: 28px !important;
-    width: 28px !important;
-    border-radius: 50% !important;
-    background-color: var(--grn-secondary-color) !important;
-    border: 1px solid var(--grn-border-color) !important;
-    padding: 4px !important;
-    margin: 12px !important;
-    cursor: pointer !important;
-    > i {
-      font-size: 20px !important;
-      color: var(--grn-text-color) !important;
-      z-index: 1000 !important;
-    }
-  }
-  > * {
-    display: flex !important;
-    height: 100% !important;
-    width: 100% !important;
-    flex-direction: column;
-  }
-}
-
 main {
   padding-left: 50px;
   padding-right: 5px; /* Add right padding for better spacing */
@@ -63,7 +22,6 @@ main {
     flex-direction: row;
     font-size: calc(1.375rem + 1.5vw);
 
-    margin-top: 0.67em;
     margin-bottom: 0.25em;
     h1 {
       font-size: calc(1.375rem + 1.5vw);
@@ -84,5 +42,66 @@ main {
     width: 100%;
     flex: 1; /* Take remaining space after heading */
     overflow: hidden;
+  }
+}
+
+::ng-deep .add-tab-button {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  i {
+    font-size: 14px;
+  }
+}
+
+::ng-deep .custom-tab {
+  .tab-edit-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    p-tab {
+      padding: 0;
+    }
+
+    .tab-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      font-weight: inherit;
+      color: inherit;
+      min-width: 0;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+        border-color: var(--surface-border, rgba(0, 0, 0, 0.1));
+      }
+
+      &:focus {
+        outline: none;
+        background: var(--surface-ground, #fff);
+        border-color: var(--primary-color, #007bff);
+        box-shadow: 0 0 0 1px var(--primary-color, #007bff);
+      }
+    }
+
+    .tab-delete-icon {
+      cursor: pointer;
+      color: var(--red-500, #ef4444);
+      font-size: 14px;
+      transition: color 0.2s;
+
+      &:hover {
+        color: var(--red-700, #dc2626);
+      }
+    }
   }
 }

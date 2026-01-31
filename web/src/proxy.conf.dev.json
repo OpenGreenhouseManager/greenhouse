@@ -1,6 +1,6 @@
 {
   "/api/**": {
-    "target": "http://localhost:5100",
+    "target": "https://grn.mauderer.work",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

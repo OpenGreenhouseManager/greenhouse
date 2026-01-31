@@ -14,44 +14,49 @@
     </div>
   </div>
   <div class="content">
-    <gridster [options]="options">
-      @for (item of dashboard(); track item.options.name) {
-        <gridster-item [item]="item">
-          @if (editMode()) {
-            <button
-              class="remove-button gridster-item-content"
-              (mousedown)="removeItem($event, item)"
-              (touchstart)="removeItem($event, item)">
-              <i class="pi pi-trash"></i>
-            </button>
-          }
-          @if (item.type === 'graph') {
-            <grn-graph
-              [config]="item.options"
-              [header]="item.options.name"></grn-graph>
-          } @else if (item.type === 'multiGraph') {
-            <grn-graph
-              [config]="item.options"
-              [header]="item.options.name"></grn-graph>
-          } @else if (item.type === 'alertList') {
-            <grn-alert-list
-              [dataSourceId]="item.options.dataSourceId"></grn-alert-list>
-          } @else if (item.type === 'latestValue') {
-            <grn-latest-value-card
-              [header]="item.options.name"
-              [deviceId]="item.options.deviceId"
-              [subProperty]="
-                item.options.subProperty || ''
-              "></grn-latest-value-card>
-          } @else if (item.type === 'compass') {
-            <grn-compass-card
-              [header]="item.options.name"
-              [deviceId]="item.options.deviceId"
-              [subProperty]="item.options.subProperty || ''"></grn-compass-card>
-          }
-        </gridster-item>
-      }
-    </gridster>
+    <p-tabs [(value)]="activeTab" class="w-full h-full" lazy>
+      <p-tablist>
+        @let tabs = dashboard();
+        @for (tab of tabs; track $index) {
+          <p-tab [value]="$index" class="custom-tab">
+            @if (editMode()) {
+              <div class="tab-edit-container">
+                <input
+                  type="text"
+                  class="tab-name-input"
+                  [value]="tab.name"
+                  [size]="tab.name.length || 1"
+                  (input)="updateTabName($index, $event)"
+                  (click)="$event.stopPropagation()" />
+                <i
+                  class="pi pi-trash tab-delete-icon"
+                  (click)="deleteTab($index, $event)"
+                  title="Delete tab"></i>
+              </div>
+            } @else {
+              {{ tab.name }}
+            }
+          </p-tab>
+        }
+        @if (editMode()) {
+          <p-tab (click)="addNewTab()" class="add-tab-button">
+            <i class="pi pi-plus"></i>
+          </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels class="h-full w-full">
+        @for (tab of tabs; track $index) {
+          <p-tabpanel [value]="$index">
+            <ng-template #content>
+              <grn-dashboard-tab
+                [dashboard]="tab.items"
+                (dashboardChange)="onDashboardChange($index, $event)"
+                [editMode]="editMode()"></grn-dashboard-tab>
+            </ng-template>
+          </p-tabpanel>
+        }
+      </p-tabpanels>
+    </p-tabs>
   </div>
 </main>
 <grn-add-dashboard-component-dialog

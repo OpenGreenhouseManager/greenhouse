@@ -473,6 +473,58 @@ body > .p-connected-overlay {
   background-color: var(--grn-secondary-color);
 }
 
+/* Global Tabs Styling */
+.p-tabs {
+  background: transparent !important;
+}
+
+/* Global Tabs Styling */
+.p-tab {
+  background: transparent !important;
+  padding: 4px !important;
+}
+
+.p-tablist {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(113, 119, 68, 0.3);
+  gap: 0;
+  padding: 0 !important;
+}
+
+.p-tab {
+  background: transparent !important;
+  color: var(--grn-text-color);
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 0.5rem 1rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.p-tab:hover {
+  color: var(--grn-secondary-color);
+  border-bottom-color: rgba(113, 119, 68, 0.3) !important;
+}
+
+.p-tab[aria-selected='true'],
+.p-tab.p-highlight {
+  background: transparent !important;
+  color: var(--grn-secondary-color);
+  font-weight: 600;
+  border-bottom-color: var(--grn-secondary-color) !important;
+}
+
+.p-tabpanels {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.p-tabpanel {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
 /* Global Responsive Design */
 @media (max-width: 1200px) {
   .p-datatable-thead > tr > th,
