@@ -6,7 +6,9 @@
     "greenhouse_web": {
       "i18n": {
         "sourceLocale": "en-US",
-        "locales": { "de-DE": "src/locale/messages.de-DE.json" }
+        "locales": {
+          "de-DE": { "translation": "src/locale/messages.de-DE.json", "subPath": "" }
+        }
       },
       "projectType": "application",
       "schematics": {
