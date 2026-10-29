@@ -30,11 +30,11 @@
 }
 
 .label {
-  font-size: 18px;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
 .error {
-  color: red;
+  color: var(--grn-danger);
   font-size: 14px;
 }

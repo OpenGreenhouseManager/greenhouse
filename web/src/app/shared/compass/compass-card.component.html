@@ -13,11 +13,10 @@
             cx="50"
             cy="50"
             r="48"
-            fill="white"
-            stroke="black"
+            style="fill: var(--grn-surface); stroke: var(--grn-border)"
             stroke-width="2"></circle>
           <!-- Cardinal tick marks -->
-          <g stroke="currentColor" stroke-width="1.5">
+          <g style="stroke: var(--grn-text-muted)" stroke-width="1.5">
             <line x1="50" y1="4" x2="50" y2="12"></line>
             <line x1="96" y1="50" x2="88" y2="50"></line>
             <line x1="50" y1="96" x2="50" y2="88"></line>
@@ -25,7 +24,7 @@
           </g>
           <!-- Cardinal labels -->
           <g
-            fill="currentColor"
+            style="fill: var(--grn-text-muted)"
             font-size="8"
             font-weight="700"
             text-anchor="middle"
@@ -37,8 +36,15 @@
           </g>
           <!-- Triangular needle -->
           <g [attr.transform]="svgRotation()">
-            <polygon points="50,12 58,54 42,54" fill="red"></polygon>
-            <circle cx="50" cy="50" r="2.5" fill="black" opacity="0.6"></circle>
+            <polygon
+              points="50,12 58,54 42,54"
+              style="fill: var(--grn-sakura-strong)"></polygon>
+            <circle
+              cx="50"
+              cy="50"
+              r="2.5"
+              style="fill: var(--grn-text)"
+              opacity="0.7"></circle>
           </g>
         </svg>
       </div>

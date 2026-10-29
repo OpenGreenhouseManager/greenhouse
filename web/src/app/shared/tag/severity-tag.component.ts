@@ -21,14 +21,13 @@ export class SeverityTagComponent {
   severityBackground = computed(() => {
     switch (this.severity()) {
       case Severity.Info:
-        // bluish white
-        return '#66A9A9';
+        return '#4f8a9a';
       case Severity.Warning:
-        return '#f59e0b';
+        return '#d99a2b';
       case Severity.Error:
-        return '#f44336';
+        return '#c2483d';
       case Severity.Fatal:
-        return '#b71c1c';
+        return '#8f2d26';
       default:
         return 'warn';
     }

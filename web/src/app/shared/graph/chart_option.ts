@@ -12,16 +12,16 @@ export const baseChartOptions = {
       ticks: {
         padding: 2,
         font: {
-          size: 8,
-          family: 'sans-serif',
+          size: 10,
+          family: "'Nunito Variable', sans-serif",
         },
-        color: '#080b05',
+        color: '#66705f',
         maxTicksLimit: 4,
         maxRotation: 0,
         autoSkipPadding: 2,
       },
       grid: {
-        color: '#71774456',
+        color: '#e3e6dc',
         drawBorder: false,
         lineWidth: 0.5,
       },
@@ -34,14 +34,14 @@ export const baseChartOptions = {
       ticks: {
         padding: 2,
         font: {
-          size: 8,
-          family: 'sans-serif',
+          size: 10,
+          family: "'Nunito Variable', sans-serif",
         },
-        color: '#080b05',
+        color: '#66705f',
         maxTicksLimit: 4,
       },
       grid: {
-        color: '#71774456',
+        color: '#e3e6dc',
         drawBorder: false,
         lineWidth: 0.5,
       },
@@ -63,19 +63,19 @@ export const chartOptions = {
         boxWidth: 8,
         padding: 4,
         font: {
-          size: 8,
-          family: 'sans-serif',
+          size: 10,
+          family: "'Nunito Variable', sans-serif",
         },
-        color: '#080b05', // Use app text color
+        color: '#24301f', // Use app text color
       },
     },
     tooltip: {
       mode: 'index' as const,
       intersect: false,
-      backgroundColor: '#eff1ed',
-      titleColor: '#080b05',
-      bodyColor: '#080b05',
-      borderColor: '#71774456',
+      backgroundColor: '#ffffff',
+      titleColor: '#24301f',
+      bodyColor: '#24301f',
+      borderColor: '#e3e6dc',
       borderWidth: 1,
       cornerRadius: 6,
       padding: 6,
@@ -88,13 +88,13 @@ export const chartOptions = {
     point: {
       radius: 1, // Smaller points for tight spaces
       hoverRadius: 3,
-      backgroundColor: '#717744',
-      borderColor: '#717744',
+      backgroundColor: '#4f7a4a',
+      borderColor: '#4f7a4a',
     },
     line: {
-      borderWidth: 1, // Thinner lines for small charts
-      borderColor: '#717744',
-      backgroundColor: 'rgba(113, 119, 68, 0.1)',
+      borderWidth: 1.5, // Thin lines for small charts
+      borderColor: '#4f7a4a',
+      backgroundColor: 'rgba(79, 122, 74, 0.12)',
     },
   },
 };
@@ -111,18 +111,18 @@ export const barChartOptions = {
         padding: 10,
         font: {
           size: 10,
-          family: 'sans-serif',
+          family: "'Nunito Variable', sans-serif",
         },
-        color: '#080b05', // Use app text color
+        color: '#24301f', // Use app text color
       },
     },
     tooltip: {
       mode: 'index' as const,
       intersect: false,
-      backgroundColor: '#eff1ed',
-      titleColor: '#080b05',
-      bodyColor: '#080b05',
-      borderColor: '#71774456',
+      backgroundColor: '#ffffff',
+      titleColor: '#24301f',
+      bodyColor: '#24301f',
+      borderColor: '#e3e6dc',
       borderWidth: 1,
       cornerRadius: 6,
     },
@@ -144,11 +144,11 @@ export const barChartOptions = {
 
 // Default color palette for charts
 export const chartColors = {
-  primary: '#717744',
-  secondary: '#766153',
-  info: '#66A9A9',
-  warning: '#f59e0b',
-  error: '#f44336',
-  fatal: '#b71c1c',
-  success: '#22c55e',
+  primary: '#4f7a4a',
+  secondary: '#c75b7a',
+  info: '#4f8a9a',
+  warning: '#d99a2b',
+  error: '#c2483d',
+  fatal: '#8f2d26',
+  success: '#5a9a4f',
 };

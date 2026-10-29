@@ -190,15 +190,15 @@ export class DeviceDetailComponent implements OnInit {
 
   getStatusColor(status?: DeviceStatusDto): string {
     if (!status) {
-      return 'gray';
+      return 'var(--grn-text-muted)';
     }
     switch (status) {
       case DeviceStatusDto.Online:
-        return 'green';
+        return 'var(--grn-success)';
       case DeviceStatusDto.Panic:
-        return 'red';
+        return 'var(--grn-danger)';
       default:
-        return 'gray';
+        return 'var(--grn-text-muted)';
     }
   }
 

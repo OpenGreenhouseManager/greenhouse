@@ -14,11 +14,14 @@
 }
 
 .value {
-  font-size: clamp(28px, 6vw, 64px);
-  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--grn-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .error {
-  color: var(--red-500);
-  font-size: 14px;
+  color: var(--grn-danger);
+  font-size: 0.9rem;
 }

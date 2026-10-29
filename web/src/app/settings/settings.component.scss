@@ -1,77 +1,85 @@
-main {
-  padding-left: 50px;
-  h1 {
-    font-size: calc(1.375rem + 1.5vw);
+main.page .content {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: flex-start;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+    align-items: stretch;
   }
+
+  .content_left {
+    width: 16rem;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: var(--grn-surface);
+    border: 1px solid var(--grn-border);
+    border-radius: var(--grn-radius);
+    box-shadow: var(--grn-shadow);
+
+    @media (max-width: 900px) {
+      width: auto;
+    }
+  }
+
   .list_item {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #ccc;
-    .text {
-      display: flex;
-      align-items: center;
-      height: 100%;
-    }
-    //center i element inside this span .icon element
-    .icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-  .list_item:hover {
-    background-color: var(--grn-card-color);
-    border-radius: 5px;
-  }
-  .selected {
-    background-color: var(--grn-card-color);
-    border-radius: 5px;
-  }
-  .content {
-    display: flex;
-    flex-direction: row;
-    .content_left {
-      height: 100%;
-      width: 25%;
-      display: flex;
-      flex-direction: column;
-    }
-    .content_right {
-      padding-left: 8px;
-      height: 100%;
-      width: 75%;
-      display: flex;
-      flex-direction: column;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--grn-radius-sm);
+    font-weight: 600;
+    color: var(--grn-text-muted);
+    cursor: pointer;
 
-      //make the card content the rest of the screen width but width: 100% is not working
-      .card_content {
-        width: calc(75vw - 100px);
-        .otp {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 8px;
-          .otp_input {
-            display: flex;
-            flex-direction: row;
-            gap: 8px;
-            width: 50%;
-            input {
-              width: -webkit-fill-available;
-            }
-            .button_label {
-              white-space: nowrap;
-              font-weight: 600;
-            }
-          }
-          .otp_output {
-            width: 50%;
-            .warning {
-              background: #fbc02d !important;
-            }
-          }
+    &:hover {
+      background-color: var(--grn-surface-soft);
+      color: var(--grn-text);
+    }
+
+    &.selected {
+      background-color: var(--grn-sakura-soft);
+      color: var(--grn-text);
+
+      i {
+        color: var(--grn-sakura-strong);
+      }
+    }
+
+    .icon i {
+      font-size: 0.8rem;
+    }
+  }
+
+  .content_right {
+    flex: 1;
+    min-width: 0;
+
+    .otp {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+
+      .otp_input,
+      .otp_output {
+        flex: 1 1 18rem;
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+
+        input {
+          flex: 1;
+          min-width: 0;
         }
+      }
+
+      .button_label {
+        white-space: nowrap;
+        font-weight: 600;
       }
     }
   }

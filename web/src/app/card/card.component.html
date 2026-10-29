@@ -1,15 +1,10 @@
 <div class="component">
-  <p-card
-    [style]="{
-      width: '100%',
-      backgroundColor: 'var(--grn-card-color)',
-      borderRadius: '10px',
-    }">
+  <p-card [style]="{ width: '100%' }">
     <ng-template #header>
-      <div class="header p-1">
-        <h1 class="w-full text-2xl {{ centerTitle() ? 'text-center' : '' }}">
+      <div class="header">
+        <h2 class="title {{ centerTitle() ? 'text-center' : '' }}">
           {{ title() }}
-        </h1>
+        </h2>
         @if (icon() && decorativeIcon()) {
           <i
             [class]="icon_class()"
@@ -18,7 +13,7 @@
         } @else if (icon()) {
           <i
             [class]="icon_class()"
-            class="gridster-item-content"
+            class="gridster-item-content action"
             role="button"
             tabindex="0"
             (click)="iconClicked.emit()"
@@ -27,7 +22,7 @@
       </div>
     </ng-template>
     <ng-template #content>
-      <div class="content gridster-item-content p-1">
+      <div class="content gridster-item-content">
         <ng-content />
       </div>
     </ng-template>

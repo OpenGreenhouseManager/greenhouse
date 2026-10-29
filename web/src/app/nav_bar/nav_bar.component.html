@@ -1,45 +1,35 @@
-<main class="background">
-  <div class="nav">
-    <div class="line">
-      <span class="icon"><i class="pi pi-warehouse"></i></span>
-      <span class="text"><a [routerLink]="['/']">Greenhouse</a></span>
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-objects-column"></i></span>
-      <span class="text"><a [routerLink]="['/']">Dashboard</a></span>
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-microchip"></i></span>
-      <span class="text"
-        ><a [routerLink]="['/smart_devices']">Smart Devices</a></span
-      >
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-bell"></i></span>
-      <span class="text"><a [routerLink]="['/alerts']">Alerts</a></span>
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-book"></i></span>
-      <span class="text"><a [routerLink]="['/diary']">Diary</a></span>
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-file-edit"></i></span>
-      <span class="text"><a [routerLink]="['/scripts']">Scripts</a></span>
-    </div>
-    <div class="line">
-      <span class="icon"><i class="pi pi-cog"></i></span>
-      <span class="text"><a [routerLink]="['/settings']">Settings</a></span>
-    </div>
-    <div class="line fix-to-bottom">
-      <span class="icon"><i class="pi pi-sign-out"></i></span>
-      <span
-        class="text"
-        role="button"
-        tabindex="0"
-        (click)="signOut()"
-        (keydown.enter)="signOut()">
-        Logout
-      </span>
-    </div>
+<nav class="sidebar" aria-label="Main navigation">
+  <a class="brand" [routerLink]="['/']">
+    <i class="pi pi-warehouse"></i>
+    <span class="label">Greenhouse</span>
+  </a>
+
+  <div class="links">
+    <a
+      class="link"
+      [routerLink]="['/']"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }">
+      <i class="pi pi-objects-column"></i><span class="label">Dashboard</span>
+    </a>
+    <a class="link" [routerLink]="['/smart_devices']" routerLinkActive="active">
+      <i class="pi pi-microchip"></i><span class="label">Smart Devices</span>
+    </a>
+    <a class="link" [routerLink]="['/alerts']" routerLinkActive="active">
+      <i class="pi pi-bell"></i><span class="label">Alerts</span>
+    </a>
+    <a class="link" [routerLink]="['/diary']" routerLinkActive="active">
+      <i class="pi pi-book"></i><span class="label">Diary</span>
+    </a>
+    <a class="link" [routerLink]="['/scripts']" routerLinkActive="active">
+      <i class="pi pi-file-edit"></i><span class="label">Scripts</span>
+    </a>
+    <a class="link" [routerLink]="['/settings']" routerLinkActive="active">
+      <i class="pi pi-cog"></i><span class="label">Settings</span>
+    </a>
   </div>
-</main>
+
+  <button type="button" class="link logout" (click)="signOut()">
+    <i class="pi pi-sign-out"></i><span class="label">Logout</span>
+  </button>
+</nav>

@@ -90,11 +90,11 @@ export class DeviceOverviewComponent implements OnInit {
   getStatusColor(status: DeviceStatusDto): string {
     switch (status) {
       case DeviceStatusDto.Online:
-        return 'green';
+        return 'var(--grn-success)';
       case DeviceStatusDto.Panic:
-        return 'red';
+        return 'var(--grn-danger)';
       default:
-        return 'gray';
+        return 'var(--grn-text-muted)';
     }
   }
 

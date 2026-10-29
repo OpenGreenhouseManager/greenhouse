@@ -1,65 +1,69 @@
-main {
-  padding-left: 50px;
-  .heading {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: row;
-    align-items: center;
-    font-size: calc(1.375rem + 1.5vw);
+main.page > .content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 
-    margin-bottom: 0.67em;
-    h1 {
-      font-size: calc(1.375rem + 1.5vw);
-      margin: 0;
-    }
-    .button_label {
-      white-space: nowrap;
-      font-weight: 600;
-      font-size: 16px;
-    }
-    i {
-      font-size: 16px;
-      padding-right: 4px;
-    }
+  grn-card {
+    width: min(900px, 100%);
   }
-  .content {
-    width: 100%;
-    height: 100%;
+
+  .DiaryContainer {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    .DiaryContainer {
+    align-items: stretch;
+    gap: 0.5rem;
+
+    .chevron {
       display: flex;
-      align-items: stretch;
-      gap: 8px;
-      .chevron {
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.5rem;
+      border-radius: var(--grn-radius-sm);
+      color: var(--grn-text-muted);
+      cursor: pointer;
+
+      &:hover {
+        background: var(--grn-surface-soft);
+        color: var(--grn-primary);
+      }
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 4rem;
+
+      .list_item {
         display: flex;
         align-items: center;
-        justify-content: center;
-        height: auto;
-      }
-      .container {
-        width: 100vw;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        .list_item {
-          display: flex;
-          justify-content: space-between;
-          background-color: var(--grn-secondary-color);
-          border-radius: 5px;
-          padding: 8px 4px 8px 4px;
-          h2 {
-            color: var(--grn-background-color);
-            margin: 0;
-          }
-          span {
-            color: var(--grn-background-color);
-          }
-          i {
-            color: var(--grn-background-color);
-          }
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background-color: var(--grn-surface);
+        border: 1px solid var(--grn-border);
+        border-radius: var(--grn-radius-sm);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+          background-color: var(--grn-surface-soft);
+        }
+
+        i {
+          color: var(--grn-sakura-strong);
+        }
+
+        h2 {
+          flex: 1;
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 600;
+        }
+
+        span {
+          color: var(--grn-text-muted);
+          font-size: 0.9rem;
+          font-variant-numeric: tabular-nums;
         }
       }
     }

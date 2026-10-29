@@ -1,9 +1,9 @@
 gridster {
   width: 100%;
   height: 100%;
-  background-color: var(--grn-background-color);
-  flex: 1; /* Take remaining space */
-  overflow: auto; /* Enable internal scrolling */
+  background-color: transparent;
+  flex: 1;
+  overflow: auto;
 }
 
 gridster-item {
@@ -11,34 +11,39 @@ gridster-item {
   background-color: transparent;
   display: flex !important;
   overflow: visible !important;
+
   .remove-button {
     position: absolute;
     top: 0;
     right: 0;
-    transform: translate(75%, -75%);
+    transform: translate(40%, -40%);
     z-index: 1001 !important;
     height: 28px !important;
     width: 28px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50% !important;
-    background-color: var(--grn-secondary-color) !important;
-    border: 1px solid var(--grn-border-color) !important;
-    padding: 4px !important;
-    margin: 12px !important;
+    background-color: var(--grn-surface) !important;
+    border: 1px solid var(--grn-border) !important;
+    box-shadow: var(--grn-shadow);
+    padding: 0 !important;
     cursor: pointer !important;
+
+    &:hover {
+      background-color: var(--grn-sakura-soft) !important;
+    }
+
     > i {
-      font-size: 20px !important;
-      color: var(--grn-text-color) !important;
-      z-index: 1000 !important;
+      font-size: 0.8rem !important;
+      color: var(--grn-danger) !important;
     }
   }
+
   > * {
     display: flex !important;
     height: 100% !important;
     width: 100% !important;
     flex-direction: column;
   }
-}
-
-.p-tabpanels {
-  padding: 0 !important;
 }

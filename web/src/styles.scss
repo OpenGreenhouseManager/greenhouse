@@ -1,57 +1,170 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles: design tokens, page layout and PrimeNG layout fixes.
+   Component colours come from the PrimeNG preset in app.config.ts. */
 @use 'tailwindcss';
 @import 'primeicons/primeicons.css';
 
 :root {
-  --grn-background-color: #eff1ed;
-  --grn-accent-color: #766153;
-  --grn-primary-color: #373d20;
-  --grn-card-color: #71774456;
-  --grn-secondary-color: #717744;
-  --grn-text-color: #080b05;
-  --primary-color: #717744;
-  --text-color: var(--grn-text-color);
+  /* Palette: warm paper, deep moss, leaf green, sakura accent */
+  --grn-bg: #f7f6f1;
+  --grn-surface: #ffffff;
+  --grn-surface-soft: #eef2ea;
+  --grn-border: #e3e6dc;
+  --grn-text: #24301f;
+  --grn-text-muted: #66705f;
+  --grn-primary: #4f7a4a;
+  --grn-primary-hover: #3f6640;
+  --grn-primary-active: #33532f;
+  --grn-sakura: #f2c4ce;
+  --grn-sakura-soft: #fbe9ee;
+  --grn-sakura-strong: #c75b7a;
+
+  /* Status / severity */
+  --grn-info: #4f8a9a;
+  --grn-warning: #d99a2b;
+  --grn-danger: #c2483d;
+  --grn-fatal: #8f2d26;
+  --grn-success: #5a9a4f;
+
+  /* Shape & spacing */
+  --grn-radius-sm: 6px;
+  --grn-radius: 12px;
+  --grn-shadow:
+    0 1px 2px rgba(36, 48, 31, 0.05), 0 4px 12px rgba(36, 48, 31, 0.06);
+  --grn-gap: 1rem;
+  --grn-page-pad: 1.5rem 2rem;
+  --grn-sidebar-w: 232px;
+
+  --grn-font:
+    'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+
+  /* Legacy aliases still referenced by a few templates */
+  --grn-background-color: var(--grn-bg);
+  --grn-text-color: var(--grn-text);
+  --grn-secondary-color: var(--grn-primary);
+  --grn-border-color: var(--grn-border);
+  --text-color-secondary: var(--grn-text-muted);
 }
 
-.p-card-content {
-  padding: 0;
+@media (max-width: 900px) {
+  :root {
+    --grn-sidebar-w: 72px;
+    --grn-page-pad: 1rem 1.25rem;
+  }
+}
+
+/* ---------- Base ---------- */
+html,
+body {
+  height: 100%;
+  margin: 0;
 }
 
 html {
-  background-color: var(--grn-background-color);
-  height: 99.99vh;
+  font-size: 15px;
+  background-color: var(--grn-bg);
 }
 
 body {
-  height: 99.99vh;
+  font-family: var(--grn-font);
+  line-height: 1.5;
+  color: var(--grn-text);
+  background-color: var(--grn-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
-html * {
-  font-family: sans-serif;
-  color: var(--grn-text-color);
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--grn-text);
+  line-height: 1.25;
+}
+
+a {
+  color: var(--grn-primary);
 }
 
 grn-root {
-  height: 99.99vh;
   display: flex;
   flex-direction: column;
-  padding: 1rem 1rem 0 1rem;
+  min-height: 100%;
 }
 
-/* Ensure PrimeNG cards fill their container height */
+/* ---------- Shared page layout ---------- */
+main.page {
+  margin-left: var(--grn-sidebar-w);
+  padding: var(--grn-page-pad);
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--grn-gap);
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--grn-border);
+
+  h1 {
+    font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .heading-left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .button_label {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .p-button i {
+    padding-right: 0.25rem;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Card ---------- */
 .p-card {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
+  border-radius: var(--grn-radius);
+  box-shadow: var(--grn-shadow);
 }
 
 .p-card-body {
-  padding: 8px !important;
+  padding: 0.75rem 1rem 1rem !important;
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 90%;
+  min-height: 0;
 }
 
 .p-card-header {
@@ -63,22 +176,21 @@ grn-root {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;
 }
 
-.p-datepicker-input {
-  width: 100% !important;
-}
-
+/* ---------- Severity tags ---------- */
 .p-tag.p-tag-error {
-  background-color: #f44336;
+  background-color: var(--grn-danger);
+  color: #fff;
 }
+
 .p-tag.p-tag-fatal {
-  background-color: #b71c1c !important; // darker red
+  background-color: var(--grn-fatal) !important;
   color: #fff !important;
 }
 
-/* Global Graph and Chart Styling */
+/* ---------- Charts ---------- */
 .graph {
   position: relative;
 }
@@ -86,9 +198,8 @@ grn-root {
 .graph-controls {
   display: flex;
   flex-direction: row;
-  gap: 10px;
-  padding: 4px;
-  padding-top: 0px;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0.25rem;
 }
 
 .chartMessage {
@@ -96,448 +207,141 @@ grn-root {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  color: var(--grn-text-muted);
 }
 
-/* Global Chart.js Styling */
-.p-chart {
-  background: transparent;
-}
-
+.p-chart,
 .p-chart canvas {
   background: transparent !important;
 }
 
-/* Ensure Chart.js text uses app colors */
-.p-chart .chartjs-render-monitor {
-  color: var(--grn-text-color) !important;
-}
-
-/* Global DatePicker Styling */
-.p-datepicker {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-  color: var(--grn-text-color);
-}
-
-.p-datepicker:hover {
-  border-color: var(--grn-accent-color);
-}
-
-.p-datepicker:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--grn-secondary-color);
-}
-
-.p-datepicker-panel {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-}
-
-.p-datepicker-panel .p-datepicker-header {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-  border: none;
-}
-
-.p-datepicker-panel .p-datepicker-calendar td > span:hover {
-  background: var(--grn-card-color);
-}
-
-.p-datepicker-panel .p-datepicker-calendar td > span.p-highlight {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-}
-
-/* Global Progress Spinner Styling */
-.p-progress-spinner {
-  color: var(--grn-secondary-color);
-}
-
-.p-progress-spinner .p-progress-spinner-circle {
-  stroke: var(--grn-secondary-color);
-}
-
-/* Global Message Styling */
-.p-message {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-  color: var(--grn-text-color);
-}
-
-.p-message.p-message-error {
-  background: #ffebee;
-  border-color: #f44336;
-  color: #c62828;
-}
-
-/* Global Accordion Styling - Seamless */
-.p-accordion {
-  background: transparent !important;
-  gap: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.p-accordion .p-accordion-panel {
-  margin-bottom: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-  outline: none !important;
-}
-
-.p-accordion .p-accordion-panel:first-child {
-  border: none !important;
-}
-
-.p-accordion .p-accordion-panel:last-child {
-  border: none !important;
-}
-
-.p-accordion .p-accordion-panel .p-accordion-header {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  margin: 0 !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.p-accordion
-  .p-accordion-panel
-  .p-accordion-header
-  .p-accordion-header-content {
-  background: transparent !important;
-  color: var(--grn-text-color) !important;
-  font-weight: 600 !important;
-  font-size: 1.1rem !important;
-  padding: 0.75rem 0 !important;
-  transition: all 0.2s ease !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.p-accordion .p-accordion-panel .p-accordion-content {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  border-top: none !important;
-  margin-bottom: 1rem !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Alternative accordion selectors */
-p-accordion {
-  border: none !important;
-  box-shadow: none !important;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-p-accordion-panel {
-  margin-bottom: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-  outline: none !important;
-}
-
-p-accordion-header {
-  background: transparent !important;
-  color: var(--grn-text-color) !important;
-  font-weight: 600 !important;
-  font-size: 1.1rem !important;
-  transition: all 0.2s ease !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-p-accordion-content {
-  background: transparent !important;
-  border: none !important;
-  border-top: none !important;
-  margin-bottom: 1rem !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Global Table Styling - Green Theme */
-.p-datatable {
+/* ---------- Forms ---------- */
+.p-datepicker-input {
   width: 100% !important;
-  min-width: 0 !important;
-  background: transparent;
-  border-radius: 6px;
+}
+
+/* ---------- Accordion (flat, inside cards) ---------- */
+.p-accordion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-accordionpanel {
+  border-color: var(--grn-border);
+}
+
+.p-accordionheader {
+  font-weight: 600;
+  padding: 0.75rem 0.25rem !important;
+  background: transparent !important;
+}
+
+.p-accordioncontent-content {
+  background: transparent !important;
+  padding: 0 0.25rem 1rem !important;
+}
+
+/* ---------- Table ---------- */
+.p-datatable {
+  width: 100%;
+  min-width: 0;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
+  border-radius: var(--grn-radius);
+  box-shadow: var(--grn-shadow);
   overflow: hidden;
 }
 
-.p-datatable .p-datatable-header {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-  border: none;
-}
-
 .p-datatable .p-datatable-thead > tr > th {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-  border: none;
+  background: var(--grn-surface-soft);
+  color: var(--grn-text-muted);
   font-weight: 600;
-}
-
-.p-datatable .p-datatable-tbody > tr {
-  background: var(--grn-background-color);
-}
-
-.p-datatable .p-datatable-tbody > tr:hover {
-  background: rgba(113, 119, 68, 0.1);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-color: var(--grn-border);
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
-  border: none;
-  color: var(--grn-text-color);
+  border-color: var(--grn-border);
 }
 
-/* Global Paginator Styling */
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--grn-surface-soft);
+}
+
 .p-paginator {
-  background: var(--grn-card-color);
-  border: none;
-  border-radius: 0 !important;
-}
-
-.p-paginator .p-paginator-pages .p-paginator-page {
-  color: var(--grn-text-color);
   background: transparent;
+  border-top: 1px solid var(--grn-border);
+  border-radius: 0;
 }
 
-.p-paginator .p-paginator-pages .p-paginator-page:hover {
-  background: var(--grn-accent-color);
-  color: var(--grn-background-color);
+/* Keep table layout stable when overlays open */
+.p-datatable-wrapper {
+  contain: layout;
+  isolation: isolate;
+  overflow-x: auto;
+  width: 100%;
 }
 
-.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-}
-
-/* Global Dropdown Styling */
-.p-dropdown {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-  color: var(--grn-text-color);
-}
-
-.p-dropdown:hover {
-  border-color: var(--grn-accent-color);
-}
-
-.p-dropdown:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--grn-secondary-color);
-}
-
-.p-dropdown-panel {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-}
-
-/* Fix for dropdown panels appended to body (prevents table layout shifts) */
-body > .p-dropdown-panel,
 body > .p-connected-overlay {
-  position: fixed !important;
   z-index: 10000 !important;
-  will-change: auto !important;
-  transform: none !important;
 }
 
-/* Ensure paginator dropdown doesn't cause reflow */
-.p-paginator .p-dropdown {
-  contain: layout !important;
+/* ---------- Tabs (colours come from the preset in app.config.ts) ---------- */
+.p-tablist-tab-list {
+  padding: 0.25rem 0;
 }
 
-/* Prevent table from jumping when dropdown opens */
-.p-datatable-wrapper {
-  contain: layout !important;
-  isolation: isolate !important;
+.p-tab {
+  border-radius: 999px;
 }
 
-.p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
-  background: var(--grn-card-color);
+.p-tab[aria-selected='true'] {
+  box-shadow: 0 1px 3px rgba(36, 48, 31, 0.08);
 }
 
-.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-}
-
-/* Global Select Styling */
-.p-select {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-  color: var(--grn-text-color);
-}
-
-.p-select:hover {
-  border-color: var(--grn-accent-color);
-}
-
-.p-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--grn-secondary-color);
-}
-
-.p-select-panel {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-}
-
-.p-select-panel .p-select-items .p-select-item:hover {
-  background: var(--grn-card-color);
-}
-
-.p-select-panel .p-select-items .p-select-item.p-highlight {
-  background: var(--grn-secondary-color);
-  color: var(--grn-background-color);
-}
-
-/* Global Filter Styling */
-.p-column-filter-menu {
-  background: var(--grn-background-color);
-  border-radius: 6px;
-}
-
-.p-column-filter-menu .p-column-filter-menu-button {
-  color: var(--grn-text-color);
-}
-
-.p-column-filter-menu .p-column-filter-menu-button:hover {
-  background: var(--grn-card-color);
-}
-
-/* Global Sort Icon Styling */
-.p-sortable-column-icon {
-  color: var(--grn-background-color);
-}
-
-/* Global Button Styling */
-.p-button.p-button-text {
-  color: var(--grn-secondary-color);
-  background: transparent;
-}
-
-.p-button.p-button-text:hover {
-  background: var(--grn-card-color);
-  color: var(--grn-text-color);
-}
-.p-accordioncontent-content {
-  border-style: none !important;
-  border-width: 0 !important;
-  border-color: transparent !important;
-  background-color: transparent !important;
-  color: var(--grn-text-color) !important;
-  padding: 0 !important;
-}
-
-/* Global Scrollbar Styling */
-.p-datatable-wrapper {
-  overflow-x: auto !important;
-  width: 100% !important;
+/* ---------- Scrollbars ---------- */
+* {
   scrollbar-width: thin;
-  scrollbar-color: var(--grn-accent-color) transparent;
+  scrollbar-color: var(--grn-border) transparent;
 }
 
-.p-datatable-wrapper::-webkit-scrollbar {
-  height: 6px;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.p-datatable-wrapper::-webkit-scrollbar-track {
-  background: transparent;
+::-webkit-scrollbar-thumb {
+  background-color: var(--grn-border);
+  border-radius: 4px;
 }
 
-.p-datatable-wrapper::-webkit-scrollbar-thumb {
-  background-color: var(--grn-accent-color);
-  border-radius: 3px;
+::-webkit-scrollbar-thumb:hover {
+  background-color: #ccd2c3;
 }
 
-.p-datatable-wrapper::-webkit-scrollbar-thumb:hover {
-  background-color: var(--grn-secondary-color);
+/* ---------- Device status ---------- */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* Global Tabs Styling */
-.p-tabs {
-  background: transparent !important;
+.status-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--grn-surface-soft);
 }
 
-/* Global Tabs Styling */
-.p-tab {
-  background: transparent !important;
-  padding: 4px !important;
-}
-
-.p-tablist {
-  background: transparent !important;
-  border-bottom: 1px solid rgba(113, 119, 68, 0.3);
-  gap: 0;
-  padding: 0 !important;
-}
-
-.p-tab {
-  background: transparent !important;
-  color: var(--grn-text-color);
-  border: none !important;
-  border-bottom: 2px solid transparent !important;
-  padding: 0.5rem 1rem;
-  font-weight: 400;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.p-tab:hover {
-  color: var(--grn-secondary-color);
-  border-bottom-color: rgba(113, 119, 68, 0.3) !important;
-}
-
-.p-tab[aria-selected='true'],
-.p-tab.p-highlight {
-  background: transparent !important;
-  color: var(--grn-secondary-color);
+.page-heading .status-indicator {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
   font-weight: 600;
-  border-bottom-color: var(--grn-secondary-color) !important;
-}
-
-.p-tabpanels {
-  padding: 0 !important;
-  background: transparent !important;
-}
-
-.p-tabpanel {
-  padding: 0 !important;
-  background: transparent !important;
-}
-
-/* Global Responsive Design */
-@media (max-width: 1200px) {
-  .p-datatable-thead > tr > th,
-  .p-datatable-tbody > tr > td {
-    padding: 0.5rem !important;
-    font-size: 0.875rem !important;
-  }
-
-  .p-accordion
-    .p-accordion-panel
-    .p-accordion-header
-    .p-accordion-header-content {
-    font-size: 1rem !important;
-    padding: 0.5rem 0 !important;
-  }
+  font-size: 0.9rem;
 }

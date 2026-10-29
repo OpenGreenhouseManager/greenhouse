@@ -17,16 +17,32 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  flex-shrink: 0; /* Don't shrink the header */
-}
+  gap: 0.5rem;
+  padding: 0.85rem 1rem 0;
+  flex-shrink: 0;
 
-.p-card-content {
-  padding: 0;
-  flex: 1; /* Take remaining space */
-  display: flex;
-  flex-direction: column;
+  .title {
+    width: 100%;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--grn-text);
+  }
+
+  i {
+    color: var(--grn-text-muted);
+  }
+
+  .action {
+    cursor: pointer;
+    padding: 0.35rem;
+    border-radius: var(--grn-radius-sm);
+
+    &:hover {
+      background: var(--grn-surface-soft);
+      color: var(--grn-primary);
+    }
+  }
 }
 
 .content {
