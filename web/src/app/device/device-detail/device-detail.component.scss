@@ -4,6 +4,7 @@ main {
     display: flex;
     justify-content: space-between;
     flex-direction: row;
+    align-items: center;
     font-size: calc(1.375rem + 1.5vw);
 
     margin-bottom: 0.67em;
@@ -19,7 +20,7 @@ main {
       align-items: baseline;
       gap: 0.5rem;
 
-      p-button {
+      .p-button {
         align-self: center;
         display: flex;
       }

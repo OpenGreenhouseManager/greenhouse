@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
   ConfigResponseDto,
@@ -12,9 +12,7 @@ import type {
 } from '../../dtos/device';
 import { device } from '../../urls/urls';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class DeviceService {
   private http = inject(HttpClient);
 
@@ -64,29 +62,24 @@ export class DeviceService {
     });
   }
 
-  registerDevice(deviceId: string): void {
-    this.http
-      .put<DeviceResponseDto>(
-        `${device}/${deviceId}/activate`,
-        {},
-        { withCredentials: true }
-      )
-      .subscribe({
-        next: () => {},
-        error: () => {},
-      });
+  registerDevice(deviceId: string): Observable<DeviceResponseDto> {
+    return this.http.put<DeviceResponseDto>(
+      `${device}/${deviceId}/activate`,
+      {},
+      { withCredentials: true }
+    );
   }
 
   updateDeviceAdditionalConfig(
     deviceId: string,
     additionalConfig: unknown
   ): Observable<string> {
-    return this.http.put<string>(
+    return this.http.put(
       `${device}/${deviceId}/config`,
       { additional_config: additionalConfig },
       {
         withCredentials: true,
-        responseType: 'text' as unknown as 'json',
+        responseType: 'text',
       }
     );
   }

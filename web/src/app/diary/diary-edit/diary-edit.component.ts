@@ -1,11 +1,10 @@
 import { Location } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
-import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { CardComponent } from '../../card/card.component';
@@ -15,14 +14,12 @@ import { DiaryService } from '../services/diary-service';
 
 @Component({
   selector: 'grn-diary-edit',
-  standalone: true,
   imports: [
     NavBarComponent,
     CardComponent,
-    FormsModule,
+    FormField,
     InputTextModule,
-    ButtonModule,
-    InputGroupModule,
+    ButtonDirective,
     TextareaModule,
     DatePicker,
   ],
@@ -37,9 +34,11 @@ export class DiaryEditComponent {
 
   private id = this.route.snapshot.paramMap.get('id');
   edit = computed(() => this.id !== null);
-  diary = toSignal(this.diaryService.getDiary(this.id), {
+  private loadedDiary = toSignal(this.diaryService.getDiary(this.id), {
     initialValue: new Diary(new Date(), '', '', new Date(), new Date()),
   });
+  private diary = linkedSignal(() => this.loadedDiary());
+  diaryForm = form(this.diary);
 
   goBack() {
     this.location.back();

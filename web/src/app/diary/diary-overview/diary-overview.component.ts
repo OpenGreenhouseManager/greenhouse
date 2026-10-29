@@ -1,7 +1,6 @@
-import { CommonModule } from '@angular/common';
+import { KeyValuePipe } from '@angular/common';
 import type { OnInit } from '@angular/core';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   addDays,
@@ -11,10 +10,7 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
-import { ButtonModule } from 'primeng/button';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
+import { ButtonDirective } from 'primeng/button';
 import { CardComponent } from '../../card/card.component';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import type { Diary } from '../models/diary';
@@ -22,17 +18,7 @@ import { DiaryService } from '../services/diary-service';
 
 @Component({
   selector: 'grn-diary-overview',
-  standalone: true,
-  imports: [
-    NavBarComponent,
-    CommonModule,
-    CardComponent,
-    FormsModule,
-    InputTextModule,
-    ButtonModule,
-    InputGroupModule,
-    InputGroupAddonModule,
-  ],
+  imports: [NavBarComponent, CardComponent, ButtonDirective, KeyValuePipe],
   templateUrl: './diary-overview.component.html',
   styleUrl: './diary-overview.component.scss',
 })
@@ -91,7 +77,7 @@ export class DiaryOverviewComponent implements OnInit {
       });
   }
 
-  diaryClicked(diaryId: string | undefined) {
+  diaryClicked(diaryId: string) {
     this.router.navigate(['/diary', diaryId]);
   }
 }

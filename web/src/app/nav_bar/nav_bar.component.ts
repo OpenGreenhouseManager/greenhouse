@@ -1,11 +1,10 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'grn-nav-bar',
-  standalone: true,
-  imports: [RouterModule],
+  imports: [RouterLink],
   templateUrl: './nav_bar.component.html',
   styleUrl: './nav_bar.component.scss',
 })

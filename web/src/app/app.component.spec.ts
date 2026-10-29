@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import '@angular/localize/init';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {

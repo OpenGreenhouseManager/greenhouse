@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { formatISO, parseISO } from 'date-fns';
 import { map, Observable } from 'rxjs';
 import type {
@@ -11,9 +11,7 @@ import type {
 import { diary } from '../../urls/urls';
 import { Diary } from '../models/diary';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class DiaryService {
   private http = inject(HttpClient);
 

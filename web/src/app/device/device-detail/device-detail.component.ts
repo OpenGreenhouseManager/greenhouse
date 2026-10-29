@@ -5,12 +5,19 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TextareaModule } from 'primeng/textarea';
-import { catchError, combineLatest, forkJoin, of, switchMap } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  finalize,
+  forkJoin,
+  of,
+  switchMap,
+} from 'rxjs';
 import { CardComponent } from '../../card/card.component';
 import type { ConfigResponseDto, DeviceResponseDto } from '../../dtos/device';
 import { DeviceStatusDto, Mode, Type } from '../../dtos/device';
@@ -21,8 +28,7 @@ import { GraphComponent } from '../../shared/graph/graph.component';
 import { DeviceService } from '../services/device-service';
 
 @Component({
-  selector: 'app-device-detail',
-  standalone: true,
+  selector: 'grn-device-detail',
   imports: [
     CardComponent,
     ProgressSpinnerModule,
@@ -30,7 +36,7 @@ import { DeviceService } from '../services/device-service';
     NavBarComponent,
     FormsModule,
     NgxJsonViewerModule,
-    ButtonModule,
+    ButtonDirective,
     Dialog,
     TextareaModule,
     GraphComponent,
@@ -151,12 +157,13 @@ export class DeviceDetailComponent implements OnInit {
       ),
     }).subscribe({
       next: result => {
-        this.device.set(result.device);
+        this.device.set(
+          result.device && {
+            ...result.device,
+            status: result.status?.status ?? DeviceStatusDto.Offline,
+          }
+        );
         this.deviceConfig.set(result.config);
-        const device = this.device();
-        if (device) {
-          device.status = result.status?.status ?? DeviceStatusDto.Offline;
-        }
         this.dataSourceId.set(result.status?.datasource_id || null);
         this.loading.set(false);
 
@@ -210,26 +217,28 @@ export class DeviceDetailComponent implements OnInit {
   }
 
   registerDevice(): void {
-    if (this.device()) {
-      this.deviceService.registerDevice(this.device()!.id);
-      this.loadingActivation.set(true);
-      setTimeout(() => {
-        this.deviceService.getDeviceConfig(this.device()!.id).subscribe({
-          next: response => {
-            const config = this.deviceConfig();
-            if (!config) {
-              return;
-            }
-            config.scripting_api = response.scripting_api;
-            this.deviceConfig.set(config);
-            this.loadingActivation.set(true);
-          },
-          error: () => {
-            this.loadingActivation.set(false);
-          },
-        });
-      }, 1000);
+    const device = this.device();
+    if (!device) {
+      return;
     }
+    this.loadingActivation.set(true);
+    this.deviceService
+      .registerDevice(device.id)
+      .pipe(
+        switchMap(() => this.deviceService.getDeviceConfig(device.id)),
+        finalize(() => this.loadingActivation.set(false))
+      )
+      .subscribe({
+        next: response => {
+          // set a new object: a same-reference set() does not notify
+          this.deviceConfig.update(config =>
+            config
+              ? { ...config, scripting_api: response.scripting_api }
+              : config
+          );
+        },
+        error: () => {},
+      });
   }
 
   openEditAdditionalConfig(): void {
@@ -302,11 +311,14 @@ export class DeviceDetailComponent implements OnInit {
       .subscribe({
         next: () => {
           // update local state and close dialog
-          const cfg = this.deviceConfig();
-          if (cfg) {
-            cfg.additional_config = parsed as Record<string, unknown>;
-            this.deviceConfig.set({ ...cfg });
-          }
+          this.deviceConfig.update(cfg =>
+            cfg
+              ? {
+                  ...cfg,
+                  additional_config: parsed as Record<string, unknown>,
+                }
+              : cfg
+          );
           this.saveConfigLoading.set(false);
           this.editAdditionalConfigVisible.set(false);
         },

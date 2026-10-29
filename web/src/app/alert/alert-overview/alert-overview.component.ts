@@ -1,9 +1,10 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { endOfDay, startOfDay, subDays, subHours } from 'date-fns';
 import type { SortEvent } from 'primeng/api';
-import { Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
@@ -16,17 +17,16 @@ import { AlertService } from '../services/alert-service';
 
 @Component({
   selector: 'grn-alert-overview',
-  standalone: true,
   imports: [
     TableModule,
     FormsModule,
     Select,
     NavBarComponent,
-    Button,
+    ButtonDirective,
     SeverityTagComponent,
   ],
   templateUrl: './alert-overview.component.html',
-  styleUrls: ['./alert-overview.component.scss'],
+  styleUrl: './alert-overview.component.scss',
 })
 export class AlertOverviewComponent {
   private router = inject(Router);
@@ -35,21 +35,22 @@ export class AlertOverviewComponent {
 
   Severity = Severity;
 
-  alerts = signal<AggregatedAlert[]>([]);
-  alerts_effect = effect(() => {
-    this.alertService
-      .getAlerts(
+  private alertsResource = rxResource({
+    params: () => this.selectedInterval(),
+    stream: ({ params: interval }) =>
+      this.alertService.getAlerts(
         this.intervalToDate(
           AlertInterval[
-            this.selectedInterval()?.value as keyof typeof AlertInterval
+            interval?.value as keyof typeof AlertInterval
           ] as AlertInterval
         ),
         endOfDay(new Date())
-      )
-      .subscribe(value => {
-        this.alerts.set(value);
-      });
+      ),
+    defaultValue: [],
   });
+  alerts = computed<AggregatedAlert[]>(() =>
+    this.alertsResource.hasValue() ? this.alertsResource.value() : []
+  );
   intervals = Object.keys(AlertInterval)
     .filter(key => isNaN(Number(key)))
     .map(key => ({
@@ -106,7 +107,7 @@ export class AlertOverviewComponent {
   }
 
   searchForAlias(identifier: string): string | null {
-    return this.alertAliasService.getAliasSync(identifier);
+    return this.alertAliasService.getAlias(identifier);
   }
 
   editAlias(event: MouseEvent, identifier: string) {

@@ -1,12 +1,10 @@
-<grn-nav-bar></grn-nav-bar>
+<grn-nav-bar />
 <main>
   <div class="heading">
     <div class="heading-left">
-      <p-button
-        type="button"
-        (click)="goBack()"
-        icon="pi pi-arrow-left"
-        styleClass="p-button-text"></p-button>
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
       @if (edit()) {
         <h1>Edit Device</h1>
       } @else {
@@ -26,7 +24,7 @@
                   pInputText
                   type="text"
                   id="Name"
-                  [(ngModel)]="device().name" />
+                  [formField]="deviceForm.name" />
               </div>
               <div class="editGroup">
                 <label for="Description">Description</label>
@@ -34,7 +32,7 @@
                   pTextarea
                   [autoResize]="true"
                   id="Description"
-                  [(ngModel)]="device().description"></textarea>
+                  [formField]="deviceForm.description"></textarea>
               </div>
               <div class="editGroup">
                 <label for="Address">Address</label>
@@ -42,31 +40,31 @@
                   pInputText
                   type="text"
                   id="Address"
-                  [(ngModel)]="device().address" />
+                  [formField]="deviceForm.address" />
               </div>
               <div class="editGroup">
                 <label for="CanScript">Can Script</label>
                 <p-checkbox
                   id="CanScript"
-                  [(ngModel)]="device().can_script"
+                  [formField]="deviceForm.can_script"
                   [binary]="true"
-                  inputId="CanScript"></p-checkbox>
+                  inputId="CanScript" />
               </div>
               <div class="editGroup">
                 <label for="scraping">scraping</label>
                 <p-checkbox
                   id="scraping"
-                  [(ngModel)]="device().scraping"
+                  [formField]="deviceForm.scraping"
                   [binary]="true"
-                  inputId="scraping"></p-checkbox>
+                  inputId="scraping" />
               </div>
             </div>
           </div>
         </div>
       </grn-card>
-      <p-button type="button" (click)="saveDevice()">
+      <button pButton type="button" (click)="saveDevice()">
         <i class="pi pi-save"></i><span class="button_label">Save</span>
-      </p-button>
+      </button>
     </div>
   </div>
 </main>

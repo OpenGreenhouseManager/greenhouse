@@ -48,6 +48,9 @@ stdenv.mkDerivation {
     NG_CLI_ANALYTICS = "false";
     CI = "true";
     HUSKY = "0";
+    # sass-embedded ships a prebuilt Dart binary that cannot run in the Nix
+    # sandbox; fall back to the pure-JS sass compiler.
+    NG_BUILD_SASS_EMBEDDED = "0";
   };
 
   buildPhase = ''
@@ -71,9 +74,9 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  # The single de-DE locale is built flat (`"subPath": ""` in angular.json), so
+  # The single de locale is built flat (`"subPath": ""` in angular.json), so
   # the app is served from `/`. Fail loudly if Angular ever reverts to a
-  # per-locale directory: serving under /de-DE/ breaks the auth cookie handling.
+  # per-locale directory: serving under a locale path breaks the auth cookie handling.
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck

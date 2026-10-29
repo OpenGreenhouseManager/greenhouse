@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:24-bullseye-slim as builder
+FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS builder
 
 ARG API_BASE_URL
 ARG ANGULAR_CONFIGURATION=staging
@@ -7,15 +7,13 @@ ENV env=${ANGULAR_CONFIGURATION}
 RUN mkdir /greenhouse_web
 WORKDIR /greenhouse_web
 
-RUN npm install -g @angular/cli@21
-
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-CMD ng serve --host 0.0.0.0 --configuration "$env"
+CMD ["sh", "-c", "npx ng serve --host 0.0.0.0 --configuration \"$env\""]
 
-FROM builder as dev-envs
+FROM builder AS dev-envs
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git
@@ -28,4 +26,4 @@ usermod -aG docker vscode
 COPY --from=builder / /
 EXPOSE 4200
 
-CMD ng serve --host 0.0.0.0 --configuration "$env"
+CMD ["sh", "-c", "npx ng serve --host 0.0.0.0 --configuration \"$env\""]

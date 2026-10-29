@@ -32,7 +32,14 @@
     </div>
     <div class="line fix-to-bottom">
       <span class="icon"><i class="pi pi-sign-out"></i></span>
-      <span class="text" (click)="signOut()">Logout</span>
+      <span
+        class="text"
+        role="button"
+        tabindex="0"
+        (click)="signOut()"
+        (keydown.enter)="signOut()">
+        Logout
+      </span>
     </div>
   </div>
 </main>

@@ -1,7 +1,6 @@
 import {
   Component,
   computed,
-  effect,
   inject,
   input,
   output,
@@ -16,7 +15,6 @@ import type { DeviceResponseDto } from '../dtos/device';
 
 @Component({
   selector: 'grn-single-data-form',
-  standalone: true,
   imports: [AutoComplete, FormsModule],
   host: {
     class: 'flex gap-2',
@@ -52,7 +50,8 @@ import type { DeviceResponseDto } from '../dtos/device';
         class="w-full"
         [suggestions]="subPropertySuggestions()"
         (completeMethod)="onSubPropertyQuery($event)"
-        [(ngModel)]="subProperty"
+        [ngModel]="subProperty()"
+        (ngModelChange)="onSubPropertyChange($event)"
         [optionLabel]="'display'"
         [optionValue]="'value'"
         placeholder="Select Sub Property"
@@ -106,15 +105,23 @@ export class SingleDataFormComponent {
     return input !== '';
   });
 
-  constructor() {
-    effect(() => {
-      if (this.validDeviceId() && this.subProperty()?.trim() !== '') {
-        this.selectedDevice.emit({
-          deviceId: this.deviceId(),
-          subProperty: this.subProperty(),
-        });
-      }
-    });
+  private setDeviceId(deviceId: string) {
+    this.deviceId.set(deviceId);
+    this.emitSelection();
+  }
+
+  onSubPropertyChange(subProperty: string) {
+    this.subProperty.set(subProperty);
+    this.emitSelection();
+  }
+
+  private emitSelection() {
+    if (this.validDeviceId() && this.subProperty()?.trim() !== '') {
+      this.selectedDevice.emit({
+        deviceId: this.deviceId(),
+        subProperty: this.subProperty(),
+      });
+    }
   }
 
   onDeviceQuery(event: { query: string }) {
@@ -133,7 +140,7 @@ export class SingleDataFormComponent {
   onDeviceSelect(event: { value: DeviceResponseDto }) {
     const d = event?.value;
     if (d?.id) {
-      this.deviceId.set(d.id);
+      this.setDeviceId(d.id);
     }
   }
 
@@ -141,14 +148,14 @@ export class SingleDataFormComponent {
     // If user selected an option, it may be an object
     if (value && typeof value === 'object' && 'id' in value) {
       const selected = value as DeviceResponseDto;
-      this.deviceId.set(selected.id);
+      this.setDeviceId(selected.id);
       return;
     }
     const str = (value as string) || '';
     const trimmed = str.trim();
     // Accept any non-empty id input
     if (trimmed !== '') {
-      this.deviceId.set(trimmed);
+      this.setDeviceId(trimmed);
     }
   }
 

@@ -3,10 +3,12 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputPassword } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
 import { CardComponent } from '../card/card.component';
 import type { LoginResponseDto } from '../dtos/login';
 import { LoginRequestDto } from '../dtos/login';
@@ -14,13 +16,14 @@ import { login } from '../urls/urls';
 
 @Component({
   selector: 'grn-login',
-  standalone: true,
   imports: [
     CardComponent,
     FormsModule,
     InputTextModule,
-    PasswordModule,
-    ButtonModule,
+    InputPassword,
+    IconField,
+    InputIcon,
+    ButtonDirective,
     DialogModule,
   ],
   templateUrl: './login.component.html',
@@ -28,7 +31,8 @@ import { login } from '../urls/urls';
 })
 export class LoginComponent {
   username = '';
-  password = '';
+  password = signal('');
+  passwordMasked = signal(true);
   public error = signal(false);
   public showGuestDialog = signal(false);
 
@@ -69,7 +73,7 @@ export class LoginComponent {
     this.http
       .post<LoginResponseDto>(
         login,
-        new LoginRequestDto(this.username, this.password),
+        new LoginRequestDto(this.username, this.password()),
         {
           withCredentials: true,
         }
@@ -89,7 +93,7 @@ export class LoginComponent {
           }
         },
         error: () => {
-          this.password = '';
+          this.password.set('');
           this.error.set(true);
         },
       });

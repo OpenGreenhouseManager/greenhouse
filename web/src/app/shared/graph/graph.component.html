@@ -24,10 +24,7 @@
       <p-progress-spinner ariaLabel="loading" class="chartMessage" />
     }
     @if (error()) {
-      <p-message
-        severity="error"
-        [text]="error()!"
-        class="chartMessage"></p-message>
+      <p-message severity="error" class="chartMessage">{{ error() }}</p-message>
     }
   </div>
 </grn-card>

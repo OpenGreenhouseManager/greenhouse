@@ -8,7 +8,7 @@ import { Severity } from '../../alert/models/alert';
   template: `
     <p-tag
       [value]="severityString()"
-      [style]="{ backgroundColor: severityBackground() }"></p-tag>
+      [style]="{ backgroundColor: severityBackground() }" />
   `,
 })
 export class SeverityTagComponent {

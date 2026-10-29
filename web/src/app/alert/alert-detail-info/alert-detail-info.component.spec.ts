@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AlertDetailInfoComponent } from './alert-detail-info.component';
 import { provideHttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 describe('AlertDetailInfoComponent', () => {
   let component: AlertDetailInfoComponent;
@@ -11,8 +11,8 @@ describe('AlertDetailInfoComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AlertDetailInfoComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient()],
+      imports: [AlertDetailInfoComponent],
+      providers: [provideRouter([]), provideHttpClient()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AlertDetailInfoComponent);

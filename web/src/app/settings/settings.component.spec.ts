@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { SettingsComponent } from './settings.component';
 import { provideHttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 describe('SettingsComponent', () => {
   let component: SettingsComponent;
@@ -11,8 +11,8 @@ describe('SettingsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SettingsComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient()],
+      imports: [SettingsComponent],
+      providers: [provideRouter([]), provideHttpClient()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsComponent);

@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type { SortEvent } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { forkJoin, of } from 'rxjs';
@@ -16,12 +16,11 @@ import { DeviceService } from '../services/device-service';
 
 @Component({
   selector: 'grn-device-overview',
-  standalone: true,
   imports: [
     InputTextModule,
     FormsModule,
     TableModule,
-    ButtonModule,
+    ButtonDirective,
     NavBarComponent,
   ],
   templateUrl: './device-overview.component.html',

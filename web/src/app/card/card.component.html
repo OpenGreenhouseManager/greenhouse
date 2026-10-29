@@ -5,20 +5,30 @@
       backgroundColor: 'var(--grn-card-color)',
       borderRadius: '10px',
     }">
-    <ng-template pTemplate="header">
+    <ng-template #header>
       <div class="header p-1">
         <h1 class="w-full text-2xl {{ centerTitle() ? 'text-center' : '' }}">
           {{ title() }}
         </h1>
-        <i
-          [class]="icon_class()"
-          class="gridster-item-content"
-          (click)="iconClicked.emit()"></i>
+        @if (icon() && decorativeIcon()) {
+          <i
+            [class]="icon_class()"
+            class="gridster-item-content"
+            aria-hidden="true"></i>
+        } @else if (icon()) {
+          <i
+            [class]="icon_class()"
+            class="gridster-item-content"
+            role="button"
+            tabindex="0"
+            (click)="iconClicked.emit()"
+            (keydown.enter)="iconClicked.emit()"></i>
+        }
       </div>
     </ng-template>
-    <ng-template pTemplate="content">
+    <ng-template #content>
       <div class="content gridster-item-content p-1">
-        <ng-content styleClass="card-content"></ng-content>
+        <ng-content />
       </div>
     </ng-template>
   </p-card>

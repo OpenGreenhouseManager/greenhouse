@@ -1,12 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { UserPreferencesDto } from '../dtos/user-preferences';
 import { userPreferences } from '../urls/urls';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class UserPreferencesService {
   private http = inject(HttpClient);
 

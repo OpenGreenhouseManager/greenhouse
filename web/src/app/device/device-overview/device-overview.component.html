@@ -1,12 +1,10 @@
-<grn-nav-bar></grn-nav-bar>
+<grn-nav-bar />
 <main>
   <div class="heading">
     <h1>Smart Devices</h1>
-    <p-button
-      label="Add New Device"
-      icon="pi pi-plus"
-      (onClick)="addNewDevice()"
-      class="add-button" />
+    <button pButton type="button" class="add-button" (click)="addNewDevice()">
+      <i class="pi pi-plus"></i>Add New Device
+    </button>
   </div>
   <div class="content">
     <div class="controls">
@@ -28,35 +26,35 @@
       (sortFunction)="customSort($event)"
       [tableStyle]="{ width: '100%', height: '100%' }"
       [loading]="loading()">
-      <ng-template pTemplate="header">
+      <ng-template #header>
         <tr>
           <th pSortableColumn="status" style="width: 8rem">
             <div class="flex justify-between items-center">
               Status
-              <p-sortIcon field="status" />
+              <p-sort-icon field="status" />
             </div>
           </th>
           <th pSortableColumn="name" style="width: 20rem">
             <div class="flex justify-between items-center">
               Name
-              <p-sortIcon field="name" />
+              <p-sort-icon field="name" />
             </div>
           </th>
           <th style="width: 25rem">
             <div class="flex justify-between items-center">
               Address
-              <p-sortIcon field="address" />
+              <p-sort-icon field="address" />
             </div>
           </th>
           <th style="width: 30rem">
             <div class="flex justify-between items-center">
               Description
-              <p-sortIcon field="description" />
+              <p-sort-icon field="description" />
             </div>
           </th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-device>
+      <ng-template #body let-device>
         <tr
           class="clickable-row"
           (click)="navigateToDeviceDetail(device)"
@@ -79,7 +77,7 @@
           <td>{{ device.description }}</td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
+      <ng-template #emptymessage>
         <tr>
           <td colspan="4">
             <div class="empty-message">

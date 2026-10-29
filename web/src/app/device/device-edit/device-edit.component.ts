@@ -1,11 +1,10 @@
 import { Location } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { map, of } from 'rxjs';
@@ -16,14 +15,12 @@ import { DeviceService } from '../services/device-service';
 
 @Component({
   selector: 'grn-device-edit',
-  standalone: true,
   imports: [
     NavBarComponent,
     CardComponent,
-    FormsModule,
+    FormField,
     InputTextModule,
-    ButtonModule,
-    InputGroupModule,
+    ButtonDirective,
     TextareaModule,
     CheckboxModule,
   ],
@@ -40,7 +37,7 @@ export class DeviceEditComponent {
   edit = computed(() => this.id !== null);
 
   // Create a reactive device object for editing
-  device = toSignal(
+  private loadedDevice = toSignal(
     this.edit()
       ? this.deviceService
           .getDeviceById(this.id ?? '')
@@ -61,6 +58,8 @@ export class DeviceEditComponent {
       initialValue: new Device(),
     }
   );
+  private device = linkedSignal(() => this.loadedDevice());
+  deviceForm = form(this.device);
 
   goBack() {
     this.location.back();

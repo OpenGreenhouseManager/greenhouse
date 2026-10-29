@@ -11,71 +11,70 @@
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <p-password
-          id="password"
-          [(ngModel)]="password"
-          [toggleMask]="true"
-          inputStyleClass="w-full"
-          [style]="{ width: '100%' }"
-          [inputStyle]="{ width: '100%' }">
-          <ng-template pTemplate="header">
-            <h6>Pick a password</h6>
-          </ng-template>
-          <ng-template pTemplate="footer">
-            <p-divider />
-            <p class="mt-2">Suggestions</p>
-            <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-              <li>At least one lowercase</li>
-              <li>At least one uppercase</li>
-              <li>At least one numeric</li>
-              <li>Minimum 8 characters</li>
-            </ul>
-          </ng-template>
-        </p-password>
+        <p-iconfield iconPosition="right">
+          <input
+            id="password"
+            pInputPassword
+            fluid
+            aria-describedby="password-hint"
+            [(mask)]="passwordMasked"
+            [(ngModel)]="password" />
+          <p-inputicon
+            class="cursor-pointer"
+            [class]="passwordMasked() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              passwordMasked() ? 'Show password' : 'Hide password'
+            "
+            (click)="passwordMasked.set(!passwordMasked())"
+            (keydown.enter)="passwordMasked.set(!passwordMasked())" />
+        </p-iconfield>
+        <small id="password-hint">
+          At least 8 characters, including a number and one of !@#$%^&amp;*.
+          Only letters (a–z, A–Z), digits and those symbols are allowed.
+        </small>
       </div>
       <div class="form-group">
-        <label for="password">Password</label>
-        <p-password
-          id="password"
-          [(ngModel)]="passwordRepeat"
-          [toggleMask]="true"
-          inputStyleClass="w-full"
-          [style]="{ width: '100%' }"
-          [inputStyle]="{ width: '100%' }">
-          <ng-template pTemplate="header">
-            <h6>Pick a password</h6>
-          </ng-template>
-          <ng-template pTemplate="footer">
-            <p-divider />
-            <p class="mt-2">Suggestions</p>
-            <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-              <li>At least one lowercase</li>
-              <li>At least one uppercase</li>
-              <li>At least one numeric</li>
-              <li>Minimum 8 characters</li>
-            </ul>
-          </ng-template>
-        </p-password>
+        <label for="passwordRepeat">Repeat password</label>
+        <p-iconfield iconPosition="right">
+          <input
+            id="passwordRepeat"
+            pInputPassword
+            fluid
+            [(mask)]="passwordRepeatMasked"
+            [(ngModel)]="passwordRepeat" />
+          <p-inputicon
+            class="cursor-pointer"
+            [class]="passwordRepeatMasked() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              passwordRepeatMasked() ? 'Show password' : 'Hide password'
+            "
+            (click)="passwordRepeatMasked.set(!passwordRepeatMasked())"
+            (keydown.enter)="
+              passwordRepeatMasked.set(!passwordRepeatMasked())
+            " />
+        </p-iconfield>
       </div>
       @if (passwordError()) {
         <div class="form-group">
-          <label class="login-failed">Passwords do not match</label>
+          <span class="login-failed" role="alert">Passwords do not match</span>
         </div>
       }
       @if (error()) {
         <div class="form-group">
-          <label class="login-failed">Username already exists</label>
+          <span class="login-failed" role="alert">Username already exists</span>
         </div>
       }
       <div class="form-group">
-        <p-button
-          type="button"
-          label="Login instead"
-          [text]="true"
-          (click)="navLogin()" />
+        <button pButton type="button" text (click)="navLogin()">
+          Login instead
+        </button>
       </div>
       <div class="form-group register-button">
-        <p-button label="Register" (click)="register()" />
+        <button pButton type="button" (click)="register()">Register</button>
       </div>
     </div>
   </grn-card>

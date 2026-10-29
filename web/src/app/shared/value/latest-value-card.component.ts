@@ -12,7 +12,6 @@ type LatestValue = {
 
 @Component({
   selector: 'grn-latest-value-card',
-  standalone: true,
   imports: [CardComponent],
   templateUrl: './latest-value-card.component.html',
   styleUrl: './latest-value-card.component.scss',

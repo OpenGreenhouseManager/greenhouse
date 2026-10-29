@@ -1,26 +1,35 @@
-<grn-nav-bar></grn-nav-bar>
+<grn-nav-bar />
 <main>
   <h1>Settings</h1>
   <div class="content">
     <div class="content_left">
       <div
         class="list_item"
-        [ngClass]="{ selected: currentTab === settingsTabs.Dashboard }"
-        (click)="changeTab(settingsTabs.Dashboard)">
+        [class.selected]="currentTab === settingsTabs.Dashboard"
+        role="button"
+        tabindex="0"
+        (click)="changeTab(settingsTabs.Dashboard)"
+        (keydown.enter)="changeTab(settingsTabs.Dashboard)">
         <span class="text">Dashboard</span>
         <span class="icon"><i class="pi pi-chevron-right"></i></span>
       </div>
       <div
         class="list_item"
-        [ngClass]="{ selected: currentTab === settingsTabs.Watchdog }"
-        (click)="changeTab(settingsTabs.Watchdog)">
+        [class.selected]="currentTab === settingsTabs.Watchdog"
+        role="button"
+        tabindex="0"
+        (click)="changeTab(settingsTabs.Watchdog)"
+        (keydown.enter)="changeTab(settingsTabs.Watchdog)">
         <span class="text">Watchdog</span>
         <span class="icon"><i class="pi pi-chevron-right"></i></span>
       </div>
       <div
         class="list_item"
-        [ngClass]="{ selected: currentTab === settingsTabs.AdminSettings }"
-        (click)="changeTab(settingsTabs.AdminSettings)">
+        [class.selected]="currentTab === settingsTabs.AdminSettings"
+        role="button"
+        tabindex="0"
+        (click)="changeTab(settingsTabs.AdminSettings)"
+        (keydown.enter)="changeTab(settingsTabs.AdminSettings)">
         <span class="text">Admin Settings</span>
         <span class="icon"><i class="pi pi-chevron-right"></i></span>
       </div>
@@ -48,19 +57,21 @@
                   type="text"
                   pInputText
                   [(ngModel)]="otpUsername" />
-                <p-button type="button" (click)="RequestOtp()">
+                <button pButton type="button" (click)="RequestOtp()">
                   <span class="button_label">Request otp</span>
-                </p-button> </span
+                </button> </span
               ><span class="otp_output">
-                <p-inputGroup>
+                <p-input-group>
                   <input id="otp" type="text" pInputText [(ngModel)]="otp" />
-                  <p-button
+                  <button
+                    pButton
                     type="button"
-                    icon="pi pi-clipboard"
+                    iconOnly
                     (click)="copyToClipboard()"
-                    [severity]="!isCopied ? 'warn' : 'primary'">
-                  </p-button>
-                </p-inputGroup>
+                    [severity]="!isCopied() ? 'warn' : 'primary'">
+                    <i class="pi pi-clipboard"></i>
+                  </button>
+                </p-input-group>
               </span>
             </div>
           </div>

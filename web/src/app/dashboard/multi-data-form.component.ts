@@ -1,21 +1,30 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
-import { v4 as uuidv4 } from 'uuid';
 import type { DeviceResponseDto } from '../dtos/device';
 import { SingleDataFormComponent } from './single-data-form.component';
 
+type AxisMode = 'merged' | 'separate';
+type SeriesEntry = {
+  id: string;
+  data: {
+    deviceId: string;
+    subProperty: string;
+  };
+};
+
 @Component({
   selector: 'grn-multi-data-form',
-  standalone: true,
-  imports: [Select, Button, FormsModule, SingleDataFormComponent],
+  imports: [Select, ButtonDirective, FormsModule, SingleDataFormComponent],
   template: `
     <div class="flex items-center gap-4 mb-4">
-      <label class="font-semibold w-24">Axis Mode</label>
+      <label for="axisMode" class="font-semibold w-24">Axis Mode</label>
       <p-select
+        inputId="axisMode"
         [options]="axisModeOptions"
-        [(ngModel)]="axisMode"
+        [ngModel]="axisMode()"
+        (ngModelChange)="onAxisModeChange($event)"
         [appendTo]="'body'"
         class="w-full" />
     </div>
@@ -28,77 +37,75 @@ import { SingleDataFormComponent } from './single-data-form.component';
             [compact]="true"
             (selectedDevice)="updateForm(entry.id, $event)"
             class="w-full" />
-          <p-button
-            icon="pi pi-trash"
+          <button
+            pButton
+            type="button"
             severity="danger"
+            iconOnly
             (click)="removeData(entry.id)"
-            [disabled]="multiData().length <= 1" />
+            [disabled]="multiData().length <= 1">
+            <i class="pi pi-trash"></i>
+          </button>
         </div>
       }
     </div>
   `,
 })
 export class MultiDataFormComponent {
-  axisMode: 'merged' | 'separate' = 'merged';
-  axisModeOptions: ('merged' | 'separate')[] = ['merged', 'separate'];
+  axisMode = signal<AxisMode>('merged');
+  axisModeOptions: AxisMode[] = ['merged', 'separate'];
 
   devices = input.required<DeviceResponseDto[]>();
 
   selectedDevices = output<{
-    axisMode: 'merged' | 'separate';
+    axisMode: AxisMode;
     graphs: {
       deviceId: string;
       subProperty: string;
     }[];
   }>();
 
-  multiData = signal<
-    {
-      id: string;
-      data: {
-        deviceId: string;
-        subProperty: string;
-      };
-    }[]
-  >([{ id: uuidv4(), data: { deviceId: '', subProperty: '' } }]);
+  multiData = signal<SeriesEntry[]>([emptyEntry()]);
 
-  constructor() {
-    effect(() => {
-      const data = this.multiData();
-      if (!data) {
-        return;
-      }
-      this.selectedDevices.emit({
-        axisMode: this.axisMode,
-        graphs: data
-          .map(entry => entry.data)
-          .filter(data => data.deviceId !== '' && data.subProperty !== ''),
-      });
-      if (
-        data
-          .map(entry => entry.data)
-          .filter(data => data.deviceId === '' && data.subProperty === '')
-          .length === 0
-      ) {
-        this.addData();
-      }
-    });
+  onAxisModeChange(axisMode: AxisMode) {
+    this.axisMode.set(axisMode);
+    this.emitSelection();
   }
 
   updateForm(id: string, data: { deviceId: string; subProperty: string }) {
-    this.multiData.update(prev =>
-      prev.map(entry => (entry.id === id ? { ...entry, data } : entry))
+    this.setEntries(
+      this.multiData().map(entry =>
+        entry.id === id ? { ...entry, data } : entry
+      )
     );
   }
 
   removeData(id: string) {
-    this.multiData.update(prev => prev.filter(entry => entry.id !== id));
+    this.setEntries(this.multiData().filter(entry => entry.id !== id));
   }
 
-  addData() {
-    this.multiData.update(prev => [
-      ...prev,
-      { id: uuidv4(), data: { deviceId: '', subProperty: '' } },
-    ]);
+  // Keeps exactly one trailing empty row to type the next series into
+  private setEntries(entries: SeriesEntry[]) {
+    const hasEmptyRow = entries.some(
+      entry => entry.data.deviceId === '' && entry.data.subProperty === ''
+    );
+    this.multiData.set(hasEmptyRow ? entries : [...entries, emptyEntry()]);
+    this.emitSelection();
   }
+
+  private emitSelection() {
+    this.selectedDevices.emit({
+      axisMode: this.axisMode(),
+      graphs: this.multiData()
+        .map(entry => entry.data)
+        .filter(data => data.deviceId !== '' && data.subProperty !== ''),
+    });
+  }
+}
+
+function emptyEntry(): SeriesEntry {
+  return {
+    id: crypto.randomUUID(),
+    data: { deviceId: '', subProperty: '' },
+  };
 }

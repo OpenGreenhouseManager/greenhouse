@@ -7,7 +7,10 @@
       "i18n": {
         "sourceLocale": "en-US",
         "locales": {
-          "de-DE": { "translation": "src/locale/messages.de-DE.json", "subPath": "" }
+          "de": {
+            "translation": "src/locale/messages.de-DE.json",
+            "subPath": ""
+          }
         }
       },
       "projectType": "application",
@@ -24,10 +27,11 @@
           "builder": "@angular/build:application",
           "options": {
             "i18nMissingTranslation": "error",
-            "localize": ["de-DE"],
+            "localize": ["de"],
             "outputPath": "dist/greenhouse_web",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "polyfills": ["@angular/localize/init"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
@@ -115,7 +119,7 @@
     }
   },
   "cli": {
-    "schematicCollections": ["@angular-eslint/schematics"],
+    "schematicCollections": ["angular-eslint"],
     "analytics": false
   },
   "schematics": {

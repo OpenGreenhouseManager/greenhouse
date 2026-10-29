@@ -1,6 +1,6 @@
 import type { HttpParams } from '@angular/common/http';
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { map } from 'rxjs';
 import type { AlertsAggrigatedDto } from '../../dtos/alert/aggrigated-alert';
@@ -12,9 +12,7 @@ import type { AggregatedAlert } from '../models/aggregated-alert';
 import type { Alert } from '../models/alert';
 import { Severity } from '../models/alert';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AlertService {
   private http = inject(HttpClient);
 

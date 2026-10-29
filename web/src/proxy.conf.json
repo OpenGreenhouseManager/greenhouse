@@ -1,6 +1,6 @@
 {
   "/api/**": {
-    "target": "https://stag-grn.mauderer.work",
+    "target": "https://greenhouse.mauderer.work",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug",

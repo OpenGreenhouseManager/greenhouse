@@ -1,14 +1,5 @@
-import { isPlatformBrowser } from '@angular/common';
-import type { OnInit } from '@angular/core';
-import {
-  ChangeDetectorRef,
-  Component,
-  computed,
-  inject,
-  input,
-  PLATFORM_ID,
-} from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, input } from '@angular/core';
+import type { ChartData } from 'chart.js';
 import {
   addDays,
   endOfDay,
@@ -17,12 +8,7 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../../card/card.component';
 import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
 import type { Alert } from '../models/alert';
@@ -30,26 +16,12 @@ import { Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-info',
-  standalone: true,
-  imports: [
-    FormsModule,
-    InputTextModule,
-    ButtonModule,
-    InputGroupModule,
-    InputGroupAddonModule,
-    CardModule,
-    ChartModule,
-    CardComponent,
-  ],
+  imports: [ChartModule, CardComponent],
   templateUrl: './alert-detail-info.component.html',
   styleUrl: './alert-detail-info.component.scss',
 })
-export class AlertDetailInfoComponent implements OnInit {
-  private cd = inject(ChangeDetectorRef);
-
-  data: unknown;
+export class AlertDetailInfoComponent {
   options = barChartOptions;
-  platformId = inject(PLATFORM_ID);
 
   alerts = input.required<Alert[]>();
 
@@ -77,10 +49,6 @@ export class AlertDetailInfoComponent implements OnInit {
     return formatDistance(firstAlert.created_at, new Date());
   });
 
-  ngOnInit() {
-    this.initChart();
-  }
-
   getCount(severity: Severity, days: number): number[] {
     const data = [];
     for (
@@ -107,41 +75,37 @@ export class AlertDetailInfoComponent implements OnInit {
     return names;
   }
 
-  initChart() {
-    if (isPlatformBrowser(this.platformId)) {
-      const days = 8;
+  data = computed<ChartData<'bar'>>(() => {
+    const days = 8;
 
-      this.data = {
-        labels: this.relativeDayNames(days),
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Info',
-            backgroundColor: chartColors.info,
-            data: this.getCount(Severity.Info, days),
-          },
-          {
-            type: 'bar',
-            label: 'Warning',
-            backgroundColor: chartColors.warning,
-            data: this.getCount(Severity.Warning, days),
-          },
-          {
-            type: 'bar',
-            label: 'Error',
-            backgroundColor: chartColors.error,
-            data: this.getCount(Severity.Error, days),
-          },
-          {
-            type: 'bar',
-            label: 'Fatal',
-            backgroundColor: chartColors.fatal,
-            data: this.getCount(Severity.Fatal, days),
-          },
-        ],
-      };
-
-      this.cd.markForCheck();
-    }
-  }
+    return {
+      labels: this.relativeDayNames(days),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Info',
+          backgroundColor: chartColors.info,
+          data: this.getCount(Severity.Info, days),
+        },
+        {
+          type: 'bar',
+          label: 'Warning',
+          backgroundColor: chartColors.warning,
+          data: this.getCount(Severity.Warning, days),
+        },
+        {
+          type: 'bar',
+          label: 'Error',
+          backgroundColor: chartColors.error,
+          data: this.getCount(Severity.Error, days),
+        },
+        {
+          type: 'bar',
+          label: 'Fatal',
+          backgroundColor: chartColors.fatal,
+          data: this.getCount(Severity.Fatal, days),
+        },
+      ],
+    };
+  });
 }

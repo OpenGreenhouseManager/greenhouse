@@ -6,7 +6,6 @@ import { GraphService } from '../graph/graph.service';
 
 @Component({
   selector: 'grn-compass-card',
-  standalone: true,
   imports: [CardComponent],
   templateUrl: './compass-card.component.html',
   styleUrl: './compass-card.component.scss',

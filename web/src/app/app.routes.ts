@@ -1,6 +1,6 @@
 import type { Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
-import { AuthGuard } from './_guards/auth.guard';
+import { authGuard } from './_guards/auth.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { RegisterComponent } from './register/register.component';
 import { SettingsComponent } from './settings/settings.component';
@@ -21,73 +21,73 @@ export const routes: Routes = [
   {
     path: '',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'smart_devices',
     component: DeviceOverviewComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'smart_devices/add',
     component: DeviceEditComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'smart_devices/:id',
     component: DeviceDetailComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'smart_devices/:id/edit',
     component: DeviceEditComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'alerts',
     component: AlertOverviewComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
 
   {
     path: 'alert/:identifier/:data-source',
     component: AlertDetailComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'diary',
     component: DiaryOverviewComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'diary/add',
     component: DiaryEditComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'diary/:id',
     component: DiaryDetailComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'diary/:id/edit',
     component: DiaryEditComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'scripts',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'settings',
     component: SettingsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'logout',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
   },
 
   // otherwise redirect to home

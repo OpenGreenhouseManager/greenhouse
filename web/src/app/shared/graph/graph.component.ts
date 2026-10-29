@@ -33,7 +33,6 @@ const MAX_DATA_POINTS = 100;
 
 @Component({
   selector: 'grn-graph',
-  standalone: true,
   imports: [
     CardComponent,
     ChartModule,
@@ -321,6 +320,8 @@ export class GraphComponent {
 
           return { labels, datasets };
         })
-      )
+      ),
+    // p-chart never creates the chart if data is undefined on first render
+    { initialValue: { labels: [] as string[], datasets: [] } }
   );
 }

@@ -1,4 +1,4 @@
-<gridster [options]="options">
+<gridster [options]="options()">
   @for (item of dashboard(); track item.options.name) {
     <gridster-item [item]="item">
       @if (editMode()) {
@@ -11,32 +11,25 @@
       }
       @switch (item.type) {
         @case ('graph') {
-          <grn-graph
-            [config]="item.options"
-            [header]="item.options.name"></grn-graph>
+          <grn-graph [config]="item.options" [header]="item.options.name" />
         }
         @case ('multiGraph') {
-          <grn-graph
-            [config]="item.options"
-            [header]="item.options.name"></grn-graph>
+          <grn-graph [config]="item.options" [header]="item.options.name" />
         }
         @case ('alertList') {
-          <grn-alert-list
-            [dataSourceId]="item.options.dataSourceId"></grn-alert-list>
+          <grn-alert-list [dataSourceId]="item.options.dataSourceId" />
         }
         @case ('latestValue') {
           <grn-latest-value-card
             [header]="item.options.name"
             [deviceId]="item.options.deviceId"
-            [subProperty]="
-              item.options.subProperty || ''
-            "></grn-latest-value-card>
+            [subProperty]="item.options.subProperty || ''" />
         }
         @case ('compass') {
           <grn-compass-card
             [header]="item.options.name"
             [deviceId]="item.options.deviceId"
-            [subProperty]="item.options.subProperty || ''"></grn-compass-card>
+            [subProperty]="item.options.subProperty || ''" />
         }
       }
     </gridster-item>

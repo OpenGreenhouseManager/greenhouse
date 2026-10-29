@@ -12,7 +12,6 @@ import { AlertService } from './alert.service';
 
 @Component({
   selector: 'grn-alert-list',
-  standalone: true,
   imports: [CardComponent, AlertDetailListComponent, AccordionModule],
   templateUrl: './alert-list.component.html',
   styleUrl: './alert-list.component.scss',

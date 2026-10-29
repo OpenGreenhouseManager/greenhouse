@@ -1,12 +1,10 @@
-<grn-nav-bar></grn-nav-bar>
+<grn-nav-bar />
 <main>
   <div class="heading">
     <div class="heading-left">
-      <p-button
-        type="button"
-        (click)="goBack()"
-        icon="pi pi-arrow-left"
-        styleClass="p-button-text"></p-button>
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
       <h1>
         Alert {{ identifier }} from {{ display(dataSource || 'not found') }}
         @if (alias()) {
@@ -16,16 +14,17 @@
     </div>
   </div>
   <div class="alert-detail-container">
-    @if (!alerts()) {
+    @let loadedAlerts = alerts();
+    @if (loadedAlerts === null) {
       <div class="error">
-        <p-message severity="error" text="ERROR LOADING ALERTS"></p-message>
+        <p-message severity="error">ERROR LOADING ALERTS</p-message>
       </div>
-    } @else {
+    } @else if (loadedAlerts) {
       <div class="content">
-        <grn-alert-detail-list [alerts]="alerts()!"></grn-alert-detail-list>
+        <grn-alert-detail-list [alerts]="loadedAlerts" />
       </div>
       <div class="content">
-        <grn-alert-detail-info [alerts]="alerts()!"></grn-alert-detail-info>
+        <grn-alert-detail-info [alerts]="loadedAlerts" />
       </div>
     }
   </div>

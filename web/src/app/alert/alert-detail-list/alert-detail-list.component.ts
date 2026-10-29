@@ -1,11 +1,7 @@
-import { CommonModule } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { SortEvent } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
@@ -14,17 +10,12 @@ import { Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-list',
-  standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
-    InputTextModule,
-    ButtonModule,
-    InputGroupModule,
-    InputGroupAddonModule,
     TableModule,
     SelectModule,
     SeverityTagComponent,
+    JsonPipe,
   ],
   templateUrl: './alert-detail-list.component.html',
   styleUrl: './alert-detail-list.component.scss',

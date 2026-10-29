@@ -12,30 +12,40 @@
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <p-password
-          id="password"
-          [(ngModel)]="password"
-          [feedback]="false"
-          [toggleMask]="true"
-          inputStyleClass="w-full"
-          [style]="{ width: '100%' }"
-          [inputStyle]="{ width: '100%' }"
-          (keyup.enter)="login()" />
+        <p-iconfield iconPosition="right">
+          <input
+            id="password"
+            pInputPassword
+            fluid
+            [(mask)]="passwordMasked"
+            [(ngModel)]="password"
+            (keyup.enter)="login()" />
+          <p-inputicon
+            class="cursor-pointer"
+            [class]="passwordMasked() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              passwordMasked() ? 'Show password' : 'Hide password'
+            "
+            (click)="passwordMasked.set(!passwordMasked())"
+            (keydown.enter)="passwordMasked.set(!passwordMasked())" />
+        </p-iconfield>
       </div>
       @if (error()) {
         <div class="form-group">
-          <label class="login-failed">Password or username wrong</label>
+          <span class="login-failed" role="alert"
+            >Password or username wrong</span
+          >
         </div>
       }
       <div class="form-group">
-        <p-button
-          type="button"
-          label="Register instead"
-          [text]="true"
-          (click)="navRegister()" />
+        <button pButton type="button" text (click)="navRegister()">
+          Register instead
+        </button>
       </div>
       <div class="form-group login-button">
-        <p-button label="Login" (click)="login()" />
+        <button pButton type="button" (click)="login()">Login</button>
       </div>
     </div>
   </grn-card>
@@ -54,9 +64,10 @@
       This is a guest account. You can use it to browse the website. You can't
       change data.
     </p>
-    <ng-template pTemplate="footer">
-      <p-button label="OK" icon="pi pi-check" (click)="onGuestDialogClose()">
-      </p-button>
+    <ng-template #footer>
+      <button pButton type="button" (click)="onGuestDialogClose()">
+        <i class="pi pi-check"></i>OK
+      </button>
     </ng-template>
   </p-dialog>
 </main>

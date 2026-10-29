@@ -1,6 +1,8 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
+import { catchError, debounceTime, EMPTY, filter, skip, switchMap } from 'rxjs';
+import { ButtonDirective } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TabsModule } from 'primeng/tabs';
 import { NavBarComponent } from '../nav_bar/nav_bar.component';
@@ -26,10 +28,9 @@ type DashboardConfig = {
 
 @Component({
   selector: 'grn-dashboard',
-  standalone: true,
   imports: [
     NavBarComponent,
-    ButtonModule,
+    ButtonDirective,
     AddDashboardComponentDialogComponent,
     ConfirmDialogModule,
     TabsModule,
@@ -39,7 +40,7 @@ type DashboardConfig = {
   styleUrl: './dashboard.component.scss',
   providers: [ConfirmationService],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   private userPreferencesService = inject(UserPreferencesService);
   private confirmationService = inject(ConfirmationService);
 
@@ -48,35 +49,31 @@ export class DashboardComponent implements OnInit {
   editMode = signal(false);
   activeTab = signal(0);
 
-  ngOnInit(): void {
-    this.loadDashboard();
-  }
-
   constructor() {
-    effect(() => {
-      if (!this.dashboard()) {
-        return;
-      }
-      setTimeout(() => {
-        // Save to backend instead of localStorage
-        this.userPreferencesService.getUserPreferences().subscribe({
-          next: currentPreferences => {
-            const updatedPreferences = {
-              ...currentPreferences,
-              dashboard_preferences: JSON.stringify(this.dashboard()),
-            };
+    this.loadDashboard();
 
-            this.userPreferencesService
-              .updateUserPreferences(updatedPreferences)
-              .subscribe({
-                next: () => {},
-                error: () => {},
-              });
-          },
-          error: () => {},
-        });
-      }, 300);
-    });
+    // Persist changes to the backend, debounced. skip(1) drops the value that
+    // was just loaded, so opening the dashboard does not write it back.
+    toObservable(this.dashboard)
+      .pipe(
+        filter(dashboard => dashboard !== undefined),
+        skip(1),
+        debounceTime(300),
+        switchMap(dashboard =>
+          this.userPreferencesService.getUserPreferences().pipe(
+            switchMap(currentPreferences =>
+              this.userPreferencesService.updateUserPreferences({
+                ...currentPreferences,
+                dashboard_preferences: JSON.stringify(dashboard),
+              })
+            ),
+            // keep the stream alive so later changes are still saved
+            catchError(() => EMPTY)
+          )
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe();
   }
 
   private loadDashboard() {
@@ -109,7 +106,7 @@ export class DashboardComponent implements OnInit {
       items: [],
     };
     this.dashboard.update(tabs => [...(tabs ?? []), newTab]);
-    this.activeTab.set(dashboard.length - 1);
+    this.activeTab.set(dashboard.length);
   }
 
   updateTabName(index: number, event: Event) {
@@ -153,8 +150,8 @@ export class DashboardComponent implements OnInit {
         });
 
         // Adjust active tab if necessary
-        if (this.activeTab() >= dashboard.length) {
-          this.activeTab.set(Math.max(0, dashboard.length - 1));
+        if (this.activeTab() >= dashboard.length - 1) {
+          this.activeTab.set(Math.max(0, dashboard.length - 2));
         }
       },
     });
@@ -260,36 +257,34 @@ export class DashboardComponent implements OnInit {
       throw new Error('Invalid component type');
     }
 
-    // add to the end of the active tab
+    // add to the end of the active tab. Build new tab and items references:
+    // grn-dashboard-tab is OnPush and only re-renders on a new input value.
     this.dashboard.update(tabs => {
       if (!tabs) {
         return undefined;
       }
+      const activeIndex = this.activeTab();
+      const activeTab = tabs[activeIndex] ?? {
+        name: componentData.name,
+        items: [],
+      };
       const newTabs = [...tabs];
-      let activeTabs = newTabs[this.activeTab()];
-      if (!activeTabs) {
-        activeTabs = { name: componentData.name, items: [] };
-      }
-      activeTabs.items.push(newItem);
-      tabs[this.activeTab()] = activeTabs;
+      newTabs[activeIndex] = {
+        ...activeTab,
+        items: [...activeTab.items, newItem],
+      };
       return newTabs;
     });
   }
 
   onDashboardChange(index: number, dashboard: DashboardItem[]) {
     this.dashboard.update(tabs => {
-      if (!tabs) {
-        return undefined;
+      const currentTab = tabs?.[index];
+      if (!tabs || !currentTab) {
+        return tabs;
       }
-      const currentTab = tabs[index];
-      if (!currentTab) {
-        return undefined;
-      }
-      currentTab.items = dashboard;
-
       const updatedTabs = [...tabs];
-      updatedTabs[index] = currentTab;
-
+      updatedTabs[index] = { ...currentTab, items: dashboard };
       return updatedTabs;
     });
   }

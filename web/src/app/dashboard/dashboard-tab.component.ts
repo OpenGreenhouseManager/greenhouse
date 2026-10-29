@@ -1,11 +1,10 @@
 import {
   Component,
-  effect,
+  computed,
   inject,
   input,
   model,
-  OnDestroy,
-  OnInit,
+  signal,
 } from '@angular/core';
 import {
   Gridster,
@@ -65,7 +64,6 @@ export type DashboardItem =
 
 @Component({
   selector: 'grn-dashboard-tab',
-  standalone: true,
   imports: [
     GridsterItem,
     Gridster,
@@ -75,64 +73,50 @@ export type DashboardItem =
     CompassCardComponent,
   ],
   templateUrl: './dashboard-tab.component.html',
-  //providers: [ConfirmationService],
   styleUrl: './dashboard-tab.component.scss',
+  host: {
+    '(window:resize)': 'onWindowResize()',
+  },
 })
-export class DashboardTabComponent implements OnInit, OnDestroy {
-  options: GridsterConfig;
+export class DashboardTabComponent {
   confirmationService = inject(ConfirmationService);
 
   dashboard = model.required<DashboardItem[]>();
   editMode = input.required<boolean>();
 
-  private readonly onWindowResize = () => {
-    this.options.fixedRowHeight = Math.floor(window.innerHeight / 9);
-    this.options['api']?.resize?.();
-  };
+  private rowHeight = signal(Math.floor(window.innerHeight / 9));
 
-  constructor() {
-    effect(() => {
-      if (!this.dashboard()) {
-        return;
-      }
-    });
-
-    this.options = {
-      gridType: GridType.ScrollVertical,
-      draggable: {
-        enabled: true,
-        stop: () => {
-          //trigger change detection
-          this.dashboard.update(items => [...items]);
-        },
+  // Gridster's `options` is a signal input, so a resize must hand it a new
+  // object; mutating the old one is not picked up.
+  options = computed<GridsterConfig>(() => ({
+    gridType: GridType.ScrollVertical,
+    draggable: {
+      enabled: true,
+      stop: () => {
+        //trigger change detection
+        this.dashboard.update(items => [...items]);
       },
-      resizable: {
-        enabled: true,
-        stop: () => {
-          //trigger change detection
-          this.dashboard.update(items => [...items]);
-        },
+    },
+    resizable: {
+      enabled: true,
+      stop: () => {
+        //trigger change detection
+        this.dashboard.update(items => [...items]);
       },
-      fixedRowHeight: Math.floor(window.innerHeight / 9),
-      pushResizeItems: true,
-      swap: true,
-      swapWhileDragging: true,
-      minCols: 16,
-      minRows: 9,
-      maxCols: 16,
-      disableScrollHorizontal: true,
-      disableScrollVertical: false,
-    };
-  }
+    },
+    fixedRowHeight: this.rowHeight(),
+    pushResizeItems: true,
+    swap: true,
+    swapWhileDragging: true,
+    minCols: 16,
+    minRows: 9,
+    maxCols: 16,
+    disableScrollHorizontal: true,
+    disableScrollVertical: false,
+  }));
 
-  ngOnInit() {
-    window.addEventListener('resize', this.onWindowResize);
-
-    // Load dashboard from backend preferences instead of localStorage
-  }
-
-  ngOnDestroy() {
-    window.removeEventListener('resize', this.onWindowResize);
+  onWindowResize() {
+    this.rowHeight.set(Math.floor(window.innerHeight / 9));
   }
 
   removeItem($event: MouseEvent | TouchEvent, item: DashboardItem): void {

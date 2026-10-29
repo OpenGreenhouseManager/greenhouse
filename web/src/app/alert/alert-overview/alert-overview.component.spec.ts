@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterModule } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { AlertOverviewComponent } from './alert-overview.component';
 
 describe('AlertOverviewComponent', () => {
@@ -12,8 +12,12 @@ describe('AlertOverviewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AlertOverviewComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      imports: [AlertOverviewComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AlertOverviewComponent);

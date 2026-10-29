@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DiaryEditComponent } from './diary-edit.component';
 import { provideHttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 describe('DiaryEditComponent', () => {
   let component: DiaryEditComponent;
@@ -11,8 +11,8 @@ describe('DiaryEditComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DiaryEditComponent, RouterModule.forRoot([])],
-      providers: [provideHttpClient()],
+      imports: [DiaryEditComponent],
+      providers: [provideRouter([]), provideHttpClient()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DiaryEditComponent);

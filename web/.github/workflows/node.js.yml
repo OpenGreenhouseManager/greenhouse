@@ -11,20 +11,16 @@ jobs:
   angular:
     name: Angular CI - Lint, Format, Test & Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
       # {2}
       - name: Checkout the source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       # {3}
-      - name: Setup Node.js $
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
