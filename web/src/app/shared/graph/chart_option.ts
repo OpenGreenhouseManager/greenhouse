@@ -1,146 +1,24 @@
-export const baseChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  resizeDelay: 0, // Immediate resize
-  devicePixelRatio: 1, // Prevent high DPI scaling issues
-  layout: {
-    padding: 0,
-  },
-  scales: {
-    x: {
-      display: true,
-      ticks: {
-        padding: 2,
-        font: {
-          size: 10,
-          family: "'Nunito Variable', sans-serif",
-        },
-        color: '#66705f',
-        maxTicksLimit: 4,
-        maxRotation: 0,
-        autoSkipPadding: 2,
-      },
-      grid: {
-        color: '#e3e6dc',
-        drawBorder: false,
-        lineWidth: 0.5,
-      },
-      border: {
-        display: false,
-      },
-    },
-    y: {
-      display: true,
-      ticks: {
-        padding: 2,
-        font: {
-          size: 10,
-          family: "'Nunito Variable', sans-serif",
-        },
-        color: '#66705f',
-        maxTicksLimit: 4,
-      },
-      grid: {
-        color: '#e3e6dc',
-        drawBorder: false,
-        lineWidth: 0.5,
-      },
-      border: {
-        display: false,
-      },
-    },
-  },
-};
+import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts';
+import type {
+  GridComponentOption,
+  LegendComponentOption,
+  TooltipComponentOption,
+} from 'echarts/components';
+import type { ComposeOption } from 'echarts/core';
 
-// Line chart specific options
-export const chartOptions = {
-  ...baseChartOptions,
-  plugins: {
-    legend: {
-      display: false,
-      position: 'top' as const,
-      labels: {
-        boxWidth: 8,
-        padding: 4,
-        font: {
-          size: 10,
-          family: "'Nunito Variable', sans-serif",
-        },
-        color: '#24301f', // Use app text color
-      },
-    },
-    tooltip: {
-      mode: 'index' as const,
-      intersect: false,
-      backgroundColor: '#ffffff',
-      titleColor: '#24301f',
-      bodyColor: '#24301f',
-      borderColor: '#e3e6dc',
-      borderWidth: 1,
-      cornerRadius: 6,
-      padding: 6,
-      titleMarginBottom: 4,
-      displayColors: false,
-    },
-  },
+export type LineChartOption = ComposeOption<
+  | LineSeriesOption
+  | GridComponentOption
+  | LegendComponentOption
+  | TooltipComponentOption
+>;
 
-  elements: {
-    point: {
-      radius: 1, // Smaller points for tight spaces
-      hoverRadius: 3,
-      backgroundColor: '#4f7a4a',
-      borderColor: '#4f7a4a',
-    },
-    line: {
-      borderWidth: 1.5, // Thin lines for small charts
-      borderColor: '#4f7a4a',
-      backgroundColor: 'rgba(79, 122, 74, 0.12)',
-    },
-  },
-};
-
-// Bar chart specific options
-export const barChartOptions = {
-  ...baseChartOptions,
-  plugins: {
-    legend: {
-      display: false,
-      position: 'top' as const,
-      labels: {
-        boxWidth: 12,
-        padding: 10,
-        font: {
-          size: 10,
-          family: "'Nunito Variable', sans-serif",
-        },
-        color: '#24301f', // Use app text color
-      },
-    },
-    tooltip: {
-      mode: 'index' as const,
-      intersect: false,
-      backgroundColor: '#ffffff',
-      titleColor: '#24301f',
-      bodyColor: '#24301f',
-      borderColor: '#e3e6dc',
-      borderWidth: 1,
-      cornerRadius: 6,
-    },
-  },
-
-  aspectRatio: 0.8,
-  scales: {
-    ...baseChartOptions.scales,
-    x: {
-      ...baseChartOptions.scales.x,
-      stacked: true,
-    },
-    y: {
-      ...baseChartOptions.scales.y,
-      stacked: true,
-    },
-  },
-};
+export type BarChartOption = ComposeOption<
+  | BarSeriesOption
+  | GridComponentOption
+  | LegendComponentOption
+  | TooltipComponentOption
+>;
 
 // Default color palette for charts
 export const chartColors = {
@@ -152,3 +30,151 @@ export const chartColors = {
   fatal: '#8f2d26',
   success: '#5a9a4f',
 };
+
+export const chartTheme = {
+  font: "'Nunito Variable', sans-serif",
+  text: '#24301f',
+  muted: '#66705f',
+  grid: '#e3e6dc',
+};
+
+export interface LineSeries {
+  name: string;
+  unit: string;
+  color: string;
+  // [unix ms, value]; null leaves a gap in the line
+  data: [number, number | null][];
+}
+
+export interface BarSeries {
+  name: string;
+  color: string;
+  data: number[];
+}
+
+// Round numbers to at most two decimal places
+export function formatNumber(val: unknown): string {
+  if (val === null || val === undefined) return '';
+  const num =
+    typeof val === 'number' ? val : typeof val === 'string' ? Number(val) : NaN;
+  if (!Number.isFinite(num)) return String(val);
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
+  return `${hex}${a}`;
+}
+
+function valueAxis(unit: string, position: 'left' | 'right') {
+  return {
+    type: 'value' as const,
+    position,
+    scale: true,
+    name: unit,
+    nameGap: 8,
+    splitNumber: 3,
+    // the right axis shares the left axis' grid lines
+    ...(position === 'right' && { splitLine: { show: false } }),
+    axisLabel: { formatter: (v: number) => formatNumber(v) },
+  };
+}
+
+export function lineChartOptions(
+  series: LineSeries[],
+  separateAxes: boolean
+): LineChartOption {
+  const units = new Set(series.map(s => s.unit).filter(u => !!u));
+  const yAxis = separateAxes
+    ? [
+        valueAxis(series[0]?.unit ?? '', 'left'),
+        valueAxis(series[1]?.unit ?? '', 'right'),
+      ]
+    : // merged axis: only show unit if all defined units are identical
+      [valueAxis(units.size === 1 ? ([...units][0] ?? '') : '', 'left')];
+  const showLegend = series.length > 1;
+
+  return {
+    animationDuration: 600,
+    grid: {
+      left: 4,
+      right: 4,
+      top: showLegend ? 32 : 20,
+      bottom: 4,
+    },
+    legend: { show: showLegend, top: 0, left: 'center' },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'line',
+        lineStyle: { color: chartTheme.muted, type: 'dashed', width: 1 },
+      },
+    },
+    xAxis: {
+      type: 'time',
+      splitNumber: 3,
+      axisLabel: { hideOverlap: true },
+    },
+    yAxis,
+    series: series.map((s, idx) => ({
+      type: 'line',
+      name: s.name,
+      data: s.data,
+      yAxisIndex: separateAxes && idx > 0 ? 1 : 0,
+      smooth: 0.3,
+      showSymbol: false,
+      symbolSize: 6,
+      color: s.color,
+      lineStyle: { width: 2 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: withAlpha(s.color, 0.28) },
+            { offset: 1, color: withAlpha(s.color, 0) },
+          ],
+        },
+      },
+      emphasis: { focus: 'series' },
+      tooltip: {
+        valueFormatter: v => `${formatNumber(v)}${s.unit ? ` ${s.unit}` : ''}`,
+      },
+    })),
+  };
+}
+
+export function barChartOptions(
+  categories: string[],
+  series: BarSeries[]
+): BarChartOption {
+  return {
+    animationDuration: 600,
+    grid: { left: 4, right: 4, top: 28, bottom: 4 },
+    legend: { top: 0, left: 'center' },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'category', data: categories },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+      splitNumber: 3,
+    },
+    series: series.map(s => ({
+      type: 'bar',
+      name: s.name,
+      data: s.data,
+      stack: 'alerts',
+      color: s.color,
+      barMaxWidth: 18,
+      itemStyle: { borderRadius: 3, borderColor: '#ffffff', borderWidth: 1 },
+      emphasis: { focus: 'series' },
+    })),
+  };
+}

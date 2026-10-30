@@ -1,5 +1,4 @@
 import { Component, computed, input } from '@angular/core';
-import type { ChartData } from 'chart.js';
 import {
   addDays,
   endOfDay,
@@ -8,7 +7,7 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
-import { ChartModule } from 'primeng/chart';
+import { NgxEchartsDirective } from 'ngx-echarts';
 import { CardComponent } from '../../card/card.component';
 import { barChartOptions, chartColors } from '../../shared/graph/chart_option';
 import type { Alert } from '../models/alert';
@@ -16,13 +15,11 @@ import { Severity } from '../models/alert';
 
 @Component({
   selector: 'grn-alert-detail-info',
-  imports: [ChartModule, CardComponent],
+  imports: [NgxEchartsDirective, CardComponent],
   templateUrl: './alert-detail-info.component.html',
   styleUrl: './alert-detail-info.component.scss',
 })
 export class AlertDetailInfoComponent {
-  options = barChartOptions;
-
   alerts = input.required<Alert[]>();
 
   lastSeen = computed(() => {
@@ -75,37 +72,30 @@ export class AlertDetailInfoComponent {
     return names;
   }
 
-  data = computed<ChartData<'bar'>>(() => {
+  options = computed(() => {
     const days = 8;
 
-    return {
-      labels: this.relativeDayNames(days),
-      datasets: [
-        {
-          type: 'bar',
-          label: 'Info',
-          backgroundColor: chartColors.info,
-          data: this.getCount(Severity.Info, days),
-        },
-        {
-          type: 'bar',
-          label: 'Warning',
-          backgroundColor: chartColors.warning,
-          data: this.getCount(Severity.Warning, days),
-        },
-        {
-          type: 'bar',
-          label: 'Error',
-          backgroundColor: chartColors.error,
-          data: this.getCount(Severity.Error, days),
-        },
-        {
-          type: 'bar',
-          label: 'Fatal',
-          backgroundColor: chartColors.fatal,
-          data: this.getCount(Severity.Fatal, days),
-        },
-      ],
-    };
+    return barChartOptions(this.relativeDayNames(days), [
+      {
+        name: 'Info',
+        color: chartColors.info,
+        data: this.getCount(Severity.Info, days),
+      },
+      {
+        name: 'Warning',
+        color: chartColors.warning,
+        data: this.getCount(Severity.Warning, days),
+      },
+      {
+        name: 'Error',
+        color: chartColors.error,
+        data: this.getCount(Severity.Error, days),
+      },
+      {
+        name: 'Fatal',
+        color: chartColors.fatal,
+        data: this.getCount(Severity.Fatal, days),
+      },
+    ]);
   });
 }

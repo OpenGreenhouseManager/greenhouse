@@ -35,10 +35,10 @@
   flex-direction: column;
 }
 
-.p-chart {
+.chart {
   flex: 1; /* Take remaining space in graph container */
-  height: 100% !important;
-  width: 100% !important;
+  min-height: 0;
+  width: 100%;
 }
 
 .chartMessage {

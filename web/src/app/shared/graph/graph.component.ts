@@ -1,13 +1,8 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import {
-  differenceInCalendarDays,
-  differenceInSeconds,
-  fromUnixTime,
-  subDays,
-} from 'date-fns';
-import { ChartModule } from 'primeng/chart';
+import { differenceInSeconds, subDays } from 'date-fns';
+import { NgxEchartsDirective } from 'ngx-echarts';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
@@ -16,7 +11,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { combineLatest, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { CardComponent } from '../../card/card.component';
-import { chartColors, chartOptions } from './chart_option';
+import { chartColors, type LineSeries, lineChartOptions } from './chart_option';
 import { GraphService } from './graph.service';
 
 export interface GraphConfig {
@@ -31,11 +26,21 @@ export interface GraphData {
 
 const MAX_DATA_POINTS = 100;
 
+const palette = [
+  chartColors.primary,
+  chartColors.secondary,
+  chartColors.info,
+  chartColors.warning,
+  chartColors.success,
+  chartColors.error,
+  chartColors.fatal,
+];
+
 @Component({
   selector: 'grn-graph',
   imports: [
     CardComponent,
-    ChartModule,
+    NgxEchartsDirective,
     ProgressSpinnerModule,
     MessageModule,
     FormsModule,
@@ -77,128 +82,7 @@ export class GraphComponent {
 
   public now = signal(new Date());
 
-  // Chart.js options computed from current state
-  public options = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const base = structuredClone(chartOptions) as any;
-    // Enable legend if more than one dataset will be shown
-    base.plugins = base.plugins || {};
-    base.plugins.legend = base.plugins.legend || {};
-
-    // Configure secondary Y axis if requested
-    base.scales = base.scales || {};
-    base.scales.x = base.scales.x || {};
-    base.scales.y = {
-      ...(base.scales.y || {}),
-      type: 'linear',
-      position: 'left',
-      title: {
-        ...(base.scales.y?.title || {}),
-        display: false,
-        text: '',
-      },
-    };
-    // Formatter to round numbers to at most two decimal places
-    const formatNumber = (val: unknown): string => {
-      if (val === null || val === undefined) return '';
-      const num =
-        typeof val === 'number'
-          ? val
-          : typeof val === 'string'
-            ? Number(val)
-            : NaN;
-      if (!Number.isFinite(num)) return String(val);
-      return new Intl.NumberFormat(undefined, {
-        maximumFractionDigits: 2,
-      }).format(num);
-    };
-
-    // Apply tick formatter on primary Y axis
-    base.scales.y.ticks = {
-      ...(base.scales.y?.ticks || {}),
-      callback: (value: unknown) => formatNumber(value),
-    };
-    if (this.config().axis_mode === 'separate') {
-      base.scales.y1 = {
-        type: 'linear',
-        position: 'right',
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          ...(base.scales.y?.ticks || {}),
-          callback: (value: unknown) => formatNumber(value),
-        },
-        title: {
-          display: false,
-          text: '',
-        },
-      };
-    } else {
-      // Ensure single axis mode
-      if (base.scales.y1) {
-        delete base.scales.y1;
-      }
-    }
-
-    // Derive units from current datasets and set axis titles accordingly
-    const series = this.timeseries?.() ?? { datasets: [] };
-    const datasets = Array.isArray(series.datasets) ? series.datasets : [];
-    const unitsSet = new Set(
-      datasets
-        .map(d => d?.unit)
-        .filter((u: string | undefined) => !!u && typeof u === 'string')
-    );
-
-    // Show legend only if we actually have more than one dataset
-    base.plugins.legend.display = datasets.length > 1;
-
-    // Tooltip callback to append units to values
-    base.plugins.tooltip = base.plugins.tooltip || {};
-    base.plugins.tooltip.callbacks = base.plugins.tooltip.callbacks || {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    base.plugins.tooltip.callbacks.label = (context: any) => {
-      const ds = context.dataset || {};
-      const unit = ds.unit ? ` ${ds.unit}` : '';
-      const value = context.parsed?.y ?? context.raw;
-      const label = ds.label ? `${ds.label}: ` : '';
-      return `${label}${formatNumber(value)}${unit}`;
-    };
-
-    if (this.config().axis_mode === 'separate') {
-      const left = datasets.find(d => d?.yAxisID === 'y');
-      const right = datasets.find(d => d?.yAxisID === 'y1');
-      if (left?.unit) {
-        base.scales.y.title.display = true;
-        base.scales.y.title.text = left.unit;
-      } else {
-        base.scales.y.title.display = false;
-        base.scales.y.title.text = '';
-      }
-      if (base.scales.y1) {
-        if (right?.unit) {
-          base.scales.y1.title.display = true;
-          base.scales.y1.title.text = right.unit;
-        } else {
-          base.scales.y1.title.display = false;
-          base.scales.y1.title.text = '';
-        }
-      }
-    } else {
-      // merged axis: only show unit if all defined units are identical
-      if (unitsSet.size === 1) {
-        const [unit] = Array.from(unitsSet);
-        base.scales.y.title.display = true;
-        base.scales.y.title.text = unit;
-      } else {
-        base.scales.y.title.display = false;
-        base.scales.y.title.text = '';
-      }
-    }
-    return base;
-  });
-
-  // Convert inputs to an observable, then fetch one or more timeseries and map to Chart.js dataset structure
+  // Convert inputs to an observable, then fetch one or more timeseries and map them to chart series
   public timeseries = toSignal(
     combineLatest([
       toObservable(this.config),
@@ -233,95 +117,51 @@ export class GraphComponent {
       .pipe(
         map(({ responses }) => {
           this.loading.set(false);
-          // If no data, return empty chart
-          if (
-            !responses ||
-            (Array.isArray(responses) && responses.length === 0)
-          ) {
-            return { labels: [], datasets: [] };
+          if (!responses) {
+            return [];
           }
 
-          const isMultiDayRange =
-            differenceInCalendarDays(this.endDate(), this.startDate()) >= 1;
-          const labels =
-            responses[0]?.timeseries.map(t => {
-              const d = fromUnixTime(t.timestamp);
-              return isMultiDayRange
-                ? d.toLocaleString(undefined, {
-                    month: 'short',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                  })
-                : d.toLocaleTimeString(undefined, {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                  });
-            }) ?? [];
-
-          const palette = [
-            chartColors.primary,
-            chartColors.secondary,
-            chartColors.info,
-            chartColors.warning,
-            chartColors.success,
-            chartColors.error,
-            chartColors.fatal,
-          ];
-
-          const useSeparateAxes = this.config().axis_mode === 'separate';
-
-          const datasets = responses.map((r, idx) => {
-            // Determine unit (if Measurement) for this dataset
+          return responses.map((r, idx): LineSeries => {
+            // Determine unit (if Measurement) for this series
             const firstMeasurement = r.timeseries.find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               t => (t.value as any)?.Measurement
             );
             const unit: string =
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (firstMeasurement?.value as any)?.Measurement?.unit ??
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (firstMeasurement?.value as any)?.Measurement?.unit ??
-              '';
+              (firstMeasurement?.value as any)?.Measurement?.unit ?? '';
 
             // Map value, supporting Number and Measurement; null for others
-            const data = r.timeseries.map(t => {
+            const data = r.timeseries.map((t): [number, number | null] => {
               const v = t.value;
+              let value: number | null = null;
               if (v && typeof v === 'object') {
                 if ('Measurement' in v && v.Measurement) {
-                  return v.Measurement.value as number;
-                }
-                if ('Number' in v) {
-                  return v.Number as number;
+                  value = v.Measurement.value as number;
+                } else if ('Number' in v) {
+                  value = v.Number as number;
                 }
               }
-              return null;
+              return [t.timestamp * 1000, value];
             });
-            const color = palette[idx % palette.length];
-            let label =
-              (this.config().graph_data[idx]?.sub_property
-                ? `${this.config().graph_data[idx]?.sub_property}`
-                : (this.config().graph_data[idx]?.device_id ?? '')) ||
-              `Series ${idx + 1}`;
-            if (unit) {
-              label = `${label} (${unit})`;
-            }
+
+            const graphData = this.config().graph_data[idx];
             return {
-              label: label || `Series ${idx + 1}`,
-              data,
-              borderColor: color,
-              backgroundColor: `${color}33`,
-              yAxisID: useSeparateAxes ? (idx === 0 ? 'y' : 'y1') : 'y',
+              name:
+                graphData?.sub_property ||
+                graphData?.device_id ||
+                `Series ${idx + 1}`,
               unit,
+              color: palette[idx % palette.length] ?? chartColors.primary,
+              data,
             };
           });
-
-          return { labels, datasets };
         })
       ),
-    // p-chart never creates the chart if data is undefined on first render
-    { initialValue: { labels: [] as string[], datasets: [] } }
+    { initialValue: [] as LineSeries[] }
+  );
+
+  public options = computed(() =>
+    lineChartOptions(this.timeseries(), this.config().axis_mode === 'separate')
   );
 }

@@ -19,7 +19,7 @@
       hourFormat="24" />
   </div>
   <div class="graph" style="height: 100%; width: 100%">
-    <p-chart type="line" [data]="timeseries()" [options]="options()"></p-chart>
+    <div echarts class="chart" [options]="options()"></div>
     @if (loading()) {
       <p-progress-spinner ariaLabel="loading" class="chartMessage" />
     }

@@ -4,9 +4,11 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
 import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';
+import { provideEchartsCore } from 'ngx-echarts';
 import { providePrimeNG } from 'primeng/config';
 import { authInterceptor } from './_interceptors/auth.interceptor';
 import { routes } from './app.routes';
+import { echarts } from './shared/graph/echarts';
 
 // Sage + sakura light theme. Only overrides are listed here; everything else
 // (primitive palettes, component tokens) comes from Lara.
@@ -168,6 +170,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
+    provideEchartsCore({ echarts, theme: 'greenhouse' }),
     providePrimeNG({
       // PrimeUI Community License key (not a secret). Without it PrimeNG 22+
       // shows an invalid-license banner.

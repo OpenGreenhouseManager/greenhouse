@@ -3,6 +3,8 @@ import { TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { GraphComponent } from './graph.component';
+import { provideEchartsCore } from 'ngx-echarts';
+import { echarts } from './echarts';
 
 describe('GraphComponent', () => {
   let component: GraphComponent;
@@ -11,7 +13,7 @@ describe('GraphComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [GraphComponent],
-      providers: [provideHttpClient()],
+      providers: [provideHttpClient(), provideEchartsCore({ echarts })],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GraphComponent);
