@@ -26,3 +26,5 @@ just test
 - Sub-flakes stay usable standalone: `github:OpenGreenhouseManager/greenhouse?dir=backend`
 - Tags are prefixed per project: `backend-vX.Y.Z`, `backend-example-vX.Y.Z`, `web-vX.Y.Z`
   (pre-merge tags were renamed the same way).
+
+CI: `CI OK` is the required check on `main`.
