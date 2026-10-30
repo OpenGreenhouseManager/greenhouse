@@ -1,0 +1,22 @@
+# Install dependencies from package-lock.json
+install:
+    npm ci
+
+# Dev server on http://localhost:4200
+start:
+    npm start
+
+build:
+    npm run build
+
+lint:
+    npm run lint
+
+test:
+    npm run test:ci
+
+fmt:
+    npm run format
+
+fmt-check:
+    npm run format:check

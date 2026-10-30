@@ -1,9 +1,9 @@
-name: Build and Push Web Images
+name: Web Build and Push Images
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'web-v*.*.*'
   workflow_dispatch: {}
 
 permissions:
@@ -35,13 +35,13 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/greenhouse_web
           tags: |
-            type=ref,event=tag
+            type=match,pattern=web-(v.*),group=1
             type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: web
           target: builder
           push: true
           tags: ${{ steps.meta.outputs.tags }}

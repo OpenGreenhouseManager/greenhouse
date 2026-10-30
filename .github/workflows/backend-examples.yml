@@ -1,9 +1,9 @@
-name: Build and Push Example Images
+name: Backend Build and Push Example Images
 
 on:
   push:
     tags:
-      - "example-v*"
+      - "backend-example-v*"
   workflow_dispatch: {}
 
 permissions:
@@ -44,8 +44,8 @@ jobs:
       - name: Build and push ${{ matrix.example }}
         uses: docker/build-push-action@v7
         with:
-          context: .
-          file: examples/Dockerfile
+          context: backend
+          file: backend/examples/Dockerfile
           push: true
           build-args: |
             EXAMPLE_BIN=${{ matrix.example }}

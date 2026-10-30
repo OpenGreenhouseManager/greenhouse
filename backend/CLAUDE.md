@@ -112,7 +112,7 @@ cd services/auth_service && diesel migration run
 
 ## CI/CD
 
-### Continuous Integration (`.github/workflows/rust_ci.yml`)
+### Continuous Integration (`../.github/workflows/backend-ci.yml`)
 
 Triggers on every push and pull request. Runs in a matrix:
 
@@ -127,7 +127,7 @@ Triggers on every push and pull request. Runs in a matrix:
 
 **All CI checks must pass before merging.**
 
-### Docker publish (`.github/workflows/docker.yml`)
+### Docker publish (`../.github/workflows/backend-docker.yml`)
 
 - **On PR to `main` that touches `Dockerfile`**: builds base image for `linux/amd64` + `linux/arm64` (no push).
 - **On `v*` tag push**: builds and publishes all service images to `ghcr.io/opengreenhousemanager/`:
@@ -199,4 +199,4 @@ Default credentials for local dev:
 3. Add a `Dockerfile` that uses the base builder image.
 4. Add a DTO module in `greenhouse_core/src/<new_service>_dto/` and export it from `lib.rs`.
 5. Add `cargo run --package <new_service>` to the relevant `just` recipes.
-6. Add a publish step in `.github/workflows/docker.yml`.
+6. Add a publish step in `../.github/workflows/backend-docker.yml`.

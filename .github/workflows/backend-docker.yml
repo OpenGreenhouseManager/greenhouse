@@ -1,14 +1,14 @@
-name: Docker Test & Publish
+name: Backend Docker Test & Publish
 
 on:
   push:
     tags:
-      - "v*"
+      - "backend-v*"
   pull_request:
     branches:
       - main
     paths:
-      - "Dockerfile"
+      - "backend/Dockerfile"
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
       - name: Build base image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: false
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -59,7 +59,7 @@ jobs:
       - name: Build base image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -71,13 +71,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/data_storage
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: services/data_storage_service/Dockerfile
+          file: backend/services/data_storage_service/Dockerfile
           tags: ${{ steps.meta-data_storage.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -90,13 +92,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/device_service
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: services/device_service/Dockerfile
+          file: backend/services/device_service/Dockerfile
           tags: ${{ steps.meta-device_service.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -109,13 +113,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/scripting_service
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: services/scripting_service/Dockerfile
+          file: backend/services/scripting_service/Dockerfile
           tags: ${{ steps.meta-scripting_service.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -128,13 +134,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/web_api
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: api/web/Dockerfile
+          file: backend/api/web/Dockerfile
           tags: ${{ steps.meta-web_api.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -147,13 +155,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/script_api
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: api/script/Dockerfile
+          file: backend/api/script/Dockerfile
           tags: ${{ steps.meta-script_api.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
@@ -166,13 +176,15 @@ jobs:
         with:
           images: |
             ghcr.io/opengreenhousemanager/auth_service
+          tags: |
+            type=match,pattern=backend-(v.*),group=1
       - name: Publish
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           push: true
           platforms: linux/amd64,linux/arm64
-          file: services/auth_service/Dockerfile
+          file: backend/services/auth_service/Dockerfile
           tags: ${{ steps.meta-auth_service.outputs.tags }}
           build-args: |
             BASE_IMAGE=ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest
