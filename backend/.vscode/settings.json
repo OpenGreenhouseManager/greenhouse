@@ -1,0 +1,4 @@
+{
+  "git.ignoreLimitWarning": true,
+  "editor.defaultFormatter": "jinxdash.prettier-rust"
+}

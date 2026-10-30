@@ -1,0 +1,31 @@
+# hadolint ignore=DL3007
+FROM ghcr.io/opengreenhousemanager/greenhouse_backend/base:latest AS builder
+
+FROM debian:bookworm-slim AS final
+RUN adduser \
+  --disabled-password \
+  --gecos "" \
+  --home "/nonexistent" \
+  --shell "/sbin/nologin" \
+  --no-create-home \
+  --uid "10001" \
+  appuser
+  
+COPY --from=builder /web_api /usr/local/bin
+RUN chown appuser /usr/local/bin/web_api && \
+  chown -R appuser /usr/local/bin/
+
+RUN apt-get update -y && apt-get upgrade -y && \ 
+  apt-get install --no-install-recommends -y \
+        libpq-dev\
+         ca-certificates\
+  && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+USER appuser
+ENV RUST_LOG="web_api=debug,info"
+RUN mkdir /usr/local/bin/config
+WORKDIR /usr/local/bin/
+ENTRYPOINT ["web_api"]
+#keep this container alive
+#ENTRYPOINT [ "tail", "-f", "/dev/null" ]

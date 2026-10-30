@@ -1,0 +1,95 @@
+name: Continuous Integration
+
+on:
+  push:
+    paths-ignore:
+      - "**/README.md"
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LDPROXY_VERSION: "0.3.4"
+
+permissions:
+  contents: read
+
+jobs:
+  typos:
+    name: Typo Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: typos-cli
+      - run: typos
+
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install nightly rustfmt
+        run: |
+          rustup update nightly
+          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check --color always
+
+  sort:
+    name: Dependency Sort
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-sort
+      - name: Check dependency sort
+        run: cargo sort --workspace --grouped --check
+
+  rust-checks:
+    name: Build / Clippy / Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install nightly components
+        run: |
+          rustup update nightly
+          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rust-src clippy
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+      - name: Cache ldproxy binary
+        uses: actions/cache@v6
+        id: cache-ldproxy
+        with:
+          path: ~/.cargo/bin/ldproxy
+          key: ldproxy-${{ runner.os }}-${{ env.LDPROXY_VERSION }}
+      - name: Install ldproxy
+        if: steps.cache-ldproxy.outputs.cache-hit != 'true'
+        run: cargo install ldproxy --version ${{ env.LDPROXY_VERSION }} --locked
+      - name: Build
+        run: cargo build --release --workspace
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+      - name: Test
+        run: cargo test --release --workspace --all-features -- --test-threads=1
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      - name: Run security audit
+        # Ignored advisories are documented with justifications in audit.toml.
+        #
+        # RUSTSEC-2023-0071: rsa via jsonwebtoken rust_crypto (HS256 only, no RSA)
+        run: |
+          cargo audit \
+            --ignore RUSTSEC-2023-0071

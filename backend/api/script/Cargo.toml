@@ -1,0 +1,27 @@
+[package]
+name = "scripting_api"
+version = "0.0.1"
+edition = "2024"
+description = "scripting_api"
+license = "GPL-3.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { workspace = true, features = ["tracing"] }
+greenhouse_core = { workspace = true, features = ["scripting_service_dto", "data_storage_service_dto"] }
+greenhouse_macro = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+sentry = { workspace = true, features = ["debug-images", "tower"] }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+tokio = { workspace = true }
+tower-cookies = { workspace = true }
+tower-http = { workspace = true, features = ["trace", "cors"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true, features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+] }

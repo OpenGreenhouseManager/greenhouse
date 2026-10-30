@@ -1,0 +1,9 @@
+# RUSTSEC-2023-0071: rsa Marvin attack (timing side channel on RSA decryption)
+#
+# Pulled in unconditionally by jsonwebtoken's `rust_crypto` backend. This
+# workspace signs and verifies JWTs with HS256 only; no RSA keys exist and no
+# RSA code path is reachable. No patched rsa release is available.
+[advisories]
+ignore = [
+    "RUSTSEC-2023-0071",
+]
