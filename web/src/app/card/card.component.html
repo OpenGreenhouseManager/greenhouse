@@ -1,0 +1,30 @@
+<div class="component">
+  <p-card [style]="{ width: '100%' }">
+    <ng-template #header>
+      <div class="header">
+        <h2 class="title {{ centerTitle() ? 'text-center' : '' }}">
+          {{ title() }}
+        </h2>
+        @if (icon() && decorativeIcon()) {
+          <i
+            [class]="icon_class()"
+            class="gridster-item-content"
+            aria-hidden="true"></i>
+        } @else if (icon()) {
+          <i
+            [class]="icon_class()"
+            class="gridster-item-content action"
+            role="button"
+            tabindex="0"
+            (click)="iconClicked.emit()"
+            (keydown.enter)="iconClicked.emit()"></i>
+        }
+      </div>
+    </ng-template>
+    <ng-template #content>
+      <div class="content gridster-item-content">
+        <ng-content />
+      </div>
+    </ng-template>
+  </p-card>
+</div>

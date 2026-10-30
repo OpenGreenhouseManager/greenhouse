@@ -1,0 +1,56 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      var(--grn-sakura-soft) 0,
+      transparent 40%
+    ),
+    radial-gradient(circle at 10% 90%, #e6efe1 0, transparent 45%),
+    var(--grn-bg);
+
+  grn-card {
+    height: fit-content;
+    width: min(380px, 100%);
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.25rem 0;
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--grn-text-muted);
+    }
+  }
+
+  .register-button {
+    flex-direction: row-reverse;
+  }
+}
+
+.register-failed {
+  color: var(--grn-danger);
+  font-size: 0.85rem;
+}

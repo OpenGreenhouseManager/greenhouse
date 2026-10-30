@@ -1,0 +1,13 @@
+<grn-card title="Alert Triggers" icon="pi-bell" [decorativeIcon]="true">
+  <div class="timeStatistic">
+    <div>
+      <span>Last seen: {{ lastSeen() }}</span>
+    </div>
+    <div>
+      <span>First seen: {{ firstSeen() }}</span>
+    </div>
+  </div>
+  <div class="graph" style="width: 100%">
+    <div echarts class="chart" [options]="options()"></div>
+  </div>
+</grn-card>

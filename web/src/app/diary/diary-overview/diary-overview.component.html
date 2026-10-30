@@ -1,0 +1,45 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <h1>Diary</h1>
+    <button pButton type="button" (click)="addEntry()">
+      <i class="pi pi-plus"></i><span class="button_label">Add Entry</span>
+    </button>
+  </div>
+  <div class="content">
+    <grn-card [title]="title()" class="card" [centerTitle]="true">
+      <div class="DiaryContainer">
+        <div
+          class="chevron"
+          role="button"
+          tabindex="0"
+          (click)="subDate()"
+          (keydown.enter)="subDate()">
+          <i class="pi pi-chevron-left"></i>
+        </div>
+        <div class="container">
+          @for (diary of diaries() | keyvalue; track diary.key) {
+            <span
+              class="list_item"
+              role="button"
+              tabindex="0"
+              (click)="diaryClicked(diary.key)"
+              (keydown.enter)="diaryClicked(diary.key)">
+              <i class="pi pi-book"></i>
+              <h2>{{ diary.value.title || '' }}</h2>
+              <span>{{ getTime(diary.value.date) }}</span>
+            </span>
+          }
+        </div>
+        <div
+          class="chevron"
+          role="button"
+          tabindex="0"
+          (click)="addDate()"
+          (keydown.enter)="addDate()">
+          <i class="pi pi-chevron-right"></i>
+        </div>
+      </div>
+    </grn-card>
+  </div>
+</main>

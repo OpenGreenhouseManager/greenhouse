@@ -1,0 +1,11 @@
+{
+  "/api/**": {
+    "target": "https://greenhouse.mauderer.work",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "headers": {
+      "Connection": "keep-alive"
+    }
+  }
+}

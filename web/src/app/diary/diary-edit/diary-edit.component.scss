@@ -1,0 +1,41 @@
+.outer-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.content-width {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--grn-gap);
+
+  grn-card {
+    width: 100%;
+  }
+}
+
+.content {
+  width: 100%;
+  padding: 0.25rem 0;
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+
+    .editGroup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+
+      label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--grn-text-muted);
+      }
+    }
+  }
+}

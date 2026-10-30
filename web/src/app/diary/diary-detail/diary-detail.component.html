@@ -1,0 +1,24 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <div class="heading-left">
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <h1>Diary</h1>
+    </div>
+    <button pButton type="button" (click)="editEntry()">
+      <i class="pi pi-pencil"></i><span class="button_label">Edit Entry</span>
+    </button>
+  </div>
+  <div class="content">
+    <grn-card [title]="diary()?.title || ''" class="card">
+      <div class="content">
+        <div class="container">
+          <p>{{ diary()?.content || '' }}</p>
+          <span>{{ getDate(diary()?.date) }}</span>
+        </div>
+      </div>
+    </grn-card>
+  </div>
+</main>

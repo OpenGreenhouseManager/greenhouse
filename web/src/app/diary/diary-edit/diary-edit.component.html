@@ -1,0 +1,55 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <div class="heading-left">
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      @if (edit()) {
+        <h1>Edit Diary</h1>
+      } @else {
+        <h1>Add Diary</h1>
+      }
+    </div>
+  </div>
+  <div class="outer-container">
+    <div class="content-width">
+      <grn-card title="Edit" class="card">
+        <div class="content">
+          <div class="container-width-restriction">
+            <div class="container">
+              <div class="editGroup">
+                <label for="Title">Title</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Title"
+                  [formField]="diaryForm.title" />
+              </div>
+              <div class="editGroup">
+                <label for="Content">Content</label>
+                <textarea
+                  pTextarea
+                  [autoResize]="true"
+                  id="Content"
+                  [formField]="diaryForm.content"></textarea>
+              </div>
+              <div class="editGroup">
+                <label for="Date">Date</label>
+                <p-datepicker
+                  [style]="{ width: '100%' }"
+                  inputId="calendar-24h"
+                  [formField]="diaryForm.date"
+                  [showTime]="true"
+                  [hourFormat]="'24'" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </grn-card>
+      <button pButton type="button" (click)="saveEntry()">
+        <i class="pi pi-save"></i><span class="button_label">Save</span>
+      </button>
+    </div>
+  </div>
+</main>

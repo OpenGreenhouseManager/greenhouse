@@ -1,0 +1,55 @@
+import { JsonPipe } from '@angular/common';
+import { Component, input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import type { SortEvent } from 'primeng/api';
+import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
+import { SeverityTagComponent } from '../../shared/tag/severity-tag.component';
+import type { Alert } from '../models/alert';
+import { Severity } from '../models/alert';
+
+@Component({
+  selector: 'grn-alert-detail-list',
+  imports: [
+    FormsModule,
+    TableModule,
+    SelectModule,
+    SeverityTagComponent,
+    JsonPipe,
+  ],
+  templateUrl: './alert-detail-list.component.html',
+  styleUrl: './alert-detail-list.component.scss',
+})
+export class AlertDetailListComponent {
+  Severity = Severity;
+  alerts = input.required<Alert[]>();
+
+  selectedSeverity: Severity | null = null;
+  severityOptions = Object.keys(Severity)
+    .filter(key => isNaN(Number(key)))
+    .map(key => ({
+      label: Severity[key as keyof typeof Severity],
+      value: key,
+    }));
+
+  customSort(event: SortEvent) {
+    event.data!.sort((data1, data2) => {
+      const value1 = data1[event.field!];
+      const value2 = data2[event.field!];
+
+      const result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
+      return event.order! * result;
+    });
+  }
+
+  prettyDate(date: Date): string {
+    return date.toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }
+}

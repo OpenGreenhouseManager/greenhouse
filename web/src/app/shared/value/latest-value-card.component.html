@@ -1,0 +1,9 @@
+<grn-card [title]="header()">
+  <div class="latest-value center">
+    @if (error()) {
+      <div class="error">{{ error() }}</div>
+    } @else {
+      <div class="value">{{ displayValue() }}</div>
+    }
+  </div>
+</grn-card>

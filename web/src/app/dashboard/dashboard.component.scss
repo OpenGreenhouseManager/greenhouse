@@ -1,0 +1,72 @@
+:host {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+main.page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+
+  .content {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+::ng-deep .add-tab-button {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+::ng-deep .custom-tab {
+  .tab-edit-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .tab-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--grn-radius-sm);
+      padding: 0.25rem 0.5rem;
+      font: inherit;
+      color: inherit;
+      min-width: 0;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--grn-surface);
+        border-color: var(--grn-border);
+      }
+
+      &:focus {
+        outline: none;
+        background: var(--grn-surface);
+        border-color: var(--grn-primary);
+        box-shadow: 0 0 0 3px var(--grn-sakura-soft);
+      }
+    }
+
+    .tab-delete-icon {
+      cursor: pointer;
+      color: var(--grn-danger);
+      font-size: 0.9rem;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}

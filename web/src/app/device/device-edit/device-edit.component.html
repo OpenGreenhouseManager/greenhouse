@@ -1,0 +1,70 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <div class="heading-left">
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      @if (edit()) {
+        <h1>Edit Device</h1>
+      } @else {
+        <h1>Add Device</h1>
+      }
+    </div>
+  </div>
+  <div class="outer-container">
+    <div class="content-width">
+      <grn-card title="Edit" class="card">
+        <div class="content">
+          <div class="container-width-restriction">
+            <div class="container">
+              <div class="editGroup">
+                <label for="Name">Name</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Name"
+                  [formField]="deviceForm.name" />
+              </div>
+              <div class="editGroup">
+                <label for="Description">Description</label>
+                <textarea
+                  pTextarea
+                  [autoResize]="true"
+                  id="Description"
+                  [formField]="deviceForm.description"></textarea>
+              </div>
+              <div class="editGroup">
+                <label for="Address">Address</label>
+                <input
+                  pInputText
+                  type="text"
+                  id="Address"
+                  [formField]="deviceForm.address" />
+              </div>
+              <div class="editGroup">
+                <label for="CanScript">Can Script</label>
+                <p-checkbox
+                  id="CanScript"
+                  [formField]="deviceForm.can_script"
+                  [binary]="true"
+                  inputId="CanScript" />
+              </div>
+              <div class="editGroup">
+                <label for="scraping">scraping</label>
+                <p-checkbox
+                  id="scraping"
+                  [formField]="deviceForm.scraping"
+                  [binary]="true"
+                  inputId="scraping" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </grn-card>
+      <button pButton type="button" (click)="saveDevice()">
+        <i class="pi pi-save"></i><span class="button_label">Save</span>
+      </button>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,8 @@
+{
+  "locale": "en-US",
+  "translations": {
+    "HOME-HEADER": "Nothing to see here yet.",
+    "HOME-TEXT1": "Add some content to get startedd!",
+    "HOME-TEXT2": "this is some more localization!"
+  }
+}

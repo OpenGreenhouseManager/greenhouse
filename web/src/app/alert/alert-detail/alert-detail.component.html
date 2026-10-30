@@ -1,0 +1,31 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <div class="heading-left">
+      <button pButton type="button" text iconOnly (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <h1>
+        Alert {{ identifier }} from {{ display(dataSource || 'not found') }}
+        @if (alias()) {
+          ({{ alias() }})
+        }
+      </h1>
+    </div>
+  </div>
+  <div class="alert-detail-container">
+    @let loadedAlerts = alerts();
+    @if (loadedAlerts === null) {
+      <div class="error">
+        <p-message severity="error">ERROR LOADING ALERTS</p-message>
+      </div>
+    } @else if (loadedAlerts) {
+      <div class="content">
+        <grn-alert-detail-list [alerts]="loadedAlerts" />
+      </div>
+      <div class="content">
+        <grn-alert-detail-info [alerts]="loadedAlerts" />
+      </div>
+    }
+  </div>
+</main>

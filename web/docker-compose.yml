@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  greenhouse-web-staging:
+    build:
+      context: .
+      target: builder
+      args:
+        - API_BASE_URL=https://staging-api.example.com
+    environment:
+      - env=${ENV:-staging}
+    ports:
+      - "8080:3000"
+    restart: unless-stopped
+    container_name: greenhouse-web-staging
+
+  greenhouse-web-production:
+    build:
+      context: .
+      target: builder
+      args:
+        - API_BASE_URL=https://api.example.com
+    environment:
+      - env=${ENV:-production}
+    ports:
+      - "8081:3000"
+    restart: unless-stopped
+    container_name: greenhouse-web-production
+
+  # Development environment
+  greenhouse-web-dev:
+    build:
+      context: .
+      target: dev-envs
+    environment:
+      - env=${ENV:-staging}
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/greenhouse_web
+      - /greenhouse_web/node_modules
+    restart: unless-stopped
+    container_name: greenhouse-web-dev 

@@ -1,0 +1,114 @@
+import { defineConfig } from 'eslint/config';
+import pluginJs from '@eslint/js';
+import angular from 'angular-eslint';
+import prettierConfig from 'eslint-config-prettier';
+import prettier from 'eslint-plugin-prettier';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+export default defineConfig(
+  {
+    files: ['**/*.{js,mjs,cjs,ts}'],
+    extends: [
+      pluginJs.configs.recommended,
+      ...tseslint.configs.recommended,
+      ...angular.configs.tsRecommended,
+    ],
+    processor: angular.processInlineTemplates,
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        $localize: 'readonly',
+      },
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      prettier: prettier,
+    },
+    rules: {
+      // Prettier integration
+      'prettier/prettier': 'error',
+
+      '@typescript-eslint/no-deprecated': 'error',
+
+      // TypeScript specific rules - more lenient for development
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-inferrable-types': 'off', // Turn off for development
+
+      // Angular specific rules - more lenient
+      '@angular-eslint/directive-selector': [
+        'warn',
+        {
+          type: 'attribute',
+          prefix: 'grn',
+          style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-selector': [
+        'warn',
+        {
+          type: 'element',
+          prefix: 'grn',
+          style: 'kebab-case',
+        },
+      ],
+      '@angular-eslint/no-empty-lifecycle-method': 'warn',
+      '@angular-eslint/use-lifecycle-interface': 'warn',
+
+      // General JavaScript/TypeScript rules - more lenient
+      'no-console': 'warn',
+      'no-debugger': 'error',
+      'prefer-const': 'warn',
+      'no-var': 'error',
+      'eqeqeq': ['warn', 'always'],
+      'curly': 'warn',
+      'no-unused-vars': 'off', // Use TypeScript version instead
+      'no-undef': 'off', // TypeScript handles this
+    },
+  },
+  {
+    files: ['**/*.html'],
+    extends: [
+      ...angular.configs.templateRecommended,
+      ...angular.configs.templateAccessibility,
+    ],
+    rules: {
+      '@angular-eslint/template/no-negated-async': 'warn',
+    },
+  },
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-console': 'off',
+      '@angular-eslint/component-selector': 'off',
+      '@angular-eslint/directive-selector': 'off',
+    },
+  },
+  {
+    files: ['**/*.{enum,model,dto,interface}.ts', '**/models/**/*.ts', '**/dtos/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off', // Allow unused exports in model/dto files
+      'no-unused-vars': 'off',
+    },
+  },
+  prettierConfig,
+);

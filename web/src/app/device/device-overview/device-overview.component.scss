@@ -1,0 +1,38 @@
+main.page {
+  .content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--grn-gap);
+  }
+
+  .controls {
+    max-width: 28rem;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+  }
+
+  .empty-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    color: var(--grn-text-muted);
+
+    i {
+      font-size: 2rem;
+      color: var(--grn-border);
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+}

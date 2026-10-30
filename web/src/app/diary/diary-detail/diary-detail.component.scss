@@ -1,0 +1,26 @@
+main.page > .content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  grn-card {
+    width: min(760px, 100%);
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    p {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.65;
+    }
+
+    span {
+      color: var(--grn-text-muted);
+      font-size: 0.9rem;
+    }
+  }
+}

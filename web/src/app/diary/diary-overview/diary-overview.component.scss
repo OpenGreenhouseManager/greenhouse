@@ -1,0 +1,71 @@
+main.page > .content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  grn-card {
+    width: min(900px, 100%);
+  }
+
+  .DiaryContainer {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+
+    .chevron {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.5rem;
+      border-radius: var(--grn-radius-sm);
+      color: var(--grn-text-muted);
+      cursor: pointer;
+
+      &:hover {
+        background: var(--grn-surface-soft);
+        color: var(--grn-primary);
+      }
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 4rem;
+
+      .list_item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background-color: var(--grn-surface);
+        border: 1px solid var(--grn-border);
+        border-radius: var(--grn-radius-sm);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+          background-color: var(--grn-surface-soft);
+        }
+
+        i {
+          color: var(--grn-sakura-strong);
+        }
+
+        h2 {
+          flex: 1;
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 600;
+        }
+
+        span {
+          color: var(--grn-text-muted);
+          font-size: 0.9rem;
+          font-variant-numeric: tabular-nums;
+        }
+      }
+    }
+  }
+}

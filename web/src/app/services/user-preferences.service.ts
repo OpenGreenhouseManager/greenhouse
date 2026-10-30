@@ -1,0 +1,30 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Service } from '@angular/core';
+import type { Observable } from 'rxjs';
+import type { UserPreferencesDto } from '../dtos/user-preferences';
+import { userPreferences } from '../urls/urls';
+
+@Service()
+export class UserPreferencesService {
+  private http = inject(HttpClient);
+
+  /**
+   * Get user preferences from the backend
+   */
+  getUserPreferences(): Observable<UserPreferencesDto> {
+    return this.http.get<UserPreferencesDto>(userPreferences, {
+      withCredentials: true,
+    });
+  }
+
+  /**
+   * Update user preferences on the backend
+   */
+  updateUserPreferences(
+    preferences: UserPreferencesDto
+  ): Observable<UserPreferencesDto> {
+    return this.http.post<UserPreferencesDto>(userPreferences, preferences, {
+      withCredentials: true,
+    });
+  }
+}

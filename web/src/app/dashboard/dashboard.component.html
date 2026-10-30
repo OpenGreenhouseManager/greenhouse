@@ -1,0 +1,71 @@
+<grn-nav-bar />
+<main class="page">
+  <div class="page-heading">
+    <h1>Dashboard</h1>
+    <div class="flex items-center gap-2">
+      @if (editMode()) {
+        <button pButton type="button" (click)="addEntry()">
+          <i class="pi pi-plus"></i><span class="button_label">Add Entry</span>
+        </button>
+      }
+      <button pButton type="button" (click)="editMode.set(!editMode())">
+        <i class="pi pi-pencil"></i><span class="button_label">Edit Mode</span>
+      </button>
+    </div>
+  </div>
+  <div class="content">
+    <p-tabs [(value)]="activeTab" class="w-full h-full" lazy>
+      <p-tablist>
+        @let tabs = dashboard();
+        @for (tab of tabs; track $index) {
+          <p-tab [value]="$index" class="custom-tab">
+            @if (editMode()) {
+              <div class="tab-edit-container">
+                <input
+                  type="text"
+                  class="tab-name-input"
+                  [value]="tab.name"
+                  [size]="tab.name.length || 1"
+                  (input)="updateTabName($index, $event)"
+                  (click)="$event.stopPropagation()" />
+                <i
+                  class="pi pi-trash tab-delete-icon"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Delete tab"
+                  (click)="deleteTab($index, $event)"
+                  (keydown.enter)="deleteTab($index, $event)"
+                  title="Delete tab"></i>
+              </div>
+            } @else {
+              {{ tab.name }}
+            }
+          </p-tab>
+        }
+        @if (editMode()) {
+          <p-tab (click)="addNewTab()" class="add-tab-button">
+            <i class="pi pi-plus"></i>
+          </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels class="h-full w-full">
+        @for (tab of tabs; track $index) {
+          <p-tabpanel [value]="$index">
+            <ng-template #content>
+              <grn-dashboard-tab
+                [dashboard]="tab.items"
+                (dashboardChange)="onDashboardChange($index, $event)"
+                [editMode]="editMode()" />
+            </ng-template>
+          </p-tabpanel>
+        }
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+</main>
+<grn-add-dashboard-component-dialog
+  [visible]="dialogVisible()"
+  (dialogClose)="onDialogClose()"
+  (componentAdded)="onComponentAdded($event)" />
+
+<p-confirmdialog />

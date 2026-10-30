@@ -1,0 +1,21 @@
+main.page {
+  .content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--grn-gap);
+
+    p-select {
+      align-self: flex-start;
+      min-width: 12rem;
+    }
+  }
+
+  .tableCell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

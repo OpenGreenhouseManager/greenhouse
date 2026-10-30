@@ -1,0 +1,342 @@
+/* Global styles: design tokens, page layout and PrimeNG layout fixes.
+   Component colours come from the PrimeNG preset in app.config.ts. */
+@use 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+:root {
+  /* Palette: warm paper, deep moss, leaf green, sakura accent */
+  --grn-bg: #f7f6f1;
+  --grn-surface: #ffffff;
+  --grn-surface-soft: #eef2ea;
+  --grn-border: #e3e6dc;
+  --grn-text: #24301f;
+  --grn-text-muted: #66705f;
+  --grn-primary: #4f7a4a;
+  --grn-primary-hover: #3f6640;
+  --grn-primary-active: #33532f;
+  --grn-sakura: #f2c4ce;
+  --grn-sakura-soft: #fbe9ee;
+  --grn-sakura-strong: #c75b7a;
+
+  /* Status / severity */
+  --grn-info: #4f8a9a;
+  --grn-warning: #d99a2b;
+  --grn-danger: #c2483d;
+  --grn-fatal: #8f2d26;
+  --grn-success: #5a9a4f;
+
+  /* Shape & spacing */
+  --grn-radius-sm: 6px;
+  --grn-radius: 12px;
+  --grn-shadow:
+    0 1px 2px rgba(36, 48, 31, 0.05), 0 4px 12px rgba(36, 48, 31, 0.06);
+  --grn-gap: 1rem;
+  --grn-page-pad: 1.5rem 2rem;
+  --grn-sidebar-w: 232px;
+
+  --grn-font:
+    'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+
+  /* Legacy aliases still referenced by a few templates */
+  --grn-background-color: var(--grn-bg);
+  --grn-text-color: var(--grn-text);
+  --grn-secondary-color: var(--grn-primary);
+  --grn-border-color: var(--grn-border);
+  --text-color-secondary: var(--grn-text-muted);
+}
+
+@media (max-width: 900px) {
+  :root {
+    --grn-sidebar-w: 72px;
+    --grn-page-pad: 1rem 1.25rem;
+  }
+}
+
+/* ---------- Base ---------- */
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+html {
+  font-size: 15px;
+  background-color: var(--grn-bg);
+}
+
+body {
+  font-family: var(--grn-font);
+  line-height: 1.5;
+  color: var(--grn-text);
+  background-color: var(--grn-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--grn-text);
+  line-height: 1.25;
+}
+
+a {
+  color: var(--grn-primary);
+}
+
+grn-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ---------- Shared page layout ---------- */
+main.page {
+  margin-left: var(--grn-sidebar-w);
+  padding: var(--grn-page-pad);
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--grn-gap);
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--grn-border);
+
+  h1 {
+    font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .heading-left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .button_label {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .p-button i {
+    padding-right: 0.25rem;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Card ---------- */
+.p-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
+  border-radius: var(--grn-radius);
+  box-shadow: var(--grn-shadow);
+}
+
+.p-card-body {
+  padding: 0.75rem 1rem 1rem !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.p-card-header {
+  flex-shrink: 0;
+}
+
+.p-card-content {
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------- Severity tags ---------- */
+.p-tag.p-tag-error {
+  background-color: var(--grn-danger);
+  color: #fff;
+}
+
+.p-tag.p-tag-fatal {
+  background-color: var(--grn-fatal) !important;
+  color: #fff !important;
+}
+
+/* ---------- Charts ---------- */
+.graph {
+  position: relative;
+}
+
+.graph-controls {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0.25rem;
+}
+
+.chartMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--grn-text-muted);
+}
+
+/* ---------- Forms ---------- */
+.p-datepicker-input {
+  width: 100% !important;
+}
+
+/* ---------- Accordion (flat, inside cards) ---------- */
+.p-accordion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-accordionpanel {
+  border-color: var(--grn-border);
+}
+
+.p-accordionheader {
+  font-weight: 600;
+  padding: 0.75rem 0.25rem !important;
+  background: transparent !important;
+}
+
+.p-accordioncontent-content {
+  background: transparent !important;
+  padding: 0 0.25rem 1rem !important;
+}
+
+/* ---------- Table ---------- */
+.p-datatable {
+  width: 100%;
+  min-width: 0;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
+  border-radius: var(--grn-radius);
+  box-shadow: var(--grn-shadow);
+  overflow: hidden;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--grn-surface-soft);
+  color: var(--grn-text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-color: var(--grn-border);
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: var(--grn-border);
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--grn-surface-soft);
+}
+
+.p-paginator {
+  background: transparent;
+  border-top: 1px solid var(--grn-border);
+  border-radius: 0;
+}
+
+/* Keep table layout stable when overlays open */
+.p-datatable-wrapper {
+  contain: layout;
+  isolation: isolate;
+  overflow-x: auto;
+  width: 100%;
+}
+
+body > .p-connected-overlay {
+  z-index: 10000 !important;
+}
+
+/* ---------- Tabs (colours come from the preset in app.config.ts) ---------- */
+.p-tablist-tab-list {
+  padding: 0.25rem 0;
+}
+
+.p-tab {
+  border-radius: 999px;
+}
+
+.p-tab[aria-selected='true'] {
+  box-shadow: 0 1px 3px rgba(36, 48, 31, 0.08);
+}
+
+/* ---------- Scrollbars ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grn-border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--grn-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #ccd2c3;
+}
+
+/* ---------- Device status ---------- */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--grn-surface-soft);
+}
+
+.page-heading .status-indicator {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--grn-surface);
+  border: 1px solid var(--grn-border);
+  font-weight: 600;
+  font-size: 0.9rem;
+}

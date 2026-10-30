@@ -1,0 +1,73 @@
+<main class="login">
+  <grn-card title="Login" class="card">
+    <div class="container">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          pInputText
+          [(ngModel)]="username"
+          (keyup.enter)="login()" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <p-iconfield iconPosition="right">
+          <input
+            id="password"
+            pInputPassword
+            fluid
+            [(mask)]="passwordMasked"
+            [(ngModel)]="password"
+            (keyup.enter)="login()" />
+          <p-inputicon
+            class="cursor-pointer"
+            [class]="passwordMasked() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              passwordMasked() ? 'Show password' : 'Hide password'
+            "
+            (click)="passwordMasked.set(!passwordMasked())"
+            (keydown.enter)="passwordMasked.set(!passwordMasked())" />
+        </p-iconfield>
+      </div>
+      @if (error()) {
+        <div class="form-group">
+          <span class="login-failed" role="alert"
+            >Password or username wrong</span
+          >
+        </div>
+      }
+      <div class="form-group">
+        <button pButton type="button" text (click)="navRegister()">
+          Register instead
+        </button>
+      </div>
+      <div class="form-group login-button">
+        <button pButton type="button" (click)="login()">Login</button>
+      </div>
+    </div>
+  </grn-card>
+
+  <!-- Guest Disclaimer Dialog -->
+  <p-dialog
+    header="Guest Account"
+    [(visible)]="showGuestDialog"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="p-fluid"
+    (onHide)="onGuestDialogClose()">
+    <p>
+      This is a guest account. You can use it to browse the website. You can't
+      change data.
+    </p>
+    <ng-template #footer>
+      <button pButton type="button" (click)="onGuestDialogClose()">
+        <i class="pi pi-check"></i>OK
+      </button>
+    </ng-template>
+  </p-dialog>
+</main>
