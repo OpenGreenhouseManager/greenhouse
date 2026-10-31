@@ -1,40 +1,24 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
-import type { TimeseriesResponseDto } from '../../dtos/timeseries';
+import type {
+  BatchTimeseriesResponseDto,
+  DeviceTimeseriesQueryDto,
+} from '../../dtos/timeseries';
 import { device } from '../../urls/urls';
-
-export interface TimeseriesQuery {
-  start: Date;
-  end: Date;
-  sub_property?: string | undefined;
-  step?: string;
-}
 
 @Service()
 export class GraphService {
   private http = inject(HttpClient);
 
-  getTimeseries(
-    deviceId: string,
-    query: TimeseriesQuery
-  ): Observable<TimeseriesResponseDto> {
-    let params = new HttpParams()
-      .set('start', query.start.toISOString())
-      .set('end', query.end.toISOString());
-    if (query.sub_property) {
-      params = params.set('sub_property', query.sub_property);
-    }
-    if (query.step) {
-      params = params.set('step', query.step);
-    }
-
-    return this.http.get<TimeseriesResponseDto>(
-      `${device}/${deviceId}/timeseries`,
-      {
-        withCredentials: true,
-        params,
-      }
+  // Results come back in the same order as the queries
+  getBatchTimeseries(
+    queries: DeviceTimeseriesQueryDto[]
+  ): Observable<BatchTimeseriesResponseDto> {
+    return this.http.post<BatchTimeseriesResponseDto>(
+      `${device}/timeseries/batch`,
+      { queries },
+      { withCredentials: true }
     );
   }
 }
