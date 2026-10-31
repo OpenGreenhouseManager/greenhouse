@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { AutoComplete } from 'primeng/autocomplete';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { DeviceService } from '../device';
-import type { DeviceResponseDto } from '../dtos/device';
+import type { DeviceResponseDto } from '../dtos/generated/device_service/DeviceResponseDto';
 
 @Component({
   selector: 'grn-single-data-form',

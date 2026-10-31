@@ -10,6 +10,11 @@ pub mod status;
 pub mod write;
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "smart_device/")
+)]
 pub enum Type {
     Number(f64),
     Boolean(bool),
@@ -20,6 +25,11 @@ pub enum Type {
 }
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "smart_device/")
+)]
 pub struct Measurement {
     pub value: f64,
     pub unit: String,

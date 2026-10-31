@@ -15,7 +15,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { DeviceService } from '../device/services/device-service';
-import type { DeviceResponseDto } from '../dtos/device';
+import type { DeviceResponseDto } from '../dtos/generated/device_service/DeviceResponseDto';
 import { AlertFormComponent } from './alert-form.component';
 import { MultiDataFormComponent } from './multi-data-form.component';
 import { SingleDataFormComponent } from './single-data-form.component';

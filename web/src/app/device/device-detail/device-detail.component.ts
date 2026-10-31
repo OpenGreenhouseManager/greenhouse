@@ -19,12 +19,15 @@ import {
   switchMap,
 } from 'rxjs';
 import { CardComponent } from '../../card/card.component';
-import type { ConfigResponseDto, DeviceResponseDto } from '../../dtos/device';
-import { DeviceStatusDto, Mode, Type } from '../../dtos/device';
+import type { ConfigResponseDto } from '../../dtos/generated/smart_device/ConfigResponseDto';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { AlertListComponent } from '../../shared/alert/alert-list.component';
 import type { GraphConfig } from '../../shared/graph/graph.component';
 import { GraphComponent } from '../../shared/graph/graph.component';
+import type {
+  DeviceStatus,
+  DeviceWithStatus,
+} from '../models/device-with-status';
 import { DeviceService } from '../services/device-service';
 
 @Component({
@@ -50,8 +53,8 @@ export class DeviceDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  device = signal<DeviceResponseDto | null>(null);
-  deviceConfig = signal<ConfigResponseDto | null>(null);
+  device = signal<DeviceWithStatus | null>(null);
+  deviceConfig = signal<ConfigResponseDto<unknown> | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
   loadingActivation = signal(false);
@@ -76,7 +79,7 @@ export class DeviceDetailComponent implements OnInit {
         if (!device) return of({ operations: [] });
         if (!deviceConfig) return of({ operations: [] });
 
-        if (deviceConfig.output_type === Type.Number) {
+        if (deviceConfig.output_type === 'Number') {
           return of({ operations: [] });
         }
         return this.deviceService.getDeviceOptions(device.id);
@@ -118,8 +121,8 @@ export class DeviceDetailComponent implements OnInit {
   public hasGraph = computed(() => {
     return (
       this.device()?.scraping &&
-      (this.deviceConfig()?.mode === Mode.Output ||
-        this.deviceConfig()?.mode === Mode.InputOutput)
+      (this.deviceConfig()?.mode === 'Output' ||
+        this.deviceConfig()?.mode === 'InputOutput')
     );
   });
 
@@ -160,7 +163,7 @@ export class DeviceDetailComponent implements OnInit {
         this.device.set(
           result.device && {
             ...result.device,
-            status: result.status?.status ?? DeviceStatusDto.Offline,
+            status: result.status?.status ?? 'Offline',
           }
         );
         this.deviceConfig.set(result.config);
@@ -188,28 +191,28 @@ export class DeviceDetailComponent implements OnInit {
     this.router.navigate(['/smart_devices']);
   }
 
-  getStatusColor(status?: DeviceStatusDto): string {
+  getStatusColor(status?: DeviceStatus): string {
     if (!status) {
       return 'var(--grn-text-muted)';
     }
     switch (status) {
-      case DeviceStatusDto.Online:
+      case 'Online':
         return 'var(--grn-success)';
-      case DeviceStatusDto.Panic:
+      case 'Panic':
         return 'var(--grn-danger)';
       default:
         return 'var(--grn-text-muted)';
     }
   }
 
-  getStatusText(status?: DeviceStatusDto): string {
+  getStatusText(status?: DeviceStatus): string {
     if (!status) {
       return 'Offline';
     }
     switch (status) {
-      case DeviceStatusDto.Online:
+      case 'Online':
         return 'Online';
-      case DeviceStatusDto.Panic:
+      case 'Panic':
         return 'Panic';
       default:
         return 'Offline';

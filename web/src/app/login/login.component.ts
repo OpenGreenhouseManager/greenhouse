@@ -10,8 +10,8 @@ import { InputIcon } from 'primeng/inputicon';
 import { InputPassword } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../card/card.component';
-import type { LoginResponseDto } from '../dtos/login';
-import { LoginRequestDto } from '../dtos/login';
+import type { LoginRequestDto } from '../dtos/generated/auth_service/LoginRequestDto';
+import type { LoginResponseDto } from '../dtos/generated/auth_service/LoginResponseDto';
 import { login } from '../urls/urls';
 
 @Component({
@@ -73,7 +73,10 @@ export class LoginComponent {
     this.http
       .post<LoginResponseDto>(
         login,
-        new LoginRequestDto(this.username, this.password()),
+        {
+          username: this.username,
+          password: this.password(),
+        } satisfies LoginRequestDto,
         {
           withCredentials: true,
         }

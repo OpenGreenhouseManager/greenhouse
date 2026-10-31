@@ -2,6 +2,11 @@ use greenhouse_macro::IntoJsonResponse;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "data_storage_service/alert/")
+)]
 pub enum Severity {
     Info,
     Warning,
@@ -10,6 +15,11 @@ pub enum Severity {
 }
 
 #[derive(Serialize, Deserialize, Debug, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "data_storage_service/alert/")
+)]
 pub struct AlertDto {
     pub id: String,
     pub severity: Severity,
@@ -21,6 +31,11 @@ pub struct AlertDto {
 }
 
 #[derive(Serialize, Deserialize, Debug, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "data_storage_service/alert/")
+)]
 pub struct AlertsDto {
     pub alerts: Vec<AlertDto>,
 }

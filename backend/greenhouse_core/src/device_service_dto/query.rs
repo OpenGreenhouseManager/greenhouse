@@ -3,11 +3,18 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::{fmt, num::NonZeroU32, str::FromStr};
 
 #[derive(Deserialize, Serialize, Debug)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct PromQuery {
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub sub_property: Option<String>,
     #[serde(default)]
+    #[cfg_attr(feature = "ts", ts(type = "string"))]
     pub step: Step,
 }
 

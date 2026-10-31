@@ -9,8 +9,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import type { DeviceResponseDto } from '../../dtos/device';
-import { DeviceStatusDto } from '../../dtos/device';
+import type {
+  DeviceStatus,
+  DeviceWithStatus,
+} from '../models/device-with-status';
 import { NavBarComponent } from '../../nav_bar/nav_bar.component';
 import { DeviceService } from '../services/device-service';
 
@@ -27,7 +29,7 @@ import { DeviceService } from '../services/device-service';
   styleUrl: './device-overview.component.scss',
 })
 export class DeviceOverviewComponent implements OnInit {
-  devices = signal<DeviceResponseDto[]>([]);
+  devices = signal<DeviceWithStatus[]>([]);
   filteredDevices = computed(() =>
     this.devices().filter(device =>
       device.name.toLowerCase().includes(this.searchTerm().toLowerCase())
@@ -87,22 +89,22 @@ export class DeviceOverviewComponent implements OnInit {
     });
   }
 
-  getStatusColor(status: DeviceStatusDto): string {
+  getStatusColor(status: DeviceStatus): string {
     switch (status) {
-      case DeviceStatusDto.Online:
+      case 'Online':
         return 'var(--grn-success)';
-      case DeviceStatusDto.Panic:
+      case 'Panic':
         return 'var(--grn-danger)';
       default:
         return 'var(--grn-text-muted)';
     }
   }
 
-  getStatusText(status: DeviceStatusDto): string {
+  getStatusText(status: DeviceStatus): string {
     switch (status) {
-      case DeviceStatusDto.Online:
+      case 'Online':
         return 'Online';
-      case DeviceStatusDto.Panic:
+      case 'Panic':
         return 'Panic';
       default:
         return 'Offline';
@@ -113,7 +115,7 @@ export class DeviceOverviewComponent implements OnInit {
     this.router.navigate(['/smart_devices/add']);
   }
 
-  navigateToDeviceDetail(device: DeviceResponseDto) {
+  navigateToDeviceDetail(device: DeviceWithStatus) {
     this.router.navigate(['/smart_devices', device.id]);
   }
 

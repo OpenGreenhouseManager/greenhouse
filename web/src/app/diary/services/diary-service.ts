@@ -2,12 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { formatISO, parseISO } from 'date-fns';
 import { map, Observable } from 'rxjs';
-import type {
-  DiaryEntryDtoResponse,
-  GetDiaryDtoResponse,
-  PostDiaryEntryDtoRequest,
-  PutDiaryEntryDtoRequest,
-} from '../../dtos/diary';
+import type { DiaryEntryResponseDto } from '../../dtos/generated/data_storage_service/diary/DiaryEntryResponseDto';
+import type { GetDiaryResponseDto } from '../../dtos/generated/data_storage_service/diary/GetDiaryResponseDto';
+import type { PostDiaryEntryDtoRequest } from '../../dtos/generated/data_storage_service/diary/PostDiaryEntryDtoRequest';
+import type { PutDiaryEntryDtoRequest } from '../../dtos/generated/data_storage_service/diary/PutDiaryEntryDtoRequest';
 import { diary } from '../../urls/urls';
 import { Diary } from '../models/diary';
 
@@ -21,7 +19,7 @@ export class DiaryService {
     }
 
     return this.http
-      .get<DiaryEntryDtoResponse>(`${diary}/${id}`, {
+      .get<DiaryEntryResponseDto>(`${diary}/${id}`, {
         withCredentials: true,
       })
       .pipe(
@@ -40,7 +38,7 @@ export class DiaryService {
 
   getDiaries(start: Date, end: Date): Observable<Map<string, Diary>> {
     return this.http
-      .get<GetDiaryDtoResponse>(
+      .get<GetDiaryResponseDto>(
         `${diary}/${start.toISOString()}/${end.toISOString()}`,
         {
           withCredentials: true,
@@ -77,7 +75,7 @@ export class DiaryService {
         date: formatISO(newDiary.date),
         title: newDiary.title,
         content: newDiary.content,
-      } as PostDiaryEntryDtoRequest,
+      } satisfies PostDiaryEntryDtoRequest,
       {
         withCredentials: true,
       }
@@ -91,7 +89,7 @@ export class DiaryService {
         date: formatISO(newDiary.date),
         title: newDiary.title,
         content: newDiary.content,
-      } as PutDiaryEntryDtoRequest,
+      } satisfies PutDiaryEntryDtoRequest,
       {
         withCredentials: true,
       }

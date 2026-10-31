@@ -4,7 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import type { BatchTimeseriesRequestDto } from '../../dtos/timeseries';
+import type { BatchTimeseriesRequestDto } from '../../dtos/generated/device_service/BatchTimeseriesRequestDto';
 import type { SeriesQuery } from './timeseries.store';
 import {
   FLUSH_DELAY_MS,

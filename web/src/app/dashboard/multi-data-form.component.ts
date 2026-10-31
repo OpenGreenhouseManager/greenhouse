@@ -2,7 +2,7 @@ import { Component, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
-import type { DeviceResponseDto } from '../dtos/device';
+import type { DeviceResponseDto } from '../dtos/generated/device_service/DeviceResponseDto';
 import { SingleDataFormComponent } from './single-data-form.component';
 
 type AxisMode = 'merged' | 'separate';

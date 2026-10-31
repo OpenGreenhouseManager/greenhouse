@@ -76,6 +76,7 @@ export class DeviceEditComponent {
         description: deviceData.description,
         address: deviceData.address,
         can_script: deviceData.can_script,
+        scraping: deviceData.scraping,
       });
     } else {
       observable = this.deviceService.addDevice({

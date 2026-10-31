@@ -41,8 +41,8 @@ export class AlertDetailComponent {
   alerts = toSignal(
     this.alertService
       .queryAlerts({
-        identifier: this.identifier || undefined,
-        datasource_id: this.dataSource || undefined,
+        ...(this.identifier ? { identifier: this.identifier } : {}),
+        ...(this.dataSource ? { datasource_id: this.dataSource } : {}),
       })
       .pipe(catchError(() => of(null)))
   );

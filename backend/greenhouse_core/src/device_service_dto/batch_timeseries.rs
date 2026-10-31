@@ -6,6 +6,11 @@ use super::{get_timeseries::TimeseriesDto, query::PromQuery};
 
 /// A [`PromQuery`] bound to a specific device.
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct DeviceTimeseriesQuery {
     pub device_id: Uuid,
     #[serde(flatten)]
@@ -14,12 +19,22 @@ pub struct DeviceTimeseriesQuery {
 
 /// Request several timeseries, possibly from different devices.
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct BatchTimeseriesRequestDto {
     pub queries: Vec<DeviceTimeseriesQuery>,
 }
 
 /// Results are returned in the same order as the requested queries.
 #[derive(Serialize, Deserialize, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct BatchTimeseriesResponseDto {
     pub results: Vec<BatchTimeseriesResultDto>,
 }
@@ -27,6 +42,11 @@ pub struct BatchTimeseriesResponseDto {
 /// Exactly one of `timeseries` or `error` is set, so a single failing
 /// query does not fail the whole batch.
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct BatchTimeseriesResultDto {
     pub query: DeviceTimeseriesQuery,
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -8,12 +8,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import type {
-  BatchTimeseriesResultDto,
-  DeviceTimeseriesQueryDto,
-  TimeseriesDto,
-  Type,
-} from '../../dtos/timeseries';
+import type { BatchTimeseriesResultDto } from '../../dtos/generated/device_service/BatchTimeseriesResultDto';
+import type { DeviceTimeseriesQuery } from '../../dtos/generated/device_service/DeviceTimeseriesQuery';
+import type { TimeseriesDto } from '../../dtos/generated/device_service/TimeseriesDto';
+import type { Type } from '../../dtos/generated/device_service/Type';
 import { GraphService } from '../graph/graph.service';
 
 // Prometheus step sizes the store queries with. Only fixed rungs are used so
@@ -295,11 +293,11 @@ export class TimeseriesStore {
   }
 }
 
-function toDto(query: SeriesQuery, now: number): DeviceTimeseriesQueryDto {
+function toDto(query: SeriesQuery, now: number): DeviceTimeseriesQuery {
   const { start, end } = resolveRange(query, now);
   return {
     device_id: query.device_id,
-    sub_property: query.sub_property || undefined,
+    ...(query.sub_property ? { sub_property: query.sub_property } : {}),
     step: query.step,
     start: start.toISOString(),
     end: end.toISOString(),

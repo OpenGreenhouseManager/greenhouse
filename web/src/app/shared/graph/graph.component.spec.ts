@@ -9,7 +9,7 @@ import {
 import { GraphComponent } from './graph.component';
 import { provideEchartsCore } from 'ngx-echarts';
 import { echarts } from './echarts';
-import type { BatchTimeseriesRequestDto } from '../../dtos/timeseries';
+import type { BatchTimeseriesRequestDto } from '../../dtos/generated/device_service/BatchTimeseriesRequestDto';
 import { FLUSH_DELAY_MS, TICK_MS } from '../timeseries/timeseries.store';
 
 describe('GraphComponent', () => {
