@@ -98,4 +98,22 @@ device-stop:
     killall input_output_int_saver || true
     killall input_alert_trigger || true
 
-ci: lint test fmt
+ci: lint test fmt check-ts
+
+ts_bindings := "../web/src/app/dtos/generated"
+
+# Regenerate the web frontend's TypeScript DTOs from greenhouse_core (ts-rs)
+gen-ts:
+    rm -rf {{ ts_bindings }}
+    cargo test -p greenhouse_core --features ts export_bindings
+
+# Fail if the committed TypeScript DTOs are out of date
+check-ts: gen-ts
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -n "$(git status --porcelain -- {{ ts_bindings }})" ]]; then
+        git status --short -- {{ ts_bindings }}
+        git --no-pager diff -- {{ ts_bindings }}
+        echo "::error::TypeScript DTOs are out of date. Run 'just backend gen-ts' and commit the result."
+        exit 1
+    fi

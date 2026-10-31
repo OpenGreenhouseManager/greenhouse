@@ -2,6 +2,11 @@ use greenhouse_macro::IntoJsonResponse;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct DeviceResponseDto {
     pub id: String,
     pub name: String,
@@ -12,6 +17,11 @@ pub struct DeviceResponseDto {
 }
 
 #[derive(Serialize, Deserialize, Debug, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "device_service/")
+)]
 pub struct DevicesResponseDto {
     pub devices: Vec<DeviceResponseDto>,
 }

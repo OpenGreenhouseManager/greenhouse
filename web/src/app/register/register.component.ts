@@ -8,8 +8,8 @@ import { InputIcon } from 'primeng/inputicon';
 import { InputPassword } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../card/card.component';
-import type { RegisterResponseDto } from '../dtos/register';
-import { RegisterRequestDto } from '../dtos/register';
+import type { RegisterRequestDto } from '../dtos/generated/auth_service/RegisterRequestDto';
+import type { RegisterResponseDto } from '../dtos/generated/auth_service/RegisterResponseDto';
 import { register } from '../urls/urls';
 
 @Component({
@@ -55,7 +55,11 @@ export class RegisterComponent {
     this.http
       .post<RegisterResponseDto>(
         register,
-        new RegisterRequestDto(this.username, this.password(), this.otp),
+        {
+          username: this.username,
+          password: this.password(),
+          one_time_token: this.otp,
+        } satisfies RegisterRequestDto,
         {
           withCredentials: true,
         }

@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { map } from 'rxjs';
-import type { AlertsAggrigatedDto } from '../../dtos/alert/aggrigated-alert';
-import type { AlertsDto } from '../../dtos/alert/alert';
-import type { AlertQuery } from '../../dtos/alert/alert-query';
-import type { IntervalQuery } from '../../dtos/alert/interval-query';
+import type { AggrigatedAlertsDto } from '../../dtos/generated/data_storage_service/alert/AggrigatedAlertsDto';
+import type { AlertQuery } from '../../dtos/generated/data_storage_service/alert/AlertQuery';
+import type { AlertsDto } from '../../dtos/generated/data_storage_service/alert/AlertsDto';
+import type { IntervalQuery } from '../../dtos/generated/data_storage_service/alert/IntervalQuery';
+import type { Severity as SeverityDto } from '../../dtos/generated/data_storage_service/alert/Severity';
 import { alert } from '../../urls/urls';
 import type { AggregatedAlert } from '../models/aggregated-alert';
 import type { Alert } from '../models/alert';
@@ -23,7 +24,7 @@ export class AlertService {
     };
 
     return this.http
-      .get<AlertsAggrigatedDto>(alert, {
+      .get<AggrigatedAlertsDto>(alert, {
         withCredentials: true,
         params: query as HttpParams,
       })
@@ -68,7 +69,7 @@ export class AlertService {
               severity: this.convertSeverity(alert.severity),
               identifier: alert.identifier,
               value: alert.value,
-              note: alert.note,
+              note: alert.note ?? undefined,
               created_at: new Date(alert.created_at),
               datasource_id: alert.datasource_id,
             });
@@ -78,7 +79,7 @@ export class AlertService {
       );
   }
 
-  convertSeverity(severity: string): Severity {
+  convertSeverity(severity: SeverityDto): Severity {
     switch (severity) {
       case 'Info':
         return Severity.Info;

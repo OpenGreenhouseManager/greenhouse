@@ -1,2 +1,8 @@
 [build]
 rustflags = ["-C","relocation-model=pic"]
+
+[env]
+# ts-rs bindings for the web frontend (`just backend gen-ts`)
+TS_RS_EXPORT_DIR = { value = "../web/src/app/dtos/generated", relative = true }
+# JSON numbers, not bigint: serde_json emits i64/u64 as plain numbers
+TS_RS_LARGE_INT = "number"

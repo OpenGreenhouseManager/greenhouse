@@ -4,14 +4,16 @@
   (iconClicked)="this.dialogVisible = true">
   <div class="graph-controls">
     <p-datepicker
-      [(ngModel)]="startDate"
+      [ngModel]="startDate()"
+      (ngModelChange)="setStart($event)"
       [showTime]="true"
       appendTo="body"
       [maxDate]="endDate()"
       hourFormat="24" />
 
     <p-datepicker
-      [(ngModel)]="endDate"
+      [ngModel]="endDate()"
+      (ngModelChange)="setEnd($event)"
       [showTime]="true"
       appendTo="body"
       [minDate]="startDate()"

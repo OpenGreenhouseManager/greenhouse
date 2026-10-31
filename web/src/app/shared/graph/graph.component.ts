@@ -1,18 +1,20 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { differenceInSeconds, subDays } from 'date-fns';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { combineLatest, forkJoin, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
 import { CardComponent } from '../../card/card.component';
+import {
+  injectTimeseries,
+  pickStep,
+  stepMs,
+  type TimeRange,
+  TimeseriesStore,
+} from '../timeseries/timeseries.store';
 import { chartColors, type LineSeries, lineChartOptions } from './chart_option';
-import { GraphService } from './graph.service';
 
 export interface GraphConfig {
   graph_data: GraphData[];
@@ -24,7 +26,10 @@ export interface GraphData {
   sub_property?: string | undefined;
 }
 
-const MAX_DATA_POINTS = 100;
+const MAX_DATA_POINTS = 500;
+const DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+// the date picker has minute precision, an end within this is treated as "now"
+const LIVE_TOLERANCE_MS = 60_000;
 
 const palette = [
   chartColors.primary,
@@ -54,114 +59,97 @@ const palette = [
 export class GraphComponent {
   public config = input.required<GraphConfig>();
   public header = input.required<string>();
-  private graphService = inject(GraphService);
-  public loading = signal(false);
-  public error = signal<string | null>(null);
   public dialogVisible = false;
-  public startDate = signal(subDays(new Date(), 1));
-  public endDate = signal(new Date());
 
-  // calculate the step size based on the duration and the max data points
-  // output should be prometeus steps example 1s, 5s, 10s, 15s, 30s, 1m, 2m, 5m, 10m, 1h, 1d
-  public steps = computed(() => {
-    const raw_pint_count =
-      differenceInSeconds(this.endDate(), this.startDate()) / 5;
-    const step_count = raw_pint_count / MAX_DATA_POINTS;
+  public now = inject(TimeseriesStore).now;
 
-    if (step_count < 1) {
-      return '1s';
-    } else if (step_count < 60) {
-      return `${Math.floor(step_count)}s`;
-    } else if (step_count < 3600) {
-      return `${Math.floor(step_count / 60)}m`;
-    } else if (step_count < 86400) {
-      return `${Math.floor(step_count / 3600)}h`;
-    }
-    return '1d';
+  // A live range slides with the store clock, a fixed range never refreshes
+  public range = signal<TimeRange>({
+    kind: 'live',
+    windowMs: DEFAULT_WINDOW_MS,
   });
 
-  public now = signal(new Date());
+  public startDate = computed(() => {
+    const range = this.range();
+    return range.kind === 'live'
+      ? new Date(this.now().getTime() - range.windowMs)
+      : range.start;
+  });
 
-  // Convert inputs to an observable, then fetch one or more timeseries and map them to chart series
-  public timeseries = toSignal(
-    combineLatest([
-      toObservable(this.config),
-      toObservable(this.startDate),
-      toObservable(this.endDate),
-      toObservable(this.steps),
-    ])
-      .pipe(
-        switchMap(([deviceConfig, startDate, endDate, steps]) => {
-          this.loading.set(true);
-          this.error.set(null);
+  public endDate = computed(() => {
+    const range = this.range();
+    return range.kind === 'live' ? this.now() : range.end;
+  });
 
-          return forkJoin(
-            deviceConfig.graph_data.map(s =>
-              this.graphService.getTimeseries(s.device_id, {
-                start: startDate,
-                end: endDate,
-                step: steps,
-                sub_property: s.sub_property,
-              })
-            )
-          ).pipe(
-            map(responses => ({ responses })),
-            catchError(error => {
-              this.loading.set(false);
-              this.error.set(error.message);
-              return of({ responses: [] });
-            })
-          );
-        })
-      )
-      .pipe(
-        map(({ responses }) => {
-          this.loading.set(false);
-          if (!responses) {
-            return [];
-          }
+  public steps = computed(() => {
+    const range = this.range();
+    const duration =
+      range.kind === 'live'
+        ? range.windowMs
+        : range.end.getTime() - range.start.getTime();
+    return pickStep(duration, MAX_DATA_POINTS);
+  });
 
-          return responses.map((r, idx): LineSeries => {
-            // Determine unit (if Measurement) for this series
-            const firstMeasurement = r.timeseries.find(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              t => (t.value as any)?.Measurement
-            );
-            const unit: string =
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (firstMeasurement?.value as any)?.Measurement?.unit ?? '';
+  private series = injectTimeseries(() =>
+    this.config().graph_data.map(s => ({
+      device_id: s.device_id,
+      sub_property: s.sub_property,
+      step: this.steps(),
+      range: this.range(),
+    }))
+  );
 
-            // Map value, supporting Number and Measurement; null for others
-            const data = r.timeseries.map((t): [number, number | null] => {
-              const v = t.value;
-              let value: number | null = null;
-              if (v && typeof v === 'object') {
-                if ('Measurement' in v && v.Measurement) {
-                  value = v.Measurement.value as number;
-                } else if ('Number' in v) {
-                  value = v.Number as number;
-                }
-              }
-              return [t.timestamp * 1000, value];
-            });
+  public loading = computed(() => this.series().some(s => s.loading));
 
-            const graphData = this.config().graph_data[idx];
-            return {
-              name:
-                graphData?.sub_property ||
-                graphData?.device_id ||
-                `Series ${idx + 1}`,
-              unit,
-              color: palette[idx % palette.length] ?? chartColors.primary,
-              data,
-            };
-          });
-        })
-      ),
-    { initialValue: [] as LineSeries[] }
+  public error = computed(() => {
+    const errors = this.series()
+      .filter(s => s.error)
+      .map(s => `${seriesName(s.query)}: ${s.error}`);
+    return errors.length ? errors.join('\n') : null;
+  });
+
+  public timeseries = computed(() =>
+    this.series().map((s, idx): LineSeries => ({
+      name: seriesName(s.query) || `Series ${idx + 1}`,
+      unit: s.unit,
+      color: palette[idx % palette.length] ?? chartColors.primary,
+      data: s.points.map(([timestamp, value]) => [
+        timestamp,
+        typeof value === 'number' ? value : null,
+      ]),
+    }))
   );
 
   public options = computed(() =>
     lineChartOptions(this.timeseries(), this.config().axis_mode === 'separate')
   );
+
+  public setStart(start: Date | null) {
+    const end = this.endDate();
+    if (!start || start >= end) return;
+    this.setRange(start, end);
+  }
+
+  public setEnd(end: Date | null) {
+    const start = this.startDate();
+    if (!end || end <= start) return;
+    this.setRange(start, end);
+  }
+
+  private setRange(start: Date, end: Date) {
+    const windowMs = end.getTime() - start.getTime();
+    const tolerance = Math.max(
+      stepMs(pickStep(windowMs, MAX_DATA_POINTS)),
+      LIVE_TOLERANCE_MS
+    );
+    this.range.set(
+      Date.now() - end.getTime() <= tolerance
+        ? { kind: 'live', windowMs }
+        : { kind: 'fixed', start, end }
+    );
+  }
+}
+
+function seriesName(s: GraphData): string {
+  return s.sub_property || s.device_id;
 }

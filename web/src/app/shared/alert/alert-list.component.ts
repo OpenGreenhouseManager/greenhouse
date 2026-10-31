@@ -8,6 +8,7 @@ import { AlertDetailListComponent } from '../../alert/alert-detail-list/alert-de
 import type { Alert } from '../../alert/models/alert';
 import { Severity } from '../../alert/models/alert';
 import { CardComponent } from '../../card/card.component';
+import type { Severity as SeverityDto } from '../../dtos/generated/data_storage_service/alert/Severity';
 import { AlertService } from './alert.service';
 
 @Component({
@@ -73,7 +74,7 @@ export class AlertListComponent {
                 severity: this.convertSeverity(a.severity),
                 identifier: a.identifier,
                 value: a.value,
-                note: a.note,
+                note: a.note ?? undefined,
                 created_at: new Date(a.created_at),
                 datasource_id: a.datasource_id,
               }) satisfies Alert
@@ -82,7 +83,7 @@ export class AlertListComponent {
       )
   );
 
-  convertSeverity(severity: string): Severity {
+  convertSeverity(severity: SeverityDto): Severity {
     switch (severity) {
       case 'Info':
         return Severity.Info;

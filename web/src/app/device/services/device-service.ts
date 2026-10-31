@@ -1,15 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import type { Observable } from 'rxjs';
-import type {
-  ConfigResponseDto,
-  DeviceOptionsResponseDto,
-  DeviceResponseDto,
-  DevicesResponseDto,
-  DeviceStatusResponseDto,
-  PostDeviceDtoRequest,
-  PutDeviceDtoRequest,
-} from '../../dtos/device';
+import type { DeviceResponseDto } from '../../dtos/generated/device_service/DeviceResponseDto';
+import type { DevicesResponseDto } from '../../dtos/generated/device_service/DevicesResponseDto';
+import type { OperationsDto } from '../../dtos/generated/device_service/OperationsDto';
+import type { PostDeviceDtoRequest } from '../../dtos/generated/device_service/PostDeviceDtoRequest';
+import type { PutDeviceDtoRequest } from '../../dtos/generated/device_service/PutDeviceDtoRequest';
+import type { ConfigResponseDto } from '../../dtos/generated/smart_device/ConfigResponseDto';
+import type { DeviceStatusResponseDto } from '../../dtos/generated/smart_device/DeviceStatusResponseDto';
 import { device } from '../../urls/urls';
 
 @Service()
@@ -56,10 +54,13 @@ export class DeviceService {
     );
   }
 
-  getDeviceConfig(deviceId: string): Observable<ConfigResponseDto> {
-    return this.http.get<ConfigResponseDto>(`${device}/${deviceId}/config`, {
-      withCredentials: true,
-    });
+  getDeviceConfig(deviceId: string): Observable<ConfigResponseDto<unknown>> {
+    return this.http.get<ConfigResponseDto<unknown>>(
+      `${device}/${deviceId}/config`,
+      {
+        withCredentials: true,
+      }
+    );
   }
 
   registerDevice(deviceId: string): Observable<DeviceResponseDto> {
@@ -84,12 +85,9 @@ export class DeviceService {
     );
   }
 
-  getDeviceOptions(deviceId: string): Observable<DeviceOptionsResponseDto> {
-    return this.http.get<DeviceOptionsResponseDto>(
-      `${device}/${deviceId}/options`,
-      {
-        withCredentials: true,
-      }
-    );
+  getDeviceOptions(deviceId: string): Observable<OperationsDto> {
+    return this.http.get<OperationsDto>(`${device}/${deviceId}/options`, {
+      withCredentials: true,
+    });
   }
 }

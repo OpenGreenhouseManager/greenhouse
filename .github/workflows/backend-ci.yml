@@ -79,6 +79,23 @@ jobs:
       - name: Test
         run: cargo test --release --workspace --all-features -- --test-threads=1
 
+  ts-bindings:
+    name: TypeScript DTOs up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install nightly
+        run: rustup update nightly
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Check generated TypeScript DTOs
+        run: just check-ts
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest

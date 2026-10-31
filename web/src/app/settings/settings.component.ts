@@ -5,7 +5,7 @@ import { ButtonDirective } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardComponent } from '../card/card.component';
-import { GenerateOneTimeTokenRequestDto } from '../dtos/generate_one_time_token_request';
+import type { GenerateOneTimeTokenRequestDto } from '../dtos/generated/auth_service/GenerateOneTimeTokenRequestDto';
 import { NavBarComponent } from '../nav_bar/nav_bar.component';
 import { otp } from '../urls/urls';
 
@@ -44,9 +44,15 @@ export class SettingsComponent {
   RequestOtp() {
     this.isCopied.set(false);
     this.http
-      .post<string>(otp, new GenerateOneTimeTokenRequestDto(this.otpUsername), {
-        withCredentials: true,
-      })
+      .post<string>(
+        otp,
+        {
+          username: this.otpUsername,
+        } satisfies GenerateOneTimeTokenRequestDto,
+        {
+          withCredentials: true,
+        }
+      )
       .subscribe({
         next: d => {
           this.otp.set(d);
