@@ -24,5 +24,5 @@ just test
 
 - `nix build .#backend` / `nix build .#web`
 - Sub-flakes stay usable standalone: `github:OpenGreenhouseManager/greenhouse?dir=backend`
-- Tags are prefixed per project: `backend-vX.Y.Z`, `backend-example-vX.Y.Z`, `web-vX.Y.Z`
-  (pre-merge tags were renamed the same way).
+- `vX.Y.Z` releases backend and web together; `backend-example-vX.Y.Z` releases the example images
+  (older releases use the per-project `backend-v*` / `web-v*` tags).

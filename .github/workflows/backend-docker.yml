@@ -3,7 +3,7 @@ name: Backend Docker Test & Publish
 on:
   push:
     tags:
-      - "backend-v*"
+      - "v*.*.*"
   pull_request:
     branches:
       - main
@@ -72,7 +72,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/data_storage
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:
@@ -93,7 +93,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/device_service
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:
@@ -114,7 +114,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/scripting_service
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:
@@ -135,7 +135,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/web_api
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:
@@ -156,7 +156,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/script_api
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:
@@ -177,7 +177,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/auth_service
           tags: |
-            type=match,pattern=backend-(v.*),group=1
+            type=ref,event=tag
       - name: Publish
         uses: docker/build-push-action@v7
         with:

@@ -3,7 +3,7 @@ name: Web Build and Push Images
 on:
   push:
     tags:
-      - 'web-v*.*.*'
+      - 'v*.*.*'
   workflow_dispatch: {}
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
           images: |
             ghcr.io/opengreenhousemanager/greenhouse_web
           tags: |
-            type=match,pattern=web-(v.*),group=1
+            type=ref,event=tag
             type=raw,value=latest
 
       - name: Build and push
