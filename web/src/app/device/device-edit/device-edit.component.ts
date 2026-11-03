@@ -1,11 +1,19 @@
 import { Location } from '@angular/common';
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { TextareaModule } from 'primeng/textarea';
 import { map, of } from 'rxjs';
 import { CardComponent } from '../../card/card.component';
@@ -23,6 +31,8 @@ import { DeviceService } from '../services/device-service';
     ButtonDirective,
     TextareaModule,
     CheckboxModule,
+    Dialog,
+    MessageModule,
   ],
   templateUrl: './device-edit.component.html',
   styleUrl: './device-edit.component.scss',
@@ -60,6 +70,45 @@ export class DeviceEditComponent {
   );
   private device = linkedSignal(() => this.loadedDevice());
   deviceForm = form(this.device);
+
+  // Name as stored on the server, not the possibly edited form value
+  deviceName = computed(() => this.loadedDevice().name);
+  deleteDialogVisible = signal(false);
+  deleteConfirmation = signal('');
+  deleteLoading = signal(false);
+  deleteError = signal<string | null>(null);
+  deleteConfirmed = computed(
+    () =>
+      this.deviceName() !== '' &&
+      this.deleteConfirmation() === this.deviceName()
+  );
+
+  openDeleteDialog() {
+    this.deleteConfirmation.set('');
+    this.deleteError.set(null);
+    this.deleteDialogVisible.set(true);
+  }
+
+  closeDeleteDialog() {
+    this.deleteDialogVisible.set(false);
+  }
+
+  deleteDevice() {
+    if (!this.id || !this.deleteConfirmed() || this.deleteLoading()) return;
+    this.deleteLoading.set(true);
+    this.deleteError.set(null);
+    this.deviceService.deleteDevice(this.id).subscribe({
+      next: () => {
+        this.deleteLoading.set(false);
+        this.deleteDialogVisible.set(false);
+        void this.router.navigate(['/smart_devices']);
+      },
+      error: () => {
+        this.deleteLoading.set(false);
+        this.deleteError.set('Failed to delete device.');
+      },
+    });
+  }
 
   goBack() {
     this.location.back();

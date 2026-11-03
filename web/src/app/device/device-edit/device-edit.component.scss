@@ -39,3 +39,29 @@
     }
   }
 }
+
+.actions {
+  display: flex;
+  gap: var(--grn-gap);
+}
+
+.delete-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  p {
+    margin: 0;
+  }
+
+  .device-name {
+    font-family: monospace;
+    word-break: break-all;
+  }
+
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
