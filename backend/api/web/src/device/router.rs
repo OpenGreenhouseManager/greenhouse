@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query, State},
     http::HeaderValue,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
 };
 use greenhouse_core::device_service_dto::{
     batch_timeseries::{BatchTimeseriesRequestDto, BatchTimeseriesResponseDto},
@@ -25,6 +25,7 @@ pub(crate) fn routes(state: AppState) -> Router {
         .route("/", get(get_devices))
         .route("/{id}", put(update_device))
         .route("/{id}", get(get_device))
+        .route("/{id}", delete(delete_device))
         .route(&format!("/{{id}}/{ACTIVATE}"), put(activate_device))
         .route(&format!("/{{id}}/{CONFIG}"), put(update_device_config))
         .route(&format!("/{{id}}/{CONFIG}"), get(get_device_config))
@@ -65,6 +66,15 @@ pub(crate) async fn get_device(
     Path(id): Path<Uuid>,
 ) -> HttpResult<DeviceResponseDto> {
     Ok(service::get_device(&config.service_addresses.device_service, id).await?)
+}
+
+#[axum::debug_handler]
+pub(crate) async fn delete_device(
+    State(AppState { config }): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> HttpResult<StatusCode> {
+    service::delete_device(&config.service_addresses.device_service, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[axum::debug_handler]

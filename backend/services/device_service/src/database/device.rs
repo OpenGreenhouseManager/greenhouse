@@ -82,6 +82,24 @@ impl Device {
         Ok(())
     }
 
+    pub(crate) async fn delete_by_id(id: Uuid, pool: &Pool) -> Result<()> {
+        let mut conn = pool.get().await.map_err(|e| {
+            sentry::capture_error(&e);
+            Error::DatabaseConnection
+        })?;
+        let deleted = diesel::delete(device::table.filter(device::id.eq(id)))
+            .execute(&mut conn)
+            .await
+            .map_err(|e| {
+                sentry::capture_error(&e);
+                Error::Delete
+            })?;
+        if deleted == 0 {
+            return Err(Error::Find);
+        }
+        Ok(())
+    }
+
     pub(crate) async fn get_scraping_devices(pool: &Pool) -> Result<Vec<Self>> {
         let mut conn = pool.get().await.map_err(|e| {
             sentry::capture_error(&e);

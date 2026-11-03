@@ -45,6 +45,12 @@ export class DeviceService {
     );
   }
 
+  deleteDevice(deviceId: string): Observable<void> {
+    return this.http.delete<void>(`${device}/${deviceId}`, {
+      withCredentials: true,
+    });
+  }
+
   getDeviceStatus(deviceId: string): Observable<DeviceStatusResponseDto> {
     return this.http.get<DeviceStatusResponseDto>(
       `${device}/${deviceId}/status`,

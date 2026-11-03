@@ -379,3 +379,72 @@ async fn test_get_device_config() {
 
     context.stop().await;
 }
+
+#[tokio::test]
+async fn test_create_and_delete_device_entry() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    let token = test_helper::admin_login().await;
+
+    let client = reqwest::Client::new();
+
+    let post_entry = PostDeviceDtoRequest {
+        address: String::from("10.0.0.3:5000"),
+        can_script: false,
+        name: String::from("DeviceToDelete"),
+        description: String::from("Will be deleted"),
+        scraping: false,
+    };
+
+    let response = client
+        .post("http://localhost:3000/api/device")
+        .json(&post_entry)
+        .header("Access-Control-Allow-Credentials", "true")
+        .header("Cookie", format!("auth-token={token}"))
+        .send()
+        .await
+        .unwrap();
+    assert!(
+        response.status().is_success(),
+        "Failed to create device entry with error: {}",
+        response.text().await.unwrap()
+    );
+    let created_device: DeviceResponseDto = response.json().await.unwrap();
+    let url = format!("http://localhost:3000/api/device/{}", created_device.id);
+
+    // Delete the device
+    let response = client
+        .delete(&url)
+        .header("Access-Control-Allow-Credentials", "true")
+        .header("Cookie", format!("auth-token={token}"))
+        .send()
+        .await
+        .unwrap();
+    assert!(
+        response.status().is_success(),
+        "Failed to delete device entry with error: {}",
+        response.text().await.unwrap()
+    );
+
+    // Device is gone
+    let response = client
+        .get(&url)
+        .header("Access-Control-Allow-Credentials", "true")
+        .header("Cookie", format!("auth-token={token}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
+
+    // Deleting again returns not found
+    let response = client
+        .delete(&url)
+        .header("Access-Control-Allow-Credentials", "true")
+        .header("Cookie", format!("auth-token={token}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
+
+    context.stop().await;
+}

@@ -27,6 +27,7 @@ pub(crate) async fn check_token(
             "guest" => match *req.method() {
                 Method::POST => Response::builder().status(200).body(Body::empty()).unwrap(),
                 Method::PUT => Response::builder().status(200).body(Body::empty()).unwrap(),
+                Method::DELETE => Response::builder().status(200).body(Body::empty()).unwrap(),
                 _ => next.run(req).await,
             },
             _ => next.run(req).await,

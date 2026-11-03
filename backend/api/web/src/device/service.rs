@@ -152,6 +152,39 @@ pub(crate) async fn get_device(base_url: &str, id: Uuid) -> Result<DeviceRespons
     }))
 }
 
+pub(crate) async fn delete_device(base_url: &str, id: Uuid) -> Result<()> {
+    let resp = reqwest::Client::new()
+        .delete(base_url.to_string() + "/" + &id.to_string())
+        .send()
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+            tracing::error!(
+                "Error in delete to device service: {:?} with id: {:?} for url {}",
+                e,
+                id,
+                base_url
+            );
+            Error::Request(e)
+        })?;
+
+    if resp.status().is_success() {
+        return Ok(());
+    }
+    Err(Error::Api(ApiError {
+        status: resp.status(),
+        message: resp
+            .json::<ErrorResponseBody>()
+            .await
+            .map_err(|e| {
+                sentry::capture_error(&e);
+                tracing::error!("Error in delete to service: {:?}", e);
+                Error::Json(e)
+            })?
+            .error,
+    }))
+}
+
 pub(crate) async fn get_device_config(base_ulr: &str, id: Uuid) -> Result<String> {
     let resp = reqwest::Client::new()
         .get(base_ulr.to_string() + "/" + &id.to_string() + "/" + endpoints::CONFIG)

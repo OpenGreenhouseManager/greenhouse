@@ -62,9 +62,65 @@
           </div>
         </div>
       </grn-card>
-      <button pButton type="button" (click)="saveDevice()">
-        <i class="pi pi-save"></i><span class="button_label">Save</span>
-      </button>
+      <div class="actions">
+        @if (edit()) {
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            (click)="openDeleteDialog()">
+            <i class="pi pi-trash"></i><span class="button_label">Delete</span>
+          </button>
+        }
+        <button pButton type="button" (click)="saveDevice()">
+          <i class="pi pi-save"></i><span class="button_label">Save</span>
+        </button>
+      </div>
     </div>
   </div>
+  <p-dialog
+    header="Delete Device"
+    [modal]="true"
+    [visible]="deleteDialogVisible()"
+    [dismissableMask]="true"
+    [closeOnEscape]="true"
+    (onHide)="closeDeleteDialog()">
+    <div class="delete-dialog">
+      <p>
+        This permanently deletes the device. To confirm, type
+        <strong class="device-name">{{ deviceName() }}</strong> below.
+      </p>
+      @if (deleteError()) {
+        <p-message severity="error">{{ deleteError() }}</p-message>
+      }
+      <input
+        pInputText
+        type="text"
+        aria-label="Device name"
+        autocomplete="off"
+        [value]="deleteConfirmation()"
+        (input)="deleteConfirmation.set($any($event.target).value)" />
+      <div class="dialog-actions">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          (click)="closeDeleteDialog()">
+          Cancel
+        </button>
+        <button
+          pButton
+          type="button"
+          severity="danger"
+          [disabled]="!deleteConfirmed() || deleteLoading()"
+          (click)="deleteDevice()">
+          <i
+            [class]="
+              deleteLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-trash'
+            "></i
+          >Delete
+        </button>
+      </div>
+    </div>
+  </p-dialog>
 </main>
