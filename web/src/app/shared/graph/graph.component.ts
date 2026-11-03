@@ -1,4 +1,11 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -67,6 +74,11 @@ const palette = [
 export class GraphComponent {
   public config = input.required<GraphConfig>();
   public header = input.required<string>();
+  /** Shows a maximize / restore button in the header. */
+  public maximizable = input<boolean>(false);
+  /** Whether the graph is currently shown maximized (flips the button). */
+  public maximized = input<boolean>(false);
+  public maximizeToggle = output();
   public dialogVisible = false;
 
   public now = inject(TimeseriesStore).now;

@@ -5,6 +5,7 @@ import {
   inject,
   input,
   model,
+  output,
   signal,
 } from '@angular/core';
 import {
@@ -56,6 +57,10 @@ export interface CompassDashboardItem extends GridsterItemConfig {
   };
 }
 
+/** Widgets that can be shown maximized over the dashboard. */
+export type GraphLikeDashboardItem =
+  GraphDashboardItem | MultiGraphDashboardItem;
+
 export type DashboardItem =
   | GraphDashboardItem
   | MultiGraphDashboardItem
@@ -85,12 +90,33 @@ const COMPACT_ROW_HEIGHT_PX = 100;
   ],
   templateUrl: './dashboard-tab.component.html',
   styleUrl: './dashboard-tab.component.scss',
+  host: {
+    '(document:keydown.escape)': 'restore()',
+  },
 })
 export class DashboardTabComponent {
   confirmationService = inject(ConfirmationService);
 
   dashboard = model.required<DashboardItem[]>();
   editMode = input.required<boolean>();
+
+  /** Asks the parent to open the edit dialog for this widget. */
+  editItem = output<DashboardItem>();
+
+  private maximized = signal<GraphLikeDashboardItem | null>(null);
+
+  /**
+   * The graph shown over the whole dashboard. Purely view state: it is not
+   * saved, and it closes in edit mode or when its widget goes away.
+   */
+  maximizedItem = computed(() => {
+    const item = this.maximized();
+    if (!item || this.editMode()) {
+      return null;
+    }
+    // close when the widget was removed or replaced
+    return this.dashboard().includes(item) ? item : null;
+  });
 
   /** True while gridster shows the stacked layout instead of the grid. */
   compact = viewportBelow(COMPACT_BREAKPOINT_PX);
@@ -141,7 +167,21 @@ export class DashboardTabComponent {
     disableScrollVertical: false,
   }));
 
-  removeItem($event: MouseEvent | TouchEvent, item: DashboardItem): void {
+  maximize(item: GraphLikeDashboardItem): void {
+    this.maximized.set(item);
+  }
+
+  restore(): void {
+    this.maximized.set(null);
+  }
+
+  onEditItem($event: Event, item: DashboardItem): void {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.editItem.emit(item);
+  }
+
+  removeItem($event: Event, item: DashboardItem): void {
     $event.preventDefault();
     $event.stopPropagation();
     this.confirmationService.confirm({

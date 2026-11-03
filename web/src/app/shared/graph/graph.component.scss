@@ -104,3 +104,27 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+.maximize-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border: none;
+  border-radius: var(--grn-radius-sm);
+  background: transparent;
+  color: var(--grn-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+
+  &:hover {
+    background: var(--grn-surface-soft);
+    color: var(--grn-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--grn-primary);
+    outline-offset: 1px;
+  }
+}

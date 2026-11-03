@@ -5,6 +5,7 @@
         <h2 class="title {{ centerTitle() ? 'text-center' : '' }}">
           {{ title() }}
         </h2>
+        <ng-content select="[cardActions]" />
         @if (icon() && decorativeIcon()) {
           <i
             [class]="icon_class()"
