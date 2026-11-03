@@ -33,6 +33,13 @@
     color: var(--grn-text-muted);
   }
 
+  button.action {
+    display: flex;
+    border: none;
+    background: transparent;
+    color: var(--grn-text-muted);
+  }
+
   .action {
     cursor: pointer;
     padding: 0.35rem;

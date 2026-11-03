@@ -2,21 +2,6 @@
   [title]="header()"
   icon="pi-info-circle"
   (iconClicked)="this.dialogVisible = true">
-  @if (maximizable()) {
-    <button
-      cardActions
-      type="button"
-      class="maximize-toggle gridster-item-content"
-      [attr.aria-label]="maximized() ? 'Restore' : 'Maximize'"
-      [attr.title]="maximized() ? 'Restore' : 'Maximize'"
-      (click)="maximizeToggle.emit()">
-      <i
-        class="pi"
-        [class.pi-window-maximize]="!maximized()"
-        [class.pi-window-minimize]="maximized()"
-        aria-hidden="true"></i>
-    </button>
-  }
   <div class="graph-controls">
     <div class="presets" role="group" aria-label="Time range">
       @for (preset of presets; track preset.windowMs) {

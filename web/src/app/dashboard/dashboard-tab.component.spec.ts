@@ -75,7 +75,7 @@ describe('DashboardTabComponent', () => {
     ]);
   });
 
-  it('maximizes a graph only outside edit mode', () => {
+  it('maximizes a widget only outside edit mode', () => {
     const fixture = create(false);
     const component = fixture.componentInstance;
     const graph: DashboardItem = {
@@ -88,14 +88,15 @@ describe('DashboardTabComponent', () => {
     };
     fixture.componentRef.setInput('dashboard', [graph]);
 
-    component.maximize(graph);
+    component.toggleMaximized(graph);
     expect(component.maximizedItem()).toBe(graph);
 
     fixture.componentRef.setInput('editMode', true);
     expect(component.maximizedItem()).toBeNull();
 
     fixture.componentRef.setInput('editMode', false);
-    component.restore();
+    expect(component.maximizedItem()).toBe(graph);
+    component.toggleMaximized(graph);
     expect(component.maximizedItem()).toBeNull();
   });
 });

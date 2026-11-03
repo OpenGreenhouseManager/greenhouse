@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  Directive,
   DestroyRef,
   inject,
   input,
@@ -15,7 +16,9 @@ import {
   GridsterItemConfig,
   GridType,
 } from 'angular-gridster2';
+import { NgTemplateOutlet } from '@angular/common';
 import { ConfirmationService } from 'primeng/api';
+import { MaximizableDirective } from '../card/maximizable.directive';
 import { AlertListComponent } from '../shared/alert/alert-list.component';
 import { CompassCardComponent } from '../shared/compass/compass-card.component';
 import { GraphComponent, GraphConfig } from '../shared/graph/graph.component';
@@ -57,16 +60,23 @@ export interface CompassDashboardItem extends GridsterItemConfig {
   };
 }
 
-/** Widgets that can be shown maximized over the dashboard. */
-export type GraphLikeDashboardItem =
-  GraphDashboardItem | MultiGraphDashboardItem;
-
 export type DashboardItem =
   | GraphDashboardItem
   | MultiGraphDashboardItem
   | AlertListDashboardItem
   | LatestValueDashboardItem
   | CompassDashboardItem;
+
+/** Types the context of the widget template in dashboard-tab.component.html. */
+@Directive({ selector: 'ng-template[grnWidget]' })
+export class WidgetTemplateDirective {
+  static ngTemplateContextGuard(
+    _dir: WidgetTemplateDirective,
+    _ctx: unknown
+  ): _ctx is { $implicit: DashboardItem; maximized: boolean } {
+    return true;
+  }
+}
 
 /**
  * Below this viewport width the free 16-column layout gets too narrow to be
@@ -81,6 +91,9 @@ const COMPACT_ROW_HEIGHT_PX = 100;
 @Component({
   selector: 'grn-dashboard-tab',
   imports: [
+    NgTemplateOutlet,
+    MaximizableDirective,
+    WidgetTemplateDirective,
     GridsterItem,
     Gridster,
     GraphComponent,
@@ -103,7 +116,7 @@ export class DashboardTabComponent {
   /** Asks the parent to open the edit dialog for this widget. */
   editItem = output<DashboardItem>();
 
-  private maximized = signal<GraphLikeDashboardItem | null>(null);
+  private maximized = signal<DashboardItem | null>(null);
 
   /**
    * The graph shown over the whole dashboard. Purely view state: it is not
@@ -167,8 +180,8 @@ export class DashboardTabComponent {
     disableScrollVertical: false,
   }));
 
-  maximize(item: GraphLikeDashboardItem): void {
-    this.maximized.set(item);
+  toggleMaximized(item: DashboardItem): void {
+    this.maximized.update(current => (current === item ? null : item));
   }
 
   restore(): void {
