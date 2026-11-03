@@ -5,7 +5,6 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { CardComponent } from '../../card/card.component';
 import {
   injectTimeseries,
@@ -27,9 +26,19 @@ export interface GraphData {
 }
 
 const MAX_DATA_POINTS = 500;
-const DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const DEFAULT_WINDOW_MS = 24 * HOUR_MS;
 // the date picker has minute precision, an end within this is treated as "now"
 const LIVE_TOLERANCE_MS = 60_000;
+
+/** One-tap live ranges, the date pickers stay available for anything else. */
+export const RANGE_PRESETS = [
+  { label: '1h', windowMs: HOUR_MS },
+  { label: '6h', windowMs: 6 * HOUR_MS },
+  { label: '24h', windowMs: 24 * HOUR_MS },
+  { label: '7d', windowMs: 7 * 24 * HOUR_MS },
+  { label: '30d', windowMs: 30 * 24 * HOUR_MS },
+] as const;
 
 const palette = [
   chartColors.primary,
@@ -51,7 +60,6 @@ const palette = [
     FormsModule,
     DatePickerModule,
     DialogModule,
-    SelectButtonModule,
   ],
   templateUrl: './graph.component.html',
   styleUrl: './graph.component.scss',
@@ -62,6 +70,15 @@ export class GraphComponent {
   public dialogVisible = false;
 
   public now = inject(TimeseriesStore).now;
+
+  public readonly presets = RANGE_PRESETS;
+
+  // Touch devices get the date pickers as a modal with a read-only input:
+  // a popup anchored to a tiny input does not fit on a phone, and focusing a
+  // small input makes iOS zoom the page.
+  public readonly touch = window.matchMedia('(pointer: coarse)').matches;
+
+  private customRangeOpen = signal(false);
 
   // A live range slides with the store clock, a fixed range never refreshes
   public range = signal<TimeRange>({
@@ -80,6 +97,18 @@ export class GraphComponent {
     const range = this.range();
     return range.kind === 'live' ? this.now() : range.end;
   });
+
+  /** The preset matching the current range, null for a custom range. */
+  public activePreset = computed(() => {
+    const range = this.range();
+    if (range.kind !== 'live') return null;
+    return this.presets.find(p => p.windowMs === range.windowMs) ?? null;
+  });
+
+  /** Custom ranges always show their dates, presets only on request. */
+  public showCustomRange = computed(
+    () => this.customRangeOpen() || this.activePreset() === null
+  );
 
   public steps = computed(() => {
     const range = this.range();
@@ -123,6 +152,15 @@ export class GraphComponent {
   public options = computed(() =>
     lineChartOptions(this.timeseries(), this.config().axis_mode === 'separate')
   );
+
+  public selectPreset(windowMs: number) {
+    this.range.set({ kind: 'live', windowMs });
+    this.customRangeOpen.set(false);
+  }
+
+  public toggleCustomRange() {
+    this.customRangeOpen.update(open => !open);
+  }
 
   public setStart(start: Date | null) {
     const end = this.endDate();
