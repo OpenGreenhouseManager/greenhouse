@@ -71,6 +71,7 @@
               <grn-dashboard-tab
                 [dashboard]="tab.items"
                 (dashboardChange)="onDashboardChange($index, $event)"
+                (editItem)="onEditItem($index, $event)"
                 [editMode]="editMode()" />
             </ng-template>
           </p-tabpanel>
@@ -81,7 +82,9 @@
 </main>
 <grn-add-dashboard-component-dialog
   [visible]="dialogVisible()"
+  [item]="editingData()"
   (dialogClose)="onDialogClose()"
-  (componentAdded)="onComponentAdded($event)" />
+  (componentAdded)="onComponentAdded($event)"
+  (componentUpdated)="onComponentUpdated($event)" />
 
 <p-confirmdialog />

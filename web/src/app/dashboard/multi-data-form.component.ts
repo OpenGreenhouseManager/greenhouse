@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
@@ -6,12 +6,15 @@ import type { DeviceResponseDto } from '../dtos/generated/device_service/DeviceR
 import { SingleDataFormComponent } from './single-data-form.component';
 
 type AxisMode = 'merged' | 'separate';
+type SeriesData = {
+  deviceId: string;
+  subProperty: string;
+};
 type SeriesEntry = {
   id: string;
-  data: {
-    deviceId: string;
-    subProperty: string;
-  };
+  /** Prefill of the row's form, fixed so typing does not reset it. */
+  initial: SeriesData | null;
+  data: SeriesData;
 };
 
 @Component({
@@ -35,6 +38,7 @@ type SeriesEntry = {
           <grn-single-data-form
             [devices]="devices()"
             [compact]="true"
+            [initial]="entry.initial"
             (selectedDevice)="updateForm(entry.id, $event)"
             class="w-full" />
           <button
@@ -52,10 +56,12 @@ type SeriesEntry = {
   `,
 })
 export class MultiDataFormComponent {
-  axisMode = signal<AxisMode>('merged');
-  axisModeOptions: AxisMode[] = ['merged', 'separate'];
-
   devices = input.required<DeviceResponseDto[]>();
+  /** Prefills the form, e.g. when editing an existing widget. */
+  initial = input<{ axisMode: AxisMode; graphs: SeriesData[] } | null>(null);
+
+  axisMode = linkedSignal<AxisMode>(() => this.initial()?.axisMode ?? 'merged');
+  axisModeOptions: AxisMode[] = ['merged', 'separate'];
 
   selectedDevices = output<{
     axisMode: AxisMode;
@@ -65,7 +71,14 @@ export class MultiDataFormComponent {
     }[];
   }>();
 
-  multiData = signal<SeriesEntry[]>([emptyEntry()]);
+  multiData = linkedSignal<SeriesEntry[]>(() => [
+    ...(this.initial()?.graphs ?? []).map(data => ({
+      id: nextId(),
+      initial: data,
+      data,
+    })),
+    emptyEntry(),
+  ]);
 
   onAxisModeChange(axisMode: AxisMode) {
     this.axisMode.set(axisMode);
@@ -103,9 +116,17 @@ export class MultiDataFormComponent {
   }
 }
 
+// Row ids only need to be unique within the page. Not crypto.randomUUID():
+// it is missing outside secure contexts, e.g. plain HTTP on a local network.
+let lastId = 0;
+function nextId(): string {
+  return `series-${++lastId}`;
+}
+
 function emptyEntry(): SeriesEntry {
   return {
-    id: crypto.randomUUID(),
+    id: nextId(),
+    initial: null,
     data: { deviceId: '', subProperty: '' },
   };
 }

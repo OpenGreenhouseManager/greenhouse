@@ -10,35 +10,88 @@
     <gridster-item [item]="item" [class]="'widget-' + item.type">
       @if (editMode()) {
         <button
-          class="remove-button gridster-item-content"
+          type="button"
+          class="corner-button edit-button gridster-item-content"
+          aria-label="Edit widget"
+          title="Edit"
+          (mousedown)="onEditItem($event, item)"
+          (touchstart)="onEditItem($event, item)"
+          (keydown.enter)="onEditItem($event, item)">
+          <i class="pi pi-pencil"></i>
+        </button>
+        <button
+          type="button"
+          class="corner-button remove-button gridster-item-content"
+          aria-label="Remove widget"
+          title="Remove"
           (mousedown)="removeItem($event, item)"
-          (touchstart)="removeItem($event, item)">
+          (touchstart)="removeItem($event, item)"
+          (keydown.enter)="removeItem($event, item)">
           <i class="pi pi-trash"></i>
         </button>
       }
-      @switch (item.type) {
-        @case ('graph') {
-          <grn-graph [config]="item.options" [header]="item.options.name" />
-        }
-        @case ('multiGraph') {
-          <grn-graph [config]="item.options" [header]="item.options.name" />
-        }
-        @case ('alertList') {
-          <grn-alert-list [dataSourceId]="item.options.dataSourceId" />
-        }
-        @case ('latestValue') {
-          <grn-latest-value-card
-            [header]="item.options.name"
-            [deviceId]="item.options.deviceId"
-            [subProperty]="item.options.subProperty || ''" />
-        }
-        @case ('compass') {
-          <grn-compass-card
-            [header]="item.options.name"
-            [deviceId]="item.options.deviceId"
-            [subProperty]="item.options.subProperty || ''" />
-        }
-      }
+      <ng-container
+        *ngTemplateOutlet="
+          widget;
+          context: { $implicit: item, maximized: false }
+        " />
     </gridster-item>
   }
 </gridster>
+
+@if (maximizedItem(); as item) {
+  <div class="maximized" role="dialog" [attr.aria-label]="item.options.name">
+    <ng-container
+      *ngTemplateOutlet="
+        widget;
+        context: { $implicit: item, maximized: true }
+      " />
+  </div>
+}
+
+<!-- One widget, in the grid or maximized over the dashboard -->
+<ng-template grnWidget #widget let-item let-maximized="maximized">
+  @switch (item.type) {
+    @case ('graph') {
+      <grn-graph
+        [config]="item.options"
+        [header]="item.options.name"
+        [grnMaximizable]="!editMode()"
+        [maximized]="maximized"
+        (maximizeToggle)="toggleMaximized(item)" />
+    }
+    @case ('multiGraph') {
+      <grn-graph
+        [config]="item.options"
+        [header]="item.options.name"
+        [grnMaximizable]="!editMode()"
+        [maximized]="maximized"
+        (maximizeToggle)="toggleMaximized(item)" />
+    }
+    @case ('alertList') {
+      <grn-alert-list
+        [dataSourceId]="item.options.dataSourceId"
+        [grnMaximizable]="!editMode()"
+        [maximized]="maximized"
+        (maximizeToggle)="toggleMaximized(item)" />
+    }
+    @case ('latestValue') {
+      <grn-latest-value-card
+        [header]="item.options.name"
+        [deviceId]="item.options.deviceId"
+        [subProperty]="item.options.subProperty || ''"
+        [grnMaximizable]="!editMode()"
+        [maximized]="maximized"
+        (maximizeToggle)="toggleMaximized(item)" />
+    }
+    @case ('compass') {
+      <grn-compass-card
+        [header]="item.options.name"
+        [deviceId]="item.options.deviceId"
+        [subProperty]="item.options.subProperty || ''"
+        [grnMaximizable]="!editMode()"
+        [maximized]="maximized"
+        (maximizeToggle)="toggleMaximized(item)" />
+    }
+  }
+</ng-template>

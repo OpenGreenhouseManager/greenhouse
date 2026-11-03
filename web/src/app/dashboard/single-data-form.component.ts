@@ -3,6 +3,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
 } from '@angular/core';
@@ -71,6 +72,8 @@ export class SingleDataFormComponent {
 
   devices = input.required<DeviceResponseDto[]>();
   compact = input<boolean>(false);
+  /** Prefills the form, e.g. when editing an existing widget. */
+  initial = input<{ deviceId: string; subProperty: string } | null>(null);
 
   selectedDevice = output<{
     deviceId: string;
@@ -78,9 +81,13 @@ export class SingleDataFormComponent {
   }>();
 
   deviceSuggestions = signal<DeviceResponseDto[]>([]);
-  deviceSearch = signal<string>('');
-  deviceId = signal<string>('');
-  subProperty = signal<string>('');
+  // Show the prefilled device by name once the device list has loaded
+  deviceSearch = linkedSignal<DeviceResponseDto | string>(() => {
+    const deviceId = this.initial()?.deviceId ?? '';
+    return this.devices().find(d => d.id === deviceId) ?? deviceId;
+  });
+  deviceId = linkedSignal(() => this.initial()?.deviceId ?? '');
+  subProperty = linkedSignal(() => this.initial()?.subProperty ?? '');
   subPropertySuggestions = signal<
     { prefix: string; operations: { display: string; value: string }[] }[]
   >([]);

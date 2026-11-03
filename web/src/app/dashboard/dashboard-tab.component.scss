@@ -12,7 +12,7 @@ gridster-item {
   display: flex !important;
   overflow: visible !important;
 
-  .remove-button {
+  .corner-button {
     position: absolute;
     top: 0;
     right: 0;
@@ -36,7 +36,18 @@ gridster-item {
 
     > i {
       font-size: 0.8rem !important;
-      color: var(--grn-danger) !important;
+    }
+  }
+
+  .remove-button > i {
+    color: var(--grn-danger) !important;
+  }
+
+  .edit-button {
+    right: 34px;
+
+    > i {
+      color: var(--grn-primary) !important;
     }
   }
 
@@ -49,10 +60,21 @@ gridster-item {
 }
 
 :host {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+/* Covers the dashboard, not the side bar. Outside gridster on purpose. */
+.maximized {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  background: var(--grn-bg);
 }
 
 .compact-hint {

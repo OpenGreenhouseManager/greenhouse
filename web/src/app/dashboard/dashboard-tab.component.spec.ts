@@ -74,4 +74,29 @@ describe('DashboardTabComponent', () => {
       'below',
     ]);
   });
+
+  it('maximizes a widget only outside edit mode', () => {
+    const fixture = create(false);
+    const component = fixture.componentInstance;
+    const graph: DashboardItem = {
+      cols: 3,
+      rows: 3,
+      x: 0,
+      y: 4,
+      type: 'graph',
+      options: { name: 'graph', graph_data: [{ device_id: 'device' }] },
+    };
+    fixture.componentRef.setInput('dashboard', [graph]);
+
+    component.toggleMaximized(graph);
+    expect(component.maximizedItem()).toBe(graph);
+
+    fixture.componentRef.setInput('editMode', true);
+    expect(component.maximizedItem()).toBeNull();
+
+    fixture.componentRef.setInput('editMode', false);
+    expect(component.maximizedItem()).toBe(graph);
+    component.toggleMaximized(graph);
+    expect(component.maximizedItem()).toBeNull();
+  });
 });
