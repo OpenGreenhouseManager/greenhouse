@@ -1,6 +1,13 @@
+@if (editMode() && compact()) {
+  <p class="compact-hint">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    Widgets are stacked on small screens. Use a wider screen to move or resize
+    them.
+  </p>
+}
 <gridster [options]="options()">
-  @for (item of dashboard(); track item.options.name) {
-    <gridster-item [item]="item">
+  @for (item of items(); track item.options.name) {
+    <gridster-item [item]="item" [class]="'widget-' + item.type">
       @if (editMode()) {
         <button
           class="remove-button gridster-item-content"

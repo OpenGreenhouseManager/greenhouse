@@ -110,4 +110,29 @@ describe('GraphComponent', () => {
       flushAll();
     });
   });
+
+  describe('range presets', () => {
+    it('starts on the 24h preset with the date pickers hidden', () => {
+      expect(component.activePreset()?.label).toBe('24h');
+      expect(component.showCustomRange()).toBe(false);
+    });
+
+    it('selects a live window', () => {
+      component.selectPreset(6 * 3600_000);
+      expect(component.range()).toEqual({
+        kind: 'live',
+        windowMs: 6 * 3600_000,
+      });
+      expect(component.activePreset()?.label).toBe('6h');
+    });
+
+    it('shows the date pickers for a custom range', () => {
+      component.setEnd(new Date(Date.now() - 2 * 3600_000));
+      expect(component.activePreset()).toBeNull();
+      expect(component.showCustomRange()).toBe(true);
+
+      component.selectPreset(3600_000);
+      expect(component.showCustomRange()).toBe(false);
+    });
+  });
 });

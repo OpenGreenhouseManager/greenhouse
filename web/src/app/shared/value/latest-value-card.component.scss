@@ -8,13 +8,16 @@
 .latest-value {
   height: 100%;
   width: 100%;
+  /* lets the value scale with the card instead of the viewport */
+  container-type: size;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .value {
-  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-size: clamp(1.25rem, min(20cqi, 60cqh), 3.75rem);
+  white-space: nowrap;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--grn-primary);

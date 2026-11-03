@@ -8,6 +8,7 @@
 .compass {
   height: 100%;
   width: 100%;
+  container-type: size;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,7 +18,8 @@
 
 .dial {
   position: relative;
-  width: min(220px, 60%);
+  /* fit the card in both directions, leaving room for the label */
+  width: min(220px, 70cqi, calc(100cqh - 2.5rem));
   aspect-ratio: 1 / 1;
   border-radius: 50%;
 }

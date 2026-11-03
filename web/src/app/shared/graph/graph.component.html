@@ -3,23 +3,57 @@
   icon="pi-info-circle"
   (iconClicked)="this.dialogVisible = true">
   <div class="graph-controls">
-    <p-datepicker
-      [ngModel]="startDate()"
-      (ngModelChange)="setStart($event)"
-      [showTime]="true"
-      appendTo="body"
-      [maxDate]="endDate()"
-      hourFormat="24" />
-
-    <p-datepicker
-      [ngModel]="endDate()"
-      (ngModelChange)="setEnd($event)"
-      [showTime]="true"
-      appendTo="body"
-      [minDate]="startDate()"
-      [maxDate]="now()"
-      hourFormat="24" />
+    <div class="presets" role="group" aria-label="Time range">
+      @for (preset of presets; track preset.windowMs) {
+        <button
+          type="button"
+          class="preset"
+          [class.active]="activePreset() === preset"
+          [attr.aria-pressed]="activePreset() === preset"
+          (click)="selectPreset(preset.windowMs)">
+          {{ preset.label }}
+        </button>
+      }
+    </div>
+    <button
+      type="button"
+      class="preset custom-toggle"
+      [class.active]="showCustomRange()"
+      [attr.aria-expanded]="showCustomRange()"
+      aria-label="Custom time range"
+      title="Custom time range"
+      (click)="toggleCustomRange()">
+      <i class="pi pi-calendar" aria-hidden="true"></i>
+    </button>
   </div>
+  @if (showCustomRange()) {
+    <div class="custom-range">
+      <p-datepicker
+        [ngModel]="startDate()"
+        (ngModelChange)="setStart($event)"
+        [showTime]="true"
+        [touchUI]="touch"
+        [readonlyInput]="touch"
+        [panelStyleClass]="touch ? 'grn-touch-datepicker' : ''"
+        appendTo="body"
+        [maxDate]="endDate()"
+        hourFormat="24"
+        ariaLabel="Start" />
+
+      <p-datepicker
+        [ngModel]="endDate()"
+        (ngModelChange)="setEnd($event)"
+        [showTime]="true"
+        [touchUI]="touch"
+        [readonlyInput]="touch"
+        [panelStyleClass]="touch ? 'grn-touch-datepicker' : ''"
+        appendTo="body"
+        [minDate]="startDate()"
+        [maxDate]="now()"
+        hourFormat="24"
+        ariaLabel="End" />
+    </div>
+  }
   <div class="graph" style="height: 100%; width: 100%">
     <div echarts class="chart" [options]="options()"></div>
     @if (loading()) {

@@ -1,5 +1,7 @@
 :host {
   height: 100vh;
+  /* dvh excludes the collapsible browser toolbars on phones */
+  height: 100dvh;
   width: 100%;
   overflow: hidden;
   display: flex;
@@ -16,6 +18,39 @@ main.page {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+}
+
+/* The tab bar must keep its height: when the widgets are taller than the
+   screen (always on phones) flexbox shrank it to nothing. */
+:host ::ng-deep {
+  .p-tabs {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .p-tablist {
+    flex-shrink: 0;
+  }
+
+  .p-tabpanels {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Phones: icon-only header buttons, the title keeps its room */
+@media (max-width: 640px) {
+  .page-heading {
+    flex-wrap: nowrap;
+
+    .button_label {
+      display: none;
+    }
+
+    .p-button i {
+      padding-right: 0;
+    }
   }
 }
 
