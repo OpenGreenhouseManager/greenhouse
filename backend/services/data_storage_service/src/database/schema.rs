@@ -18,6 +18,12 @@ diesel::table! {
         note -> Nullable<Text>,
         created_at -> Timestamptz,
         datasource_id -> Uuid,
+        kind -> Text,
+        last_seen_at -> Timestamptz,
+        expires_at -> Timestamptz,
+        ended_at -> Nullable<Timestamptz>,
+        end_reason -> Nullable<Text>,
+        occurrences -> Int8,
     }
 }
 

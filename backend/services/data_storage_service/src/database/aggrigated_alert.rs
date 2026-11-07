@@ -10,6 +10,7 @@ pub(crate) struct AggrigatedAlert {
     pub(crate) datasource_id: Uuid,
     pub(crate) severity: Severity,
     pub(crate) count: i64,
+    pub(crate) open: i64,
     pub(crate) identifier: String,
     pub(crate) first_date: String,
     pub(crate) last_date: String,
@@ -20,6 +21,7 @@ impl AggrigatedAlert {
         datasource_id: Uuid,
         severity: Severity,
         count: i64,
+        open: i64,
         identifier: String,
         first_date: Option<DateTime<Utc>>,
         last_date: Option<DateTime<Utc>>,
@@ -28,6 +30,7 @@ impl AggrigatedAlert {
             datasource_id,
             severity,
             count,
+            open,
             identifier,
             first_date: first_date
                 .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string())
@@ -43,6 +46,7 @@ impl From<AggrigatedAlert> for AggrigatedAlertDto {
     fn from(alert: AggrigatedAlert) -> Self {
         Self {
             count: alert.count,
+            open: alert.open,
             identifier: alert.identifier,
             severity: alert.severity.into(),
             source: alert.datasource_id.into(),

@@ -1,4 +1,4 @@
-use crate::data_storage_service_dto::alert_dto::alert::Severity;
+use crate::data_storage_service_dto::alert_dto::alert::{AlertKind, Severity};
 use crate::data_storage_service_dto::alert_dto::post_create_alert::CreateAlertDto;
 use std::sync::Arc;
 
@@ -25,6 +25,8 @@ where
             value: alert.value,
             note: alert.note,
             datasource_id: config.datasource_id.clone(),
+            kind: AlertKind::OneTime,
+            keep_alive_secs: None,
         };
 
         let response = client

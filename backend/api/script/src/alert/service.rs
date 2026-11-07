@@ -1,6 +1,7 @@
 use greenhouse_core::{
     data_storage_service_dto::alert_dto::{
         alert::AlertDto, endpoints, post_create_alert::CreateAlertDto,
+        post_stop_alert::StopAlertDto,
     },
     http_error::ErrorResponseBody,
 };
@@ -30,6 +31,36 @@ pub(crate) async fn create_alert(base_ulr: &str, alert: CreateAlertDto) -> Resul
 
             Error::Json(e)
         });
+    }
+    Err(Error::Api(ApiError {
+        status: resp.status(),
+        message: resp
+            .json::<ErrorResponseBody>()
+            .await
+            .map_err(|e| {
+                sentry::capture_error(&e);
+                tracing::error!("Error in post to service: {:?}", e);
+                Error::Json(e)
+            })?
+            .error,
+    }))
+}
+
+pub(crate) async fn stop_alert(base_ulr: &str, stop: StopAlertDto) -> Result<()> {
+    let resp = reqwest::Client::new()
+        .post(base_ulr.to_string() + endpoints::ALERT + endpoints::STOP)
+        .json(&stop)
+        .send()
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+
+            tracing::error!("Error in post to service: {:?} for url {}", e, base_ulr);
+
+            Error::Request(e)
+        })?;
+    if resp.status().is_success() {
+        return Ok(());
     }
     Err(Error::Api(ApiError {
         status: resp.status(),

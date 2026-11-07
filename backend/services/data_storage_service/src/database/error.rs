@@ -6,6 +6,8 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug, Serialize, From)]
 pub(crate) enum Error {
     Creation,
+    Update,
+    InvalidInput,
     Find,
     DatabaseConnection,
 }
