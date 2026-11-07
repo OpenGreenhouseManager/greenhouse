@@ -35,6 +35,8 @@ impl HttpErrorMapping for Error {
             Error::TimeError => StatusCode::BAD_REQUEST,
             Error::Database(e) => match e {
                 database::Error::Creation => StatusCode::INTERNAL_SERVER_ERROR,
+                database::Error::Update => StatusCode::INTERNAL_SERVER_ERROR,
+                database::Error::InvalidInput => StatusCode::BAD_REQUEST,
                 database::Error::DatabaseConnection => StatusCode::INTERNAL_SERVER_ERROR,
                 database::Error::Find => StatusCode::NOT_FOUND,
             },
@@ -46,6 +48,8 @@ impl HttpErrorMapping for Error {
             Error::TimeError => String::from("Time error"),
             Error::Database(e) => match e {
                 database::Error::Creation => String::from("Database creation error"),
+                database::Error::Update => String::from("Database update error"),
+                database::Error::InvalidInput => String::from("Invalid input"),
                 database::Error::DatabaseConnection => String::from("Database connection error"),
                 database::Error::Find => String::from("Database find error"),
             },

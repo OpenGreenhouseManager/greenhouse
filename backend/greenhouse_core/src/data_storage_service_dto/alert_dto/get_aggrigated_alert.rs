@@ -10,11 +10,17 @@ use super::alert::Severity;
     ts(export, export_to = "data_storage_service/alert/")
 )]
 pub struct AggrigatedAlertDto {
+    /// Number of alerts in the group that were active during the interval.
     pub count: i64,
+    /// Number of those alerts that are still open.
+    #[serde(default)]
+    pub open: i64,
     pub identifier: String,
     pub severity: Severity,
     pub source: String,
+    /// Start of the earliest alert.
     pub first: String,
+    /// Most recent time any alert in the group was fired.
     pub last: String,
 }
 
