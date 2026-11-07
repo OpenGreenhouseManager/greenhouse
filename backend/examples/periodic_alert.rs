@@ -4,7 +4,7 @@ use std::{
 };
 
 use greenhouse_core::{
-    data_storage_service_dto::alert_dto::alert::Severity,
+    data_storage_service_dto::alert_dto::alert::{AlertKind, Severity},
     smart_device_dto::{
         Type,
         config::{ConfigRequestDto, TypeOption},
@@ -183,6 +183,8 @@ async fn start_periodic_alerts(config: Config<ExampleDeviceConfig>, config_path:
                 },
                 value: None,
                 note: None,
+                kind: AlertKind::OneTime,
+                keep_alive_secs: None,
             },
         )
         .await;
