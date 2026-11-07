@@ -8,7 +8,7 @@ use pg::{Pg, PgValue};
 use serde::Deserialize;
 use serialize::{IsNull, Output, ToSql};
 
-#[derive(Debug, Clone, PartialEq, FromSqlRow, AsExpression, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, FromSqlRow, AsExpression, Eq, Hash, Deserialize)]
 #[diesel(sql_type = sql_types::Severity)]
 pub(crate) enum Severity {
     Info,

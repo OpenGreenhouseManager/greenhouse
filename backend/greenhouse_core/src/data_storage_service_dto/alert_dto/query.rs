@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::alert::Severity;
+use super::alert::{AlertKind, Severity};
 
 #[derive(Deserialize, Serialize, Debug)]
 #[cfg_attr(
@@ -16,6 +16,9 @@ pub struct AlertQuery {
     pub identifier: Option<String>,
     pub created_at: Option<DateTime<Utc>>,
     pub datasource_id: Option<Uuid>,
+    pub kind: Option<AlertKind>,
+    /// `Some(true)`: only open alerts, `Some(false)`: only ended alerts.
+    pub open: Option<bool>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

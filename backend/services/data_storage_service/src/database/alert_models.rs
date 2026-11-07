@@ -1,16 +1,17 @@
-use super::aggrigated_alert::AggrigatedAlert;
+//! One-time alerts: single events, one row each, in the `alert` table.
+
 use super::severity_models::Severity;
 use super::{Error, Result, schema::alert};
-use crate::Pool;
 use chrono::{DateTime, Utc};
 use diesel::*;
-use diesel_async::RunQueryDsl;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use greenhouse_core::data_storage_service_dto::alert_dto::{
-    alert::AlertDto,
+    alert::{AlertDto, AlertKind},
     post_create_alert::CreateAlertDto,
     query::{AlertQuery, IntervalQuery},
 };
 use uuid::Uuid;
+
 #[derive(Clone, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::database::schema::alert)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -24,30 +25,36 @@ pub(crate) struct Alert {
     pub(crate) datasource_id: Uuid,
 }
 
+/// One group of the aggregated view: datasource, severity, identifier, count,
+/// open count, first start, last fire.
+pub(crate) type AggregateRow = (
+    Uuid,
+    Severity,
+    String,
+    i64,
+    i64,
+    Option<DateTime<Utc>>,
+    Option<DateTime<Utc>>,
+);
+
 impl Alert {
-    pub(crate) async fn create(alert: CreateAlertDto, pool: &Pool) -> Result<Self> {
+    pub(crate) async fn create(
+        alert: CreateAlertDto,
+        datasource_id: Uuid,
+        conn: &mut AsyncPgConnection,
+    ) -> Result<Self> {
         let alert = Self {
             id: Uuid::new_v4(),
             severity: alert.severity.into(),
-            identifier: alert.identifier.parse().map_err(|e| {
-                sentry::capture_error(&e);
-                Error::Creation
-            })?,
+            identifier: alert.identifier,
             value: alert.value.unwrap_or_default(),
             note: alert.note,
             created_at: Utc::now(),
-            datasource_id: alert.datasource_id.parse().map_err(|e| {
-                sentry::capture_error(&e);
-                Error::Creation
-            })?,
+            datasource_id,
         };
-        let mut conn = pool.get().await.map_err(|e| {
-            sentry::capture_error(&e);
-            Error::DatabaseConnection
-        })?;
         diesel::insert_into(alert::table)
             .values(&alert)
-            .execute(&mut conn)
+            .execute(conn)
             .await
             .map_err(|e| {
                 sentry::capture_error(&e);
@@ -56,11 +63,10 @@ impl Alert {
         Ok(alert)
     }
 
-    pub(crate) async fn query(alert_query: AlertQuery, pool: &Pool) -> Result<Vec<Self>> {
-        let mut conn = pool.get().await.map_err(|e| {
-            sentry::capture_error(&e);
-            Error::DatabaseConnection
-        })?;
+    pub(crate) async fn query(
+        alert_query: &AlertQuery,
+        conn: &mut AsyncPgConnection,
+    ) -> Result<Vec<Self>> {
         let mut query = alert::table.into_boxed();
         if let Some(start) = alert_query.created_at {
             query = query.filter(alert::created_at.ge(start));
@@ -72,24 +78,20 @@ impl Alert {
             let s: Severity = severity.into();
             query = query.filter(alert::severity.eq(s));
         }
-        if let Some(identifier) = alert_query.identifier {
+        if let Some(identifier) = &alert_query.identifier {
             query = query.filter(alert::identifier.eq(identifier));
         }
-        query.load(&mut conn).await.map_err(|e| {
+        query.load(conn).await.map_err(|e| {
             sentry::capture_error(&e);
             Error::Find
         })
     }
 
-    pub(crate) async fn aggrigate(
-        interval_query: IntervalQuery,
-        pool: &Pool,
-    ) -> Result<Vec<AggrigatedAlert>> {
-        let mut conn = pool.get().await.map_err(|e| {
-            sentry::capture_error(&e);
-            Error::DatabaseConnection
-        })?;
-
+    /// One-time alerts that happened in the interval, grouped. They are never open.
+    pub(crate) async fn aggregate(
+        interval: &IntervalQuery,
+        conn: &mut AsyncPgConnection,
+    ) -> Result<Vec<AggregateRow>> {
         let mut query = alert::table
             .group_by((alert::datasource_id, alert::severity, alert::identifier))
             .select((
@@ -101,15 +103,13 @@ impl Alert {
                 diesel::dsl::max(alert::created_at),
             ))
             .into_boxed();
-
-        if let Some(start) = interval_query.start {
+        if let Some(start) = interval.start {
             query = query.filter(alert::created_at.ge(start));
         }
-        if let Some(end) = interval_query.end {
+        if let Some(end) = interval.end {
             query = query.filter(alert::created_at.le(end));
         }
-
-        let query = query
+        let rows = query
             .load::<(
                 Uuid,
                 Severity,
@@ -117,41 +117,37 @@ impl Alert {
                 i64,
                 Option<DateTime<Utc>>,
                 Option<DateTime<Utc>>,
-            )>(&mut conn)
+            )>(conn)
             .await
             .map_err(|e| {
                 sentry::capture_error(&e);
                 Error::Find
             })?;
-
-        Ok(query
+        Ok(rows
             .into_iter()
-            .map(
-                |(datasource_id, severity, identifier, count, first_date, last_date)| {
-                    AggrigatedAlert::new(
-                        datasource_id,
-                        severity,
-                        count,
-                        identifier,
-                        first_date,
-                        last_date,
-                    )
-                },
-            )
+            .map(|(ds, sev, ident, count, first, last)| (ds, sev, ident, count, 0, first, last))
             .collect())
     }
 }
 
 impl From<Alert> for AlertDto {
     fn from(alert: Alert) -> Self {
+        let created_at = alert.created_at.to_rfc3339();
         Self {
             id: alert.id.to_string(),
             severity: alert.severity.into(),
-            identifier: alert.identifier.to_string(),
+            identifier: alert.identifier,
             value: alert.value,
             note: alert.note,
-            created_at: alert.created_at.to_rfc3339(),
+            last_seen_at: created_at.clone(),
+            expires_at: created_at.clone(),
+            created_at,
             datasource_id: alert.datasource_id.to_string(),
+            kind: AlertKind::OneTime,
+            open: false,
+            keep_alive_secs: None,
+            end_reason: None,
+            occurrences: 1,
         }
     }
 }

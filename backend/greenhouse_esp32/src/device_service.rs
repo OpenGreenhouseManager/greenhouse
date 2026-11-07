@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use greenhouse_core::data_storage_service_dto::alert_dto::{
-    alert::Severity, post_create_alert::CreateAlertDto,
+    alert::{AlertKind, Severity},
+    post_create_alert::CreateAlertDto,
 };
 
 use crate::config::Config;
@@ -29,6 +30,8 @@ where
         value: alert.value,
         note: alert.note,
         datasource_id: config.datasource_id.clone(),
+        kind: AlertKind::OneTime,
+        keep_alive_secs: None,
     };
 
     let body = serde_json::to_vec(&dto).map_err(|_| Error::SerializationError)?;
@@ -40,16 +43,13 @@ where
         ("Cookie", cookie.as_str()),
     ];
 
-    use esp_idf_svc::http::client::{Configuration, EspHttpConnection};
     use embedded_svc::http::client::Client;
+    use esp_idf_svc::http::client::{Configuration, EspHttpConnection};
 
-    let mut client = Client::wrap(
-        EspHttpConnection::new(&Configuration::default()).map_err(Error::Esp)?,
-    );
+    let mut client =
+        Client::wrap(EspHttpConnection::new(&Configuration::default()).map_err(Error::Esp)?);
 
-    let mut request = client
-        .post(&url, &headers)
-        .map_err(|_| Error::IoError)?;
+    let mut request = client.post(&url, &headers).map_err(|_| Error::IoError)?;
 
     use embedded_io::Write;
     request.write_all(&body).map_err(|_| Error::IoError)?;

@@ -22,6 +22,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Severity;
+
+    concurrent_alert (id) {
+        id -> Uuid,
+        severity -> Severity,
+        identifier -> Text,
+        value -> Text,
+        note -> Nullable<Text>,
+        datasource_id -> Uuid,
+        created_at -> Timestamptz,
+        last_seen_at -> Timestamptz,
+        expires_at -> Timestamptz,
+        keep_alive_secs -> Int4,
+        occurrences -> Int8,
+    }
+}
+
+diesel::table! {
     diary_entry (id) {
         id -> Uuid,
         entry_date -> Timestamptz,
@@ -49,4 +68,10 @@ diesel::table! {
 diesel::joinable!(diary_entry_tag -> diary_entry (diary_entry_id));
 diesel::joinable!(diary_entry_tag -> diary_tag   (diary_tag_id));
 
-diesel::allow_tables_to_appear_in_same_query!(alert, diary_entry, diary_entry_tag, diary_tag,);
+diesel::allow_tables_to_appear_in_same_query!(
+    alert,
+    concurrent_alert,
+    diary_entry,
+    diary_entry_tag,
+    diary_tag,
+);

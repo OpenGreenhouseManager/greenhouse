@@ -1,5 +1,7 @@
 pub(crate) mod aggrigated_alert;
 pub(crate) mod alert_models;
+pub(crate) mod alerts;
+pub(crate) mod concurrent_alert_models;
 pub(crate) mod diary_models;
 pub(crate) mod diary_tag;
 mod error;
