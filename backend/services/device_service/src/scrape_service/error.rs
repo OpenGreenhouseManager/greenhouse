@@ -7,6 +7,9 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 #[allow(dead_code)]
 #[derive(Debug, From)]
 pub(crate) enum Error {
+    /// No response from the device (connection failed, timeout, ...).
+    Unreachable(String),
+    /// The device answered with an error status.
     Request,
     Json,
     ServiceIsTooSlow,
