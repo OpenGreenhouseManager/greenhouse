@@ -7,6 +7,7 @@ license = "GPL-3.0"
 
 [features]
 default = [
+    "alert_debounce",
     "api_web_dto",
     "api_script_dto",
     "auth_service_dto",
@@ -17,11 +18,12 @@ default = [
     "error_handling",
     "scripting_service_dto",
 ]
+alert_debounce = []
 api_web_dto = []
 api_script_dto = []
 auth_service_dto = []
 smart_device_dto = []
-smart_device_interface = ["smart_device_dto", "dep:axum", "dep:tracing", "dep:reqwest"]
+smart_device_interface = ["smart_device_dto", "data_storage_service_dto", "alert_debounce", "dep:axum", "dep:tracing", "dep:reqwest"]
 data_storage_service_dto = []
 device_service_dto = []
 error_handling = ["dep:axum", "dep:tracing"]

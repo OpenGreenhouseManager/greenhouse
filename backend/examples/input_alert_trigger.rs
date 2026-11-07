@@ -1,8 +1,9 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::http::StatusCode;
 use greenhouse_core::{
-    data_storage_service_dto::alert_dto::alert::Severity,
+    alert_debounce::{DebounceConfig, Signal, Threshold, ThresholdDebouncer},
+    data_storage_service_dto::alert_dto::alert::{AlertKind, Severity},
     smart_device_dto::{
         Type,
         config::{ConfigRequestDto, TypeOption},
@@ -11,7 +12,7 @@ use greenhouse_core::{
     smart_device_interface::{
         config::{Config, read_config_file_with_path, update_config_file_with_path},
         device_builder::DeviceBuilder,
-        device_service::{AlertCreation, trigger_alert},
+        device_service::{AlertCreation, stop_alert, trigger_alert},
         hybrid_device::init_hybrid_router,
     },
 };
@@ -19,6 +20,45 @@ use serde_derive::{Deserialize, Serialize};
 
 const LOW_ALERT_IDENTIFIER: &str = "low_alert";
 const HIGH_ALERT_IDENTIFIER: &str = "high_alert";
+/// A limit counts as cleared only once the value is this far back inside it.
+const HYSTERESIS: f64 = 1.0;
+/// Consecutive out-of-range (or back-in-range) writes before an alert starts (or stops).
+const DEBOUNCE: DebounceConfig = DebounceConfig {
+    start_after: 3,
+    stop_after: 3,
+};
+/// Writes arrive irregularly, so an open alert is only dropped after five
+/// minutes without a write.
+const KEEP_ALIVE_SECS: u32 = 300;
+
+struct AlertState {
+    low: ThresholdDebouncer,
+    high: ThresholdDebouncer,
+}
+
+impl AlertState {
+    fn new() -> Self {
+        Self {
+            low: ThresholdDebouncer::new(Threshold::below(0.0, 0.0), DEBOUNCE),
+            high: ThresholdDebouncer::new(Threshold::above(0.0, 0.0), DEBOUNCE),
+        }
+    }
+
+    /// Updates the limits from the (possibly changed) config and feeds the value.
+    fn update(&mut self, number: f64, config: &ExampleDeviceConfig) -> [(Signal, &'static str); 2] {
+        let (min, max) = (config.min as f64, config.max as f64);
+        self.low
+            .set_threshold(Threshold::below(min, min + HYSTERESIS));
+        self.high
+            .set_threshold(Threshold::above(max, max - HYSTERESIS));
+        [
+            (self.low.update(number), LOW_ALERT_IDENTIFIER),
+            (self.high.update(number), HIGH_ALERT_IDENTIFIER),
+        ]
+    }
+}
+
+static ALERT_STATE: Mutex<Option<AlertState>> = Mutex::new(None);
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct ExampleDeviceConfig {
@@ -85,31 +125,43 @@ async fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> 
         Type::Number(number) => number,
         _ => return StatusCode::BAD_REQUEST,
     };
-    if number > config.additional_config.max as f64 {
-        trigger_alert(
-            config.clone(),
-            AlertCreation {
-                severity: Severity::Error,
-                identifier: HIGH_ALERT_IDENTIFIER.to_string(),
-                value: Some(number.to_string()),
-                note: None,
-            },
-        )
-        .await
-        .unwrap();
-    }
-    if number < config.additional_config.min as f64 {
-        trigger_alert(
-            config.clone(),
-            AlertCreation {
-                severity: Severity::Error,
-                identifier: LOW_ALERT_IDENTIFIER.to_string(),
-                value: Some(number.to_string()),
-                note: None,
-            },
-        )
-        .await
-        .unwrap();
+    let signals = ALERT_STATE
+        .lock()
+        .unwrap()
+        .get_or_insert_with(AlertState::new)
+        .update(number, &config.additional_config);
+
+    for (signal, identifier) in signals {
+        let result = match signal {
+            Signal::Idle => continue,
+            // Fire on every out-of-range write: the first starts the alert, the
+            // rest keep it alive. A failed fire is simply retried next write.
+            Signal::Fire { .. } => {
+                trigger_alert(
+                    config.clone(),
+                    AlertCreation {
+                        severity: Severity::Error,
+                        identifier: identifier.to_string(),
+                        value: Some(number.to_string()),
+                        note: None,
+                        kind: AlertKind::Concurrent,
+                        keep_alive_secs: Some(KEEP_ALIVE_SECS),
+                    },
+                )
+                .await
+            }
+            Signal::Stop => {
+                stop_alert(
+                    config.clone(),
+                    identifier.to_string(),
+                    Some(format!("value back in range: {number}")),
+                )
+                .await
+            }
+        };
+        if let Err(e) = result {
+            println!("Error sending {identifier} alert: {e}");
+        }
     }
     StatusCode::OK
 }
