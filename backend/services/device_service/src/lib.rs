@@ -34,10 +34,46 @@ pub struct Config {
     pub sentry_url: String,
     #[serde(rename = "ENVIRONMENT", default = "default_environment")]
     pub environment: String,
+    /// Data storage service base URL. Needed for the watchdog to raise alerts
+    /// for unreachable devices; without it the watchdog only exports metrics.
+    #[serde(rename = "DATA_STORAGE_SERVICE", default)]
+    pub data_storage_service: Option<String>,
+    /// Consecutive failed scrapes (every 5 s) before a device is reported unreachable.
+    #[serde(
+        rename = "WATCHDOG_START_AFTER",
+        default = "default_watchdog_start_after"
+    )]
+    pub watchdog_start_after: u32,
+    /// Consecutive successful scrapes before the unreachable alert is stopped.
+    #[serde(
+        rename = "WATCHDOG_STOP_AFTER",
+        default = "default_watchdog_stop_after"
+    )]
+    pub watchdog_stop_after: u32,
+    /// Keep-alive of the unreachable alert, in seconds. The watchdog re-fires
+    /// it on every scrape, so this only matters when it stops doing so (e.g.
+    /// this service is down); then the alert expires after this long.
+    #[serde(
+        rename = "WATCHDOG_KEEP_ALIVE_SECS",
+        default = "default_watchdog_keep_alive_secs"
+    )]
+    pub watchdog_keep_alive_secs: u32,
 }
 
 fn default_environment() -> String {
     "development".to_string()
+}
+
+fn default_watchdog_start_after() -> u32 {
+    3
+}
+
+fn default_watchdog_stop_after() -> u32 {
+    2
+}
+
+fn default_watchdog_keep_alive_secs() -> u32 {
+    60
 }
 
 pub type Pool = bb8::Pool<AsyncDieselConnectionManager<AsyncPgConnection>>;
