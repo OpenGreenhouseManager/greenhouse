@@ -55,4 +55,44 @@ describe('DashboardComponent', () => {
 
     expect(items()).toBe(1);
   });
+
+  it('edits a widget in place without changing its type or position', async () => {
+    component.onComponentAdded({
+      type: 'graph',
+      graphData: [{ deviceId: 'device-1', subProperty: 'temp' }],
+      name: 'Temperature',
+    });
+    const tabItems = () => component.dashboard()?.[0]?.items ?? [];
+    const original = tabItems()[0]!;
+    original.x = 5;
+    original.y = 2;
+
+    component.onEditItem(0, original);
+    expect(component.editingData()).toEqual({
+      type: 'graph',
+      name: 'Temperature',
+      axisMode: 'merged',
+      graphData: [{ deviceId: 'device-1', subProperty: 'temp' }],
+    });
+
+    component.onComponentUpdated({
+      type: 'graph',
+      graphData: [{ deviceId: 'device-2', subProperty: 'humidity' }],
+      name: 'Humidity',
+    });
+
+    expect(tabItems()).toHaveLength(1);
+    expect(tabItems()[0]).toMatchObject({
+      type: 'graph',
+      x: 5,
+      y: 2,
+      cols: 3,
+      rows: 3,
+      options: {
+        name: 'Humidity',
+        graph_data: [{ device_id: 'device-2', sub_property: 'humidity' }],
+      },
+    });
+    expect(component.editing()).toBeNull();
+  });
 });

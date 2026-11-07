@@ -12,7 +12,7 @@ gridster-item {
   display: flex !important;
   overflow: visible !important;
 
-  .remove-button {
+  .corner-button {
     position: absolute;
     top: 0;
     right: 0;
@@ -36,7 +36,18 @@ gridster-item {
 
     > i {
       font-size: 0.8rem !important;
-      color: var(--grn-danger) !important;
+    }
+  }
+
+  .remove-button > i {
+    color: var(--grn-danger) !important;
+  }
+
+  .edit-button {
+    right: 34px;
+
+    > i {
+      color: var(--grn-primary) !important;
     }
   }
 
@@ -45,5 +56,68 @@ gridster-item {
     height: 100% !important;
     width: 100% !important;
     flex-direction: column;
+  }
+}
+
+:host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Covers the dashboard, not the side bar. Outside gridster on purpose. */
+.maximized {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  background: var(--grn-bg);
+}
+
+.compact-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--grn-text-muted);
+}
+
+/* Stacked layout (gridster adds .mobile below COMPACT_BREAKPOINT_PX): reflow
+   the widgets into as many equal columns as fit instead of one long list. */
+gridster.mobile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  align-content: start;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.25rem 0.25rem 0.75rem;
+  box-sizing: border-box;
+
+  ::ng-deep gridster-preview {
+    display: none;
+  }
+
+  gridster-item {
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  /* Floors so a widget sized small on the grid stays usable when stacked */
+  gridster-item.widget-graph,
+  gridster-item.widget-multiGraph {
+    min-height: 17rem;
+  }
+
+  gridster-item.widget-alertList,
+  gridster-item.widget-compass {
+    min-height: 14rem;
+  }
+
+  gridster-item.widget-latestValue {
+    min-height: 8rem;
   }
 }

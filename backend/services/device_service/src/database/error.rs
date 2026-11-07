@@ -7,6 +7,7 @@ pub(crate) enum Error {
     Creation,
     DatabaseConnection,
     Find,
+    Delete,
 }
 
 // region:    --- Error Boilerplate

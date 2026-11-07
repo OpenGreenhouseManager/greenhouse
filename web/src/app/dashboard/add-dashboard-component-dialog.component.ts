@@ -5,7 +5,6 @@ import {
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +27,16 @@ export interface DashboardComponentCreate {
   name: string;
 }
 
+interface SingleData {
+  deviceId: string;
+  subProperty: string;
+}
+
+interface MultiData {
+  axisMode: 'merged' | 'separate';
+  graphs: SingleData[];
+}
+
 @Component({
   selector: 'grn-add-dashboard-component-dialog',
   imports: [
@@ -42,7 +51,9 @@ export interface DashboardComponentCreate {
   ],
   template: `
     <p-dialog
-      header="Add Dashboard Component"
+      [header]="
+        editing() ? 'Edit Dashboard Component' : 'Add Dashboard Component'
+      "
       [modal]="true"
       [visible]="visibleSignal()"
       class="w-full"
@@ -63,6 +74,7 @@ export interface DashboardComponentCreate {
             'alertList',
           ]"
           [(ngModel)]="selectedComponentType"
+          [disabled]="editing()"
           [appendTo]="'body'"
           class="w-full" />
       </div>
@@ -78,17 +90,21 @@ export interface DashboardComponentCreate {
       ) {
         <grn-single-data-form
           [devices]="devices()"
+          [initial]="initialSingle()"
           (selectedDevice)="singleData.set($event)" />
       }
 
       @if (selectedComponentType() === 'multiGraph') {
         <grn-multi-data-form
           [devices]="devices()"
+          [initial]="initialMulti()"
           (selectedDevices)="multiData.set($event)" />
       }
 
       @if (selectedComponentType() === 'alertList') {
-        <grn-alert-form (selectedDataSource)="dataSourceId.set($event)" />
+        <grn-alert-form
+          [initial]="initialDataSourceId()"
+          (selectedDataSource)="dataSourceId.set($event)" />
       }
 
       <div class="flex justify-end gap-2 mt-6">
@@ -104,7 +120,7 @@ export interface DashboardComponentCreate {
           type="button"
           [disabled]="!isFormValid()"
           (click)="onSave()">
-          Add Component
+          {{ editing() ? 'Save' : 'Add Component' }}
         </button>
       </div>
     </p-dialog>
@@ -112,20 +128,31 @@ export interface DashboardComponentCreate {
 })
 export class AddDashboardComponentDialogComponent {
   visible = input<boolean>(false);
+  /** The widget to edit; null adds a new one. Its type cannot be changed. */
+  item = input<DashboardComponentCreate | null>(null);
   visibleSignal = linkedSignal(() => this.visible());
   dialogClose = output<void>();
   componentAdded = output<DashboardComponentCreate>();
+  componentUpdated = output<DashboardComponentCreate>();
   deviceService = inject(DeviceService);
 
-  // Reset to defaults whenever the dialog is opened or closed
+  editing = computed(() => this.item() !== null);
+
+  // Reset to the edited widget, or to defaults, whenever the dialog is opened
+  // or closed
+  private initial = computed(() => {
+    this.visible();
+    return this.item();
+  });
+
   selectedComponentType = linkedSignal<
-    boolean,
+    DashboardComponentCreate | null,
     DashboardComponentCreate['type']
   >({
-    source: this.visible,
-    computation: () => 'graph',
+    source: this.initial,
+    computation: item => item?.type ?? 'graph',
   });
-  name = linkedSignal({ source: this.visible, computation: () => '' });
+  name = linkedSignal(() => this.initial()?.name ?? '');
 
   // Load all devices for autocomplete each time the dialog opens
   private devicesResource = rxResource({
@@ -140,20 +167,37 @@ export class AddDashboardComponentDialogComponent {
   devices = computed<DeviceResponseDto[]>(() =>
     this.devicesResource.hasValue() ? this.devicesResource.value() : []
   );
-  dataSourceId = signal<string | null>(null);
+  // Prefill values for the forms. Kept apart from the signals below, which
+  // follow the user's input, so the forms are not reset on every change.
+  initialDataSourceId = computed(() => this.initial()?.dataSourceId ?? '');
 
-  singleData = signal<{
-    deviceId: string;
-    subProperty: string;
-  } | null>(null);
+  initialSingle = computed<SingleData | null>(() => {
+    const item = this.initial();
+    const data = item?.type === 'multiGraph' ? undefined : item?.graphData?.[0];
+    return data
+      ? { deviceId: data.deviceId, subProperty: data.subProperty ?? '' }
+      : null;
+  });
 
-  multiData = signal<{
-    axisMode: 'merged' | 'separate';
-    graphs: {
-      deviceId: string;
-      subProperty: string;
-    }[];
-  } | null>(null);
+  initialMulti = computed<MultiData | null>(() => {
+    const item = this.initial();
+    if (item?.type !== 'multiGraph') {
+      return null;
+    }
+    return {
+      axisMode: item.axisMode ?? 'merged',
+      graphs: (item.graphData ?? []).map(d => ({
+        deviceId: d.deviceId,
+        subProperty: d.subProperty ?? '',
+      })),
+    };
+  });
+
+  dataSourceId = linkedSignal<string | null>(
+    () => this.initialDataSourceId() || null
+  );
+  singleData = linkedSignal(() => this.initialSingle());
+  multiData = linkedSignal(() => this.initialMulti());
 
   isFormValid = computed(() => {
     const type = this.selectedComponentType();
@@ -224,7 +268,11 @@ export class AddDashboardComponentDialogComponent {
       component.dataSourceId = data.trim();
     }
 
-    this.componentAdded.emit(component);
+    if (this.editing()) {
+      this.componentUpdated.emit(component);
+    } else {
+      this.componentAdded.emit(component);
+    }
     this.onCloseDialog();
   }
 }

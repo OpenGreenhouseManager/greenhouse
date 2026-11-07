@@ -5,6 +5,20 @@
         <h2 class="title {{ centerTitle() ? 'text-center' : '' }}">
           {{ title() }}
         </h2>
+        @if (maximizable?.enabled()) {
+          <button
+            type="button"
+            class="gridster-item-content action"
+            [attr.aria-label]="maximizable.maximized() ? 'Restore' : 'Maximize'"
+            [attr.title]="maximizable.maximized() ? 'Restore' : 'Maximize'"
+            (click)="maximizable.maximizeToggle.emit()">
+            <i
+              class="pi"
+              [class.pi-window-maximize]="!maximizable.maximized()"
+              [class.pi-window-minimize]="maximizable.maximized()"
+              aria-hidden="true"></i>
+          </button>
+        }
         @if (icon() && decorativeIcon()) {
           <i
             [class]="icon_class()"

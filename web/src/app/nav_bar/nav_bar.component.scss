@@ -116,3 +116,48 @@
     left: -0.5rem;
   }
 }
+
+/* Phones: the sidebar becomes a bottom tab bar so content gets the full width */
+@media (max-width: 640px) {
+  .sidebar {
+    inset: auto 0 0;
+    width: auto;
+    height: var(--grn-bottom-nav-h);
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 0.25rem env(safe-area-inset-bottom);
+    box-sizing: content-box;
+    border: none;
+    border-top: 1px solid var(--grn-border);
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .links {
+    display: contents;
+  }
+
+  .link {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+
+    i {
+      font-size: 1.25rem;
+    }
+
+    &.active {
+      background: transparent;
+
+      &::before {
+        inset: 0 25% auto;
+        width: auto;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+      }
+    }
+  }
+}

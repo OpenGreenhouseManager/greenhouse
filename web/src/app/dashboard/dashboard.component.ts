@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { catchError, debounceTime, EMPTY, filter, skip, switchMap } from 'rxjs';
@@ -48,6 +48,13 @@ export class DashboardComponent {
   dialogVisible = signal(false);
   editMode = signal(false);
   activeTab = signal(0);
+
+  /** The widget open in the edit dialog, null while adding a new one. */
+  editing = signal<{ tabIndex: number; item: DashboardItem } | null>(null);
+  editingData = computed(() => {
+    const editing = this.editing();
+    return editing ? toComponentData(editing.item) : null;
+  });
 
   constructor() {
     this.loadDashboard();
@@ -159,102 +166,13 @@ export class DashboardComponent {
 
   onDialogClose() {
     this.dialogVisible.set(false);
+    this.editing.set(null);
   }
 
   onComponentAdded(componentData: DashboardComponentCreate) {
-    const dashboard = this.dashboard();
-    if (!dashboard) {
+    const newItem = createItem(componentData);
+    if (!newItem) {
       return;
-    }
-    // Create the appropriate dashboard item based on type
-    let newItem: DashboardItem;
-
-    if (componentData.type === 'graph') {
-      const data = componentData.graphData?.[0];
-      if (!data) {
-        return;
-      }
-      newItem = {
-        cols: 3,
-        rows: 3,
-        y: 0,
-        x: 0,
-        type: 'graph',
-        options: {
-          graph_data: [
-            {
-              device_id: data.deviceId,
-              sub_property: data.subProperty,
-            },
-          ],
-          name: componentData.name,
-        },
-      } satisfies GraphDashboardItem;
-    } else if (componentData.type === 'multiGraph') {
-      newItem = {
-        cols: 4,
-        rows: 3,
-        y: 0,
-        x: 0,
-        type: 'multiGraph',
-        options: {
-          graph_data:
-            componentData.graphData?.map(d => ({
-              device_id: d.deviceId,
-              sub_property: d.subProperty ?? undefined,
-            })) ?? [],
-          axis_mode: componentData.axisMode ?? 'merged',
-          name: componentData.name,
-        },
-      } satisfies MultiGraphDashboardItem;
-    } else if (componentData.type === 'alertList') {
-      newItem = {
-        cols: 3,
-        rows: 3,
-        y: 0,
-        x: 0,
-        type: 'alertList',
-        options: {
-          dataSourceId: componentData.dataSourceId!,
-          name: componentData.name,
-        },
-      } satisfies AlertListDashboardItem;
-    } else if (componentData.type === 'latestValue') {
-      const data = componentData.graphData?.[0];
-      if (!data) {
-        return;
-      }
-      newItem = {
-        cols: 2,
-        rows: 2,
-        y: 0,
-        x: 0,
-        type: 'latestValue',
-        options: {
-          deviceId: data.deviceId,
-          subProperty: data.subProperty || undefined,
-          name: componentData.name,
-        },
-      } satisfies LatestValueDashboardItem;
-    } else if (componentData.type === 'compass') {
-      const data = componentData.graphData?.[0];
-      if (!data) {
-        return;
-      }
-      newItem = {
-        cols: 3,
-        rows: 3,
-        y: 0,
-        x: 0,
-        type: 'compass',
-        options: {
-          deviceId: data.deviceId,
-          subProperty: data.subProperty || undefined,
-          name: componentData.name,
-        },
-      } satisfies CompassDashboardItem;
-    } else {
-      throw new Error('Invalid component type');
     }
 
     // add to the end of the active tab. Build new tab and items references:
@@ -277,6 +195,35 @@ export class DashboardComponent {
     });
   }
 
+  onEditItem(tabIndex: number, item: DashboardItem) {
+    this.editing.set({ tabIndex, item });
+    this.dialogVisible.set(true);
+  }
+
+  /** Replaces the edited widget's settings, keeping its place on the grid. */
+  onComponentUpdated(componentData: DashboardComponentCreate) {
+    const editing = this.editing();
+    const updated = createItem(componentData);
+    if (!editing || !updated || updated.type !== editing.item.type) {
+      return;
+    }
+    const { x, y, cols, rows } = editing.item;
+    const newItem = { ...editing.item, ...updated, x, y, cols, rows };
+    this.dashboard.update(tabs => {
+      const tab = tabs?.[editing.tabIndex];
+      if (!tabs || !tab) {
+        return tabs;
+      }
+      const newTabs = [...tabs];
+      newTabs[editing.tabIndex] = {
+        ...tab,
+        items: tab.items.map(i => (i === editing.item ? newItem : i)),
+      };
+      return newTabs;
+    });
+    this.editing.set(null);
+  }
+
   onDashboardChange(index: number, dashboard: DashboardItem[]) {
     this.dashboard.update(tabs => {
       const currentTab = tabs?.[index];
@@ -287,5 +234,138 @@ export class DashboardComponent {
       updatedTabs[index] = { ...currentTab, items: dashboard };
       return updatedTabs;
     });
+  }
+}
+
+/** Builds a new widget, placed at the top left, from the dialog's data. */
+function createItem(
+  componentData: DashboardComponentCreate
+): DashboardItem | undefined {
+  switch (componentData.type) {
+    case 'graph': {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return undefined;
+      }
+      return {
+        cols: 3,
+        rows: 3,
+        y: 0,
+        x: 0,
+        type: 'graph',
+        options: {
+          graph_data: [
+            {
+              device_id: data.deviceId,
+              sub_property: data.subProperty,
+            },
+          ],
+          name: componentData.name,
+        },
+      } satisfies GraphDashboardItem;
+    }
+    case 'multiGraph':
+      return {
+        cols: 4,
+        rows: 3,
+        y: 0,
+        x: 0,
+        type: 'multiGraph',
+        options: {
+          graph_data:
+            componentData.graphData?.map(d => ({
+              device_id: d.deviceId,
+              sub_property: d.subProperty ?? undefined,
+            })) ?? [],
+          axis_mode: componentData.axisMode ?? 'merged',
+          name: componentData.name,
+        },
+      } satisfies MultiGraphDashboardItem;
+    case 'alertList':
+      if (!componentData.dataSourceId) {
+        return undefined;
+      }
+      return {
+        cols: 3,
+        rows: 3,
+        y: 0,
+        x: 0,
+        type: 'alertList',
+        options: {
+          dataSourceId: componentData.dataSourceId,
+          name: componentData.name,
+        },
+      } satisfies AlertListDashboardItem;
+    case 'latestValue': {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return undefined;
+      }
+      return {
+        cols: 2,
+        rows: 2,
+        y: 0,
+        x: 0,
+        type: 'latestValue',
+        options: {
+          deviceId: data.deviceId,
+          subProperty: data.subProperty || undefined,
+          name: componentData.name,
+        },
+      } satisfies LatestValueDashboardItem;
+    }
+    case 'compass': {
+      const data = componentData.graphData?.[0];
+      if (!data) {
+        return undefined;
+      }
+      return {
+        cols: 3,
+        rows: 3,
+        y: 0,
+        x: 0,
+        type: 'compass',
+        options: {
+          deviceId: data.deviceId,
+          subProperty: data.subProperty || undefined,
+          name: componentData.name,
+        },
+      } satisfies CompassDashboardItem;
+    }
+  }
+}
+
+/** The dialog's view of an existing widget, to prefill the edit form. */
+export function toComponentData(item: DashboardItem): DashboardComponentCreate {
+  switch (item.type) {
+    case 'graph':
+    case 'multiGraph':
+      return {
+        type: item.type,
+        name: item.options.name,
+        axisMode: item.options.axis_mode ?? 'merged',
+        graphData: item.options.graph_data.map(d => ({
+          deviceId: d.device_id,
+          subProperty: d.sub_property ?? '',
+        })),
+      };
+    case 'alertList':
+      return {
+        type: item.type,
+        name: item.options.name,
+        dataSourceId: item.options.dataSourceId,
+      };
+    case 'latestValue':
+    case 'compass':
+      return {
+        type: item.type,
+        name: item.options.name,
+        graphData: [
+          {
+            deviceId: item.options.deviceId,
+            subProperty: item.options.subProperty ?? '',
+          },
+        ],
+      };
   }
 }

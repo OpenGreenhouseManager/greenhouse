@@ -1,5 +1,6 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { CardModule } from 'primeng/card';
+import { MaximizableDirective } from './maximizable.directive';
 
 @Component({
   selector: 'grn-card',
@@ -15,4 +16,6 @@ export class CardComponent {
   public decorativeIcon = input<boolean>(false);
   public icon_class = computed(() => `pi ${this.icon() ?? ''}`);
   public iconClicked = output();
+  /** Present when the widget around this card was marked grnMaximizable. */
+  public maximizable = inject(MaximizableDirective, { optional: true });
 }

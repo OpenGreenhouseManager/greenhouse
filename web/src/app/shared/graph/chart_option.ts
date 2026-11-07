@@ -106,9 +106,12 @@ export function lineChartOptions(
       top: showLegend ? 32 : 20,
       bottom: 4,
     },
-    legend: { show: showLegend, top: 0, left: 'center' },
+    // scroll instead of wrapping over the plot when the card is narrow
+    legend: { show: showLegend, type: 'scroll', top: 0, left: 'center' },
     tooltip: {
       trigger: 'axis',
+      // keep the tooltip inside the chart, it is cut off on small screens
+      confine: true,
       axisPointer: {
         type: 'line',
         lineStyle: { color: chartTheme.muted, type: 'dashed', width: 1 },
@@ -158,8 +161,12 @@ export function barChartOptions(
   return {
     animationDuration: 600,
     grid: { left: 4, right: 4, top: 28, bottom: 4 },
-    legend: { top: 0, left: 'center' },
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { type: 'scroll', top: 0, left: 'center' },
+    tooltip: {
+      trigger: 'axis',
+      confine: true,
+      axisPointer: { type: 'shadow' },
+    },
     xAxis: { type: 'category', data: categories },
     yAxis: {
       type: 'value',

@@ -1,9 +1,12 @@
 import {
   Component,
   computed,
+  Directive,
+  DestroyRef,
   inject,
   input,
   model,
+  output,
   signal,
 } from '@angular/core';
 import {
@@ -13,7 +16,9 @@ import {
   GridsterItemConfig,
   GridType,
 } from 'angular-gridster2';
+import { NgTemplateOutlet } from '@angular/common';
 import { ConfirmationService } from 'primeng/api';
+import { MaximizableDirective } from '../card/maximizable.directive';
 import { AlertListComponent } from '../shared/alert/alert-list.component';
 import { CompassCardComponent } from '../shared/compass/compass-card.component';
 import { GraphComponent, GraphConfig } from '../shared/graph/graph.component';
@@ -62,9 +67,33 @@ export type DashboardItem =
   | LatestValueDashboardItem
   | CompassDashboardItem;
 
+/** Types the context of the widget template in dashboard-tab.component.html. */
+@Directive({ selector: 'ng-template[grnWidget]' })
+export class WidgetTemplateDirective {
+  static ngTemplateContextGuard(
+    _dir: WidgetTemplateDirective,
+    _ctx: unknown
+  ): _ctx is { $implicit: DashboardItem; maximized: boolean } {
+    return true;
+  }
+}
+
+/**
+ * Below this viewport width the free 16-column layout gets too narrow to be
+ * readable, so gridster stacks the widgets and CSS reflows them into as many
+ * columns as fit (see dashboard-tab.component.scss).
+ */
+export const COMPACT_BREAKPOINT_PX = 1024;
+
+/** Height of one grid row in the compact layout, widgets keep their `rows`. */
+const COMPACT_ROW_HEIGHT_PX = 100;
+
 @Component({
   selector: 'grn-dashboard-tab',
   imports: [
+    NgTemplateOutlet,
+    MaximizableDirective,
+    WidgetTemplateDirective,
     GridsterItem,
     Gridster,
     GraphComponent,
@@ -75,7 +104,7 @@ export type DashboardItem =
   templateUrl: './dashboard-tab.component.html',
   styleUrl: './dashboard-tab.component.scss',
   host: {
-    '(window:resize)': 'onWindowResize()',
+    '(document:keydown.escape)': 'restore()',
   },
 })
 export class DashboardTabComponent {
@@ -84,27 +113,63 @@ export class DashboardTabComponent {
   dashboard = model.required<DashboardItem[]>();
   editMode = input.required<boolean>();
 
-  private rowHeight = signal(Math.floor(window.innerHeight / 9));
+  /** Asks the parent to open the edit dialog for this widget. */
+  editItem = output<DashboardItem>();
 
-  // Gridster's `options` is a signal input, so a resize must hand it a new
+  private maximized = signal<DashboardItem | null>(null);
+
+  /**
+   * The graph shown over the whole dashboard. Purely view state: it is not
+   * saved, and it closes in edit mode or when its widget goes away.
+   */
+  maximizedItem = computed(() => {
+    const item = this.maximized();
+    if (!item || this.editMode()) {
+      return null;
+    }
+    // close when the widget was removed or replaced
+    return this.dashboard().includes(item) ? item : null;
+  });
+
+  /** True while gridster shows the stacked layout instead of the grid. */
+  compact = viewportBelow(COMPACT_BREAKPOINT_PX);
+
+  /**
+   * The stacked layout follows DOM order, so render the widgets in reading
+   * order of the grid layout (top to bottom, left to right).
+   */
+  items = computed(() => {
+    const items = this.dashboard();
+    if (!this.compact()) {
+      return items;
+    }
+    return [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+  });
+
+  // Gridster's `options` is a signal input, so a change must hand it a new
   // object; mutating the old one is not picked up.
   options = computed<GridsterConfig>(() => ({
     gridType: GridType.ScrollVertical,
+    // Only drag and resize in edit mode: otherwise touching a widget starts a
+    // drag instead of scrolling the page or interacting with the chart.
     draggable: {
-      enabled: true,
+      enabled: this.editMode(),
       stop: () => {
         //trigger change detection
         this.dashboard.update(items => [...items]);
       },
     },
     resizable: {
-      enabled: true,
+      enabled: this.editMode(),
       stop: () => {
         //trigger change detection
         this.dashboard.update(items => [...items]);
       },
     },
-    fixedRowHeight: this.rowHeight(),
+    mobileBreakpoint: COMPACT_BREAKPOINT_PX,
+    useBodyForBreakpoint: true,
+    keepFixedHeightInMobile: true,
+    fixedRowHeight: COMPACT_ROW_HEIGHT_PX,
     pushResizeItems: true,
     swap: true,
     swapWhileDragging: true,
@@ -115,11 +180,21 @@ export class DashboardTabComponent {
     disableScrollVertical: false,
   }));
 
-  onWindowResize() {
-    this.rowHeight.set(Math.floor(window.innerHeight / 9));
+  toggleMaximized(item: DashboardItem): void {
+    this.maximized.update(current => (current === item ? null : item));
   }
 
-  removeItem($event: MouseEvent | TouchEvent, item: DashboardItem): void {
+  restore(): void {
+    this.maximized.set(null);
+  }
+
+  onEditItem($event: Event, item: DashboardItem): void {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.editItem.emit(item);
+  }
+
+  removeItem($event: Event, item: DashboardItem): void {
     $event.preventDefault();
     $event.stopPropagation();
     this.confirmationService.confirm({
@@ -130,4 +205,16 @@ export class DashboardTabComponent {
       },
     });
   }
+}
+
+/** Signal that tracks whether the viewport is narrower than `px`. */
+function viewportBelow(px: number) {
+  const query = window.matchMedia(`(max-width: ${px - 0.02}px)`);
+  const matches = signal(query.matches);
+  const onChange = (event: MediaQueryListEvent) => matches.set(event.matches);
+  query.addEventListener('change', onChange);
+  inject(DestroyRef).onDestroy(() =>
+    query.removeEventListener('change', onChange)
+  );
+  return matches.asReadonly();
 }

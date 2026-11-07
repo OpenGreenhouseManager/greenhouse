@@ -4,12 +4,28 @@
     <h1>Dashboard</h1>
     <div class="flex items-center gap-2">
       @if (editMode()) {
-        <button pButton type="button" (click)="addEntry()">
+        <button
+          pButton
+          type="button"
+          aria-label="Add Entry"
+          title="Add Entry"
+          (click)="addEntry()">
           <i class="pi pi-plus"></i><span class="button_label">Add Entry</span>
         </button>
       }
-      <button pButton type="button" (click)="editMode.set(!editMode())">
-        <i class="pi pi-pencil"></i><span class="button_label">Edit Mode</span>
+      <button
+        pButton
+        type="button"
+        [attr.aria-label]="editMode() ? 'Done' : 'Edit Mode'"
+        [attr.title]="editMode() ? 'Done' : 'Edit Mode'"
+        [attr.aria-pressed]="editMode()"
+        (click)="editMode.set(!editMode())">
+        @if (editMode()) {
+          <i class="pi pi-check"></i><span class="button_label">Done</span>
+        } @else {
+          <i class="pi pi-pencil"></i
+          ><span class="button_label">Edit Mode</span>
+        }
       </button>
     </div>
   </div>
@@ -55,6 +71,7 @@
               <grn-dashboard-tab
                 [dashboard]="tab.items"
                 (dashboardChange)="onDashboardChange($index, $event)"
+                (editItem)="onEditItem($index, $event)"
                 [editMode]="editMode()" />
             </ng-template>
           </p-tabpanel>
@@ -65,7 +82,9 @@
 </main>
 <grn-add-dashboard-component-dialog
   [visible]="dialogVisible()"
+  [item]="editingData()"
   (dialogClose)="onDialogClose()"
-  (componentAdded)="onComponentAdded($event)" />
+  (componentAdded)="onComponentAdded($event)"
+  (componentUpdated)="onComponentUpdated($event)" />
 
 <p-confirmdialog />

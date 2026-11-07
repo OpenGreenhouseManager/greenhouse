@@ -1,4 +1,4 @@
-import { Component, output, signal } from '@angular/core';
+import { Component, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 
@@ -19,7 +19,9 @@ import { InputText } from 'primeng/inputtext';
   `,
 })
 export class AlertFormComponent {
-  dataSourceId = signal<string>('');
+  /** Prefills the form, e.g. when editing an existing widget. */
+  initial = input<string>('');
+  dataSourceId = linkedSignal(() => this.initial());
   selectedDataSource = output<string>();
 
   onDataSourceIdChange(dataSourceId: string) {

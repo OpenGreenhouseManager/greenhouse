@@ -13,9 +13,66 @@
   gap: 4px;
   padding: 0;
   align-items: center;
+}
+
+.presets {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.preset {
+  flex-shrink: 0;
+  min-width: 2.25rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--grn-text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+
+  &:hover {
+    background: var(--grn-surface-soft);
+    color: var(--grn-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--grn-primary);
+    outline-offset: 1px;
+  }
+
+  &.active {
+    background: var(--grn-sakura-soft);
+    border-color: var(--grn-sakura);
+    color: var(--grn-text);
+  }
+}
+
+/* Bigger touch targets where the pointer is a finger */
+@media (pointer: coarse) {
+  .preset {
+    height: 2.25rem;
+    min-width: 2.75rem;
+  }
+}
+
+.custom-range {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding-top: 4px;
 
   p-datepicker {
-    max-width: 50%;
+    flex: 1;
+    min-width: 0;
   }
 }
 
