@@ -7,10 +7,6 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pinned to the last revision whose default ESP-IDF is v5.3.x, matching the
-    # v5.3 line greenhouse_esp32 targets (.cargo/config.toml). Not following our
-    # nixpkgs: its Python package set is tuned to the nixpkgs it was locked with.
-    nixpkgs-esp-dev.url = "github:mirrexagon/nixpkgs-esp-dev/4e791fca5ae53623bba45157dae5d43e9cb0b335";
   };
 
   outputs =
@@ -18,7 +14,6 @@
       self,
       nixpkgs,
       rust-overlay,
-      nixpkgs-esp-dev,
       ...
     }:
     let
@@ -33,9 +28,7 @@
       backendShell = pkgs.callPackage ./backend/nix/shell.nix {
         toolchain = import ./backend/nix/toolchain.nix pkgs;
       };
-      esp32Shell = pkgs.callPackage ./backend/nix/esp32-shell.nix {
-        esp-idf = nixpkgs-esp-dev.packages.${system}.esp-idf-esp32c3;
-      };
+      esp32Shell = pkgs.callPackage ./backend/nix/esp32-shell.nix { };
       webShell = pkgs.callPackage ./web/nix/shell.nix { inherit nodejs; };
     in
     {

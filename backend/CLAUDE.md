@@ -192,6 +192,13 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 Default credentials for local dev:
 - PostgreSQL user: `admin`, password: `password`
 
+## ESP32 firmware (`greenhouse_esp32/`)
+
+- Bare-metal `no_std` crate (esp-hal + embassy, ESP32-C3), **excluded** from the workspace and built with **stable** Rust from the `esp32` devShell (`backend/nix/esp32-shell.nix`; keep its version in sync with `greenhouse_esp32/rust-toolchain.toml`). No ESP-IDF, no `build-std`.
+- Mirrors `greenhouse_core::smart_device_interface` (same HTTP contract and handler signatures); uses `greenhouse_core` with `default-features = false` + `smart_device_dto`, `data_storage_service_dto`. Those DTO modules must stay `no_std` + `alloc` compatible (import `String`/`Vec` from `alloc`); `std`-only things go behind the `std` feature.
+- HTTPS trust: `greenhouse_esp32/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
+- Build/flash: `cd greenhouse_esp32 && WIFI_SSID=… WIFI_PASSWORD=… cargo run --release --example input_output_int_saver`.
+
 ## Adding a New Service
 
 1. Create `services/<new_service>/` following the existing service structure.

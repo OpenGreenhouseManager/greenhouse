@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     sync::{Arc, LazyLock},
 };
 
@@ -123,7 +123,7 @@ async fn main() {
 }
 
 async fn read_handler(_: Arc<Config<ExampleDeviceConfig>>) -> Type {
-    Type::Object(HashMap::from_iter(ALERTS_MUTEX.read().await.iter().map(
+    Type::Object(BTreeMap::from_iter(ALERTS_MUTEX.read().await.iter().map(
         |alert| {
             (
                 alert.identifier.to_string(),

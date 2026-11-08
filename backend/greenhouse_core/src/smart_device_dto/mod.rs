@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use alloc::{collections::BTreeMap, string::String};
 
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ pub mod write;
 pub enum Type {
     Number(f64),
     Boolean(bool),
-    Object(HashMap<String, Type>),
+    Object(BTreeMap<String, Type>),
     Measurement(Measurement),
     Stream,
     None,

@@ -1,3 +1,4 @@
+use alloc::string::String;
 use greenhouse_macro::IntoJsonResponse;
 use serde::{Deserialize, Serialize};
 

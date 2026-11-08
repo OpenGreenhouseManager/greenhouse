@@ -1,3 +1,7 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
 #[cfg(feature = "auth_service_dto")]
 pub mod auth_service_dto;
 #[cfg(feature = "data_storage_service_dto")]

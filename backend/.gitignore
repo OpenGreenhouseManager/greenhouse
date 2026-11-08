@@ -1,5 +1,4 @@
 /target
-.embuild
 .env
 **/config.json
 # The root Cargo.lock is committed: the Nix package builds from it.

@@ -1,13 +1,15 @@
-use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use alloc::string::String;
 
-use crate::error::{Error, Result};
+use greenhouse_core::smart_device_dto::config::TypeOption;
+use serde::{Deserialize, Serialize};
 
-const NVS_CONFIG_KEY: &str = "cfg";
-const NVS_BUF_SIZE: usize = 4096;
-
+/// Device configuration; same shape and JSON as
+/// `greenhouse_core::smart_device_interface::config::Config`.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Config<T: Clone + Default> {
+pub struct Config<T>
+where
+    T: Clone + Default,
+{
     pub port: u16,
     pub datasource_id: String,
     pub additional_config: T,
@@ -20,22 +22,9 @@ pub struct ScriptingApi {
     pub token: String,
 }
 
-pub fn write_nvs_config<T>(nvs: &mut EspNvs<NvsDefault>, config: &Config<T>) -> Result<()>
-where
-    T: Serialize + Clone + Default,
-{
-    let json = serde_json::to_vec(config).map_err(|_| Error::SerializationError)?;
-    nvs.set_raw(NVS_CONFIG_KEY, &json).map_err(Error::Esp)?;
-    Ok(())
-}
-
-pub fn read_nvs_config<T>(nvs: &EspNvs<NvsDefault>) -> Result<Config<T>>
-where
-    T: DeserializeOwned + Clone + Default,
-{
-    let mut buf = vec![0u8; NVS_BUF_SIZE];
-    match nvs.get_raw(NVS_CONFIG_KEY, &mut buf).map_err(Error::Esp)? {
-        Some(data) => serde_json::from_slice(data).map_err(|_| Error::IllFormattedConfig),
-        None => Err(Error::MissingConfig),
-    }
+#[derive(Debug, Clone)]
+pub enum Mode {
+    Input(TypeOption),
+    Output(TypeOption),
+    InputOutput(TypeOption, TypeOption),
 }

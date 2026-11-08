@@ -1,5 +1,5 @@
 [toolchain]
-# Standard nightly works for RISC-V ESP32 variants (C3, C6, C2).
-# For Xtensa variants (ESP32, S2, S3) switch to channel = "esp" after running `espup install`.
-channel = "nightly-2026-10-08" # see backend/nix/esp32-shell.nix for why it is pinned
+# Keep in sync with backend/nix/esp32-shell.nix (which provides it under Nix).
+channel = "1.99.1"
 components = ["rust-src", "rustfmt", "clippy"]
+targets = ["riscv32imc-unknown-none-elf"]
