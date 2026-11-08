@@ -12,6 +12,8 @@ members = [
     "services/device_service",
     "services/scripting_service",
 ]
+# Cross-compiled for ESP32 with its own target/toolchain (devShell `esp32`).
+exclude = ["greenhouse_esp32"]
 default-members = [
     "api/web",
     "api/script",
