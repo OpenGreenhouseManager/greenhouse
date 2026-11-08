@@ -23,7 +23,10 @@ let
   # espidf `stat` uses `st_atim` timespecs while std/os/espidf still reads
   # `st_atime`, so build-std fails on later nightlies. Bump once upstream is
   # consistent again. Keep in sync with greenhouse_esp32/rust-toolchain.toml.
-  toolchain = rust-bin.nightly."2026-10-15".default.override {
+  # Not 2026-10-09..10-15 either: those ICE in compare_const_generic_param_types
+  # ("DefId::expect_local ... isn't local") on esp-idf-svc's async `Wifi::scan_n`
+  # impl. Fixed again by 2026-10-22.
+  toolchain = rust-bin.nightly."2026-10-08".default.override {
     extensions = [
       "rust-src"
       "rust-analyzer"

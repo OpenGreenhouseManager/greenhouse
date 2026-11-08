@@ -1,20 +1,18 @@
 use std::sync::{Arc, Mutex};
 
-use embedded_io::{Read, Write};
+use embedded_io::Write;
 use esp_idf_svc::http::server::{EspHttpConnection, Request};
 use esp_idf_svc::io::EspIOError;
 use greenhouse_core::smart_device_dto::{
-    Type,
-    config::{ConfigRequestDto, ConfigResponseDto, TypeOption},
+    config::{ConfigRequestDto, ConfigResponseDto},
     read::ReadResponseDto,
     status::DeviceStatusResponseDto,
     write::WriteRequestDto,
 };
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
-use crate::config::{Config, ScriptingApi, write_nvs_config};
+use crate::config::{write_nvs_config, ScriptingApi};
 use crate::device_builder::DeviceState;
-use crate::StatusCode;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 
 const BODY_BUF_SIZE: usize = 4096;

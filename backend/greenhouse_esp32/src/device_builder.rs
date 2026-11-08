@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use greenhouse_core::smart_device_dto::config::TypeOption;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
-use crate::config::{Config, write_nvs_config, read_nvs_config};
+use crate::config::{read_nvs_config, write_nvs_config, Config};
 use crate::error::{Error, Result};
 use crate::StatusCode;
-use greenhouse_core::smart_device_dto::status::DeviceStatusResponseDto;
 use greenhouse_core::smart_device_dto::config::ConfigRequestDto;
+use greenhouse_core::smart_device_dto::status::DeviceStatusResponseDto;
 use greenhouse_core::smart_device_dto::Type;
 
 const NVS_NAMESPACE: &str = "ghse_cfg";
@@ -21,13 +21,20 @@ pub enum Mode {
     Unknown,
 }
 
+pub type ReadHandler<T> = Arc<dyn Fn(Arc<Config<T>>) -> Type + Send + Sync>;
+pub type WriteHandler<T> = Arc<dyn Fn(Type, Arc<Config<T>>) -> StatusCode + Send + Sync>;
+pub type StatusHandler<T> = Arc<dyn Fn(Arc<Config<T>>) -> DeviceStatusResponseDto + Send + Sync>;
+pub type ConfigInterceptor<T> =
+    Arc<dyn Fn(ConfigRequestDto<T>, Arc<Config<T>>) -> Config<T> + Send + Sync>;
+type SharedNvs = Arc<Mutex<EspNvs<NvsDefault>>>;
+
 pub struct DeviceState<T: Clone + Default> {
-    pub read_handler: Option<Arc<dyn Fn(Arc<Config<T>>) -> Type + Send + Sync>>,
-    pub write_handler: Option<Arc<dyn Fn(Type, Arc<Config<T>>) -> StatusCode + Send + Sync>>,
-    pub status_handler: Arc<dyn Fn(Arc<Config<T>>) -> DeviceStatusResponseDto + Send + Sync>,
-    pub config_interceptor: Arc<dyn Fn(ConfigRequestDto<T>, Arc<Config<T>>) -> Config<T> + Send + Sync>,
+    pub read_handler: Option<ReadHandler<T>>,
+    pub write_handler: Option<WriteHandler<T>>,
+    pub status_handler: StatusHandler<T>,
+    pub config_interceptor: ConfigInterceptor<T>,
     pub config: Mutex<Config<T>>,
-    pub nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    pub nvs: SharedNvs,
     pub mode: Mode,
 }
 
@@ -39,6 +46,7 @@ impl<T> DeviceBuilder<T>
 where
     T: Clone + Default + Serialize + DeserializeOwned + Send + Sync + 'static,
 {
+    #[allow(clippy::too_many_arguments)]
     pub fn new_hybrid_device<RH, WH, SH, CIH>(
         nvs_partition: EspDefaultNvsPartition,
         default_config: Config<T>,
@@ -133,10 +141,15 @@ where
             .port;
         let server_cfg = esp_idf_svc::http::server::Configuration {
             http_port: port,
+            // Handlers run on the httpd task. The 6 KiB default is too small for
+            // the mbedTLS handshake when a handler calls `trigger_alert` over https.
+            stack_size: 10240,
             ..Default::default()
         };
         let _server = match &self.state.mode {
-            Mode::InputOutput(_, _) => crate::hybrid_device::start_server(self.state.clone(), server_cfg)?,
+            Mode::InputOutput(_, _) => {
+                crate::hybrid_device::start_server(self.state.clone(), server_cfg)?
+            }
             Mode::Output(_) => crate::output_device::start_server(self.state.clone(), server_cfg)?,
             Mode::Input(_) => crate::input_device::start_server(self.state.clone(), server_cfg)?,
             Mode::Unknown => return Err(Error::IllFormattedConfig),
@@ -150,7 +163,7 @@ where
 fn load_or_init_config<T>(
     nvs_partition: EspDefaultNvsPartition,
     default_config: Config<T>,
-) -> Result<(Config<T>, Arc<Mutex<EspNvs<NvsDefault>>>)>
+) -> Result<(Config<T>, SharedNvs)>
 where
     T: Clone + Default + Serialize + DeserializeOwned,
 {

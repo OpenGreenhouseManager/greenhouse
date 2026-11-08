@@ -15,8 +15,9 @@ path = "src/examples/input_output_int_saver.rs"
 
 [dependencies]
 embedded-io = "0.6"
-esp-idf-hal = "0.44"
-esp-idf-svc = { version = "0.49", features = ["std", "alloc", "experimental"] }
+embedded-svc = "0.28"
+esp-idf-hal = "0.45"
+esp-idf-svc = { version = "0.51", features = ["std", "alloc", "experimental"] }
 greenhouse_core = { path = "../greenhouse_core", default-features = false, features = [
     "smart_device_dto",
     "data_storage_service_dto",
@@ -26,7 +27,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 [build-dependencies]
-embuild = "0.32"
+embuild = "0.33"
 
 [profile.release]
 opt-level = "s"

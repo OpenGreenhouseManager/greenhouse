@@ -24,3 +24,9 @@ impl From<esp_idf_svc::sys::EspError> for Error {
         Error::Esp(e)
     }
 }
+
+impl From<esp_idf_svc::io::EspIOError> for Error {
+    fn from(e: esp_idf_svc::io::EspIOError) -> Self {
+        Error::Esp(e.0)
+    }
+}

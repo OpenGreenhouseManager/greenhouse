@@ -1,5 +1,5 @@
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::error::{Error, Result};
 

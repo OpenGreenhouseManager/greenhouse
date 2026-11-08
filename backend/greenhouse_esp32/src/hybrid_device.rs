@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use esp_idf_svc::http::server::{Configuration, EspHttpServer, Method};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::device_builder::DeviceState;
 use crate::error::{Error, Result};
@@ -14,30 +14,38 @@ pub fn start_server<T>(
 where
     T: Clone + Default + Serialize + DeserializeOwned + Send + Sync + 'static,
 {
-    let mut server = EspHttpServer::new(&config).map_err(Error::Esp)?;
+    let mut server = EspHttpServer::new(&config)?;
 
     {
         let s = state.clone();
         server
-            .fn_handler("/read", Method::Get, move |req| handler::handle_read(&s, req))
+            .fn_handler("/read", Method::Get, move |req| {
+                handler::handle_read(&s, req)
+            })
             .map_err(Error::Esp)?;
     }
     {
         let s = state.clone();
         server
-            .fn_handler("/write", Method::Post, move |req| handler::handle_write(&s, req))
+            .fn_handler("/write", Method::Post, move |req| {
+                handler::handle_write(&s, req)
+            })
             .map_err(Error::Esp)?;
     }
     {
         let s = state.clone();
         server
-            .fn_handler("/status", Method::Get, move |req| handler::handle_status(&s, req))
+            .fn_handler("/status", Method::Get, move |req| {
+                handler::handle_status(&s, req)
+            })
             .map_err(Error::Esp)?;
     }
     {
         let s = state.clone();
         server
-            .fn_handler("/config", Method::Get, move |req| handler::handle_get_config(&s, req))
+            .fn_handler("/config", Method::Get, move |req| {
+                handler::handle_get_config(&s, req)
+            })
             .map_err(Error::Esp)?;
     }
     {

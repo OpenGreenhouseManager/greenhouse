@@ -7,19 +7,24 @@
 //!   - Replace `axum::http::StatusCode` with `greenhouse_esp32::StatusCode`
 //!   - Replace `init_hybrid_router + axum::serve` with `DeviceBuilder::run()`
 //!   - Pass a `default_config` to the builder instead of a config file path
-//!   - Drop `.await` from `trigger_alert` calls (sync on ESP32)
+//!   - Drop `.await` from `trigger_alert` calls (sync on ESP32); the write
+//!     handler sends an out-of-range alert like `input_alert_trigger` does
 //!
 //! For PWM / motor control see the comment block at the bottom of the file.
 
 use std::sync::Arc;
 
+use greenhouse_core::data_storage_service_dto::alert_dto::alert::Severity;
 use greenhouse_core::smart_device_dto::{
-    Type,
     config::{ConfigRequestDto, TypeOption},
     status::{DeviceStatusDto, DeviceStatusResponseDto},
+    Type,
 };
+use greenhouse_esp32::device_service::{trigger_alert, AlertCreation};
 use greenhouse_esp32::{Config, DeviceBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
+
+const OUT_OF_RANGE_ALERT_IDENTIFIER: &str = "out_of_range";
 
 static SAVED_NUMBER: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(20);
 
@@ -76,6 +81,17 @@ fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> Status
     };
     let number_i32 = number as i32;
     if config.additional_config.min > number_i32 || config.additional_config.max < number_i32 {
+        // Borrowed from `input_alert_trigger`: report rejected values. Runs on the
+        // httpd task, so this also exercises the TLS handshake for https URLs.
+        let alert = AlertCreation {
+            severity: Severity::Warning,
+            identifier: OUT_OF_RANGE_ALERT_IDENTIFIER.to_string(),
+            value: Some(number.to_string()),
+            note: None,
+        };
+        if let Err(e) = trigger_alert(&config, alert) {
+            log::warn!("failed to send out-of-range alert: {e}");
+        }
         return StatusCode::BAD_REQUEST;
     }
     SAVED_NUMBER.store(number_i32, std::sync::atomic::Ordering::Relaxed);
@@ -103,7 +119,7 @@ fn connect_wifi(
     modem: esp_idf_hal::modem::Modem,
     sysloop: esp_idf_svc::eventloop::EspSystemEventLoop,
     nvs: esp_idf_svc::nvs::EspDefaultNvsPartition,
-) -> esp_idf_svc::wifi::EspWifi<'static> {
+) -> esp_idf_svc::wifi::BlockingWifi<esp_idf_svc::wifi::EspWifi<'static>> {
     use esp_idf_svc::wifi::{BlockingWifi, ClientConfiguration, Configuration, EspWifi};
 
     let mut wifi = BlockingWifi::wrap(
@@ -128,7 +144,7 @@ fn connect_wifi(
         wifi.wifi().sta_netif().get_ip_info().unwrap()
     );
 
-    wifi.into_inner()
+    wifi
 }
 
 // ── PWM / motor control example ───────────────────────────────────────────

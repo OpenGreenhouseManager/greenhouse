@@ -5,6 +5,10 @@ target = "riscv32imc-esp-espidf"
 
 [target.riscv32imc-esp-espidf]
 linker = "ldproxy"
+# Recent nightlies reach external data through the GOT even with the static
+# relocation model; ESP-IDF's linker script asserts no section (like `.got`)
+# sits between .flash.rodata and .eh_frame_hdr, so linking fails without this.
+rustflags = ["-Z", "direct-access-external-data=yes"]
 
 [unstable]
 build-std = ["std", "panic_abort"]
