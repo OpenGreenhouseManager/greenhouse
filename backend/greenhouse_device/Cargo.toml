@@ -6,6 +6,14 @@ description = "Building blocks for OpenGreenhouseManager smart devices: axum/tok
 license = "GPL-3.0"
 publish = false
 
+# The runtime is picked by the build target, not by a feature, so
+# `--workspace --all-features` on a host never pulls in the ESP32 crates:
+#   - host targets: axum + tokio + reqwest, config in a JSON file
+#   - `target_os = "none"` (riscv32imc-unknown-none-elf, ESP32-C3): esp-hal + embassy
+#     + picoserve + mbedtls, config in the `nvs` flash partition.
+# Examples: `examples/esp32_*.rs` are firmware (build them with the `esp32-*`
+# cargo aliases in backend/.cargo/config.toml), all others run on the host.
+
 [dependencies]
 greenhouse_core = { path = "../greenhouse_core", default-features = false, features = ["data_storage_service_dto", "smart_device_dto"] }
 log = "0.4"
@@ -35,17 +43,10 @@ picoserve = { version = "0.20.1", features = ["alloc", "embassy", "log"] }
 portable-atomic-util = { version = "0.2", default-features = false, features = ["alloc"] }
 static_cell = "2.1.0"
 
+[target.'cfg(not(target_os = "none"))'.dev-dependencies]
+rand = "0.10.3"
+tokio = { workspace = true, features = ["time"] }
+
 [target.'cfg(target_os = "none")'.dev-dependencies]
 esp-backtrace = { version = "0.20.0", features = ["esp32c3", "panic-handler", "println"] }
 esp-println = { version = "0.18.0", features = ["esp32c3", "log-04"] }
-
-# The runtime is picked by the build target, not by a feature, so
-# `--workspace --all-features` on a host never pulls in the ESP32 crates:
-#   - host targets: axum + tokio + reqwest, config in a JSON file
-#   - `target_os = "none"` (riscv32imc-unknown-none-elf, ESP32-C3): esp-hal + embassy
-#     + picoserve + mbedtls, config in the `nvs` flash partition.
-# Build the firmware with the `esp32-*` cargo aliases (backend/.cargo/config.toml).
-
-[[example]]
-name = "esp32_input_output_int_saver"
-path = "examples/esp32_input_output_int_saver.rs"

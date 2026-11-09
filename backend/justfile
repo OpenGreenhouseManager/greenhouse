@@ -84,7 +84,7 @@ lint: esp32-lint
 
 # Clippy for greenhouse_device's ESP32 half (unit tests don't build bare-metal)
 esp32-lint:
-    cargo esp32-clippy --lib --examples -- -D warnings
+    cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings
 
 # Build the ESP32 example firmware (needs WIFI_SSID / WIFI_PASSWORD to be useful)
 esp32-build example="esp32_input_output_int_saver":
@@ -101,9 +101,9 @@ fmt:
     cargo fmt --all -- --color always
 
 device:
-    cargo run -p examples --example input_output_int_saver &
-    cargo run -p examples --example input_alert_trigger &
-    cargo run -p examples --example periodic_alert 
+    cargo run -p greenhouse_device --example input_output_int_saver &
+    cargo run -p greenhouse_device --example input_alert_trigger &
+    cargo run -p greenhouse_device --example periodic_alert 
 
 device-stop:
     killall periodic_alert || true

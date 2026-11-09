@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "api/script",
     "api/web",
-    "examples",
     "greenhouse_core",
     "greenhouse_device",
     "greenhouse_macro",

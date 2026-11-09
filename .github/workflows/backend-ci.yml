@@ -69,7 +69,8 @@ jobs:
   # ESP32 half (riscv32imc-unknown-none-elf, `esp32-*` aliases in
   # backend/.cargo/config.toml). It is also the check that greenhouse_core's DTO
   # modules stay no_std. Unit tests cannot build for a bare-metal target, hence
-  # `--lib --examples` instead of `--all-targets`.
+  # `--lib --example 'esp32_*'` instead of `--all-targets` (the other
+  # examples are host-only).
   esp32:
     name: ESP32 firmware
     runs-on: ubuntu-latest
@@ -83,7 +84,7 @@ jobs:
           workspaces: backend
           key: esp32
       - name: Clippy
-        run: cargo esp32-clippy --lib --examples -- -D warnings
+        run: cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings
       - name: Build example firmware
         run: cargo esp32-build --example esp32_input_output_int_saver
 

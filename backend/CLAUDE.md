@@ -24,7 +24,7 @@ greenhouse_backend/
 ├── Cargo.toml              # Workspace manifest
 ├── rust-toolchain.toml     # Pins the stable toolchain + ESP32-C3 target
 ├── justfile                # Developer task runner
-├── compose.yaml            # Local dev Docker Compose (PostgreSQL + example devices)
+├── compose.yaml            # Local dev Docker Compose (PostgreSQL)
 ├── Dockerfile              # Base builder image for all services
 ├── greenhouse_core/        # Shared library: DTOs (no_std-capable)
 │   └── src/
@@ -34,7 +34,7 @@ greenhouse_backend/
 │       ├── scripting_service_dto/
 │       ├── smart_device_dto/
 │       └── http_error.rs
-├── greenhouse_device/      # Smart-device library: host (axum) + ESP32 (embassy)
+├── greenhouse_device/      # Smart-device library: host (axum) + ESP32 (embassy), examples/ for both
 ├── greenhouse_macro/       # Procedural macro crate
 ├── services/
 │   ├── auth_service/       # User auth, JWT issuance, bcrypt passwords
@@ -44,7 +44,6 @@ greenhouse_backend/
 ├── api/
 │   ├── web/                # web_api — REST gateway used by the Angular frontend
 │   └── script/             # scripting_api — API for the scripting subsystem
-├── examples/               # Example smart-device binaries (used for local testing)
 ├── integration-tests/      # Workspace-level integration test crate
 ├── docker/                 # Supporting Docker files (e.g. postgres/init.sql)
 └── scripts/                # Build helper scripts (build-image-layer.sh)
@@ -95,7 +94,7 @@ just lint    # cargo clippy --all-targets --all-features --workspace -- -D warni
 just test    # cargo test --release --workspace --all-features -- --test-threads=1
 just fmt     # cargo fmt --all -- --color always
 
-# Run example devices
+# Run the host example devices (greenhouse_device/examples, ports 6001–6003)
 just device
 just device-stop
 ```
@@ -103,7 +102,7 @@ just device-stop
 ### Local database
 
 ```bash
-# Start PostgreSQL (and example devices)
+# Start PostgreSQL
 docker compose up db -d
 
 # Run Diesel migrations for a specific service
@@ -185,7 +184,6 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 `compose.yaml` provides:
 - **`db`** — PostgreSQL on port `5432` with `admin`/`password` credentials, initialised by `docker/postgres/init.sql`.
-- Three **example device** containers (ports `6001`–`6003`) with health checks.
 
 Default credentials for local dev:
 - PostgreSQL user: `admin`, password: `password`
@@ -198,7 +196,7 @@ One crate, one public API (`DeviceBuilder::new_hybrid/output/input_device(platfo
 - **ESP32-C3** (`cfg(target_os = "none")`, `src/platform/esp32/`): bare-metal `no_std` esp-hal + embassy + picoserve + mbedtls; `Platform::start(spawner, peripherals, wifi)`, config in the `nvs` flash partition. No ESP-IDF, no `build-std`.
 - Everything else is shared and must stay `no_std` + `alloc` (import `String`/`Vec` from `alloc`): `config/common.rs` (types, `/config` response, activate merge, stored-config migration), `device_builder.rs`, `handler.rs` (all request logic; the servers only route to it), `device_service.rs`. Put new logic there; each platform module only provides the items listed in `src/platform/mod.rs`. Target-specific dependencies go in the matching `[target.'cfg(…)'.dependencies]` table.
 - Handler bounds use `MaybeSend`/`MaybeSync` (`Send`/`Sync` on the host, nothing on the ESP32).
-- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Unit tests are host-only, so ESP32 clippy runs on `--lib --examples`; ESP32 examples compile to a stub `main` on the host.
+- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Examples: `examples/esp32_*.rs` are firmware, the rest run on the host (`just device`). Unit tests and host examples do not build bare-metal, so ESP32 clippy runs on `--lib --example 'esp32_*'`; ESP32 examples compile to a stub `main` on the host, so workspace `--all-targets` works.
 - CI: the `esp32` job in `backend-ci.yml` runs ESP32 clippy and the firmware build — it is also the no_std check for `greenhouse_core`'s DTO modules (std-only DTO code goes behind core's `std` feature).
 - HTTPS trust on the ESP32: `greenhouse_device/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
 
