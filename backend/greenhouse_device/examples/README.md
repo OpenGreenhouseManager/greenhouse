@@ -2,7 +2,9 @@
 
 Example smart devices built with `greenhouse_device`. The host examples and the
 ESP32 firmware use the same API (`DeviceBuilder`, handlers taking
-`Arc<Config<T>>`, `trigger_alert`); only `main` differs.
+`Arc<Config<T>>`, `trigger_alert`); only `main` differs. Logic shared by a host
+and an ESP32 example lives in `common/` (e.g. `common/int_saver.rs`) and must stay
+`no_std`-clean.
 
 | Example | Runs on | Kind | Port | What it does |
 |---|---|---|---|---|
@@ -53,5 +55,19 @@ stub `main`.
 ## Writing your own device
 
 Copy the example closest to your device. Define your `additional_config` type,
-then implement the handlers. Name firmware examples `esp32_*.rs` so the ESP32
+then implement the handlers:
+
+```rust
+DeviceBuilder::new(platform, default_config)
+    .read(TypeOption::Number, read_handler)   // `/read`: the device outputs data
+    .write(TypeOption::Number, write_handler) // `/write`: the device takes input
+    .status(status_handler)                   // optional; default: online
+    .config_interceptor(interceptor)          // optional; default: take `additional_config`
+    .build()?
+    .run()
+    .await
+```
+
+At least one of `read` / `write` is required. Host examples log via `env_logger`
+(`RUST_LOG`, default `info`). Name firmware examples `esp32_*.rs` so the ESP32
 lint (`just esp32-lint`) picks them up and the host-only ones are skipped.

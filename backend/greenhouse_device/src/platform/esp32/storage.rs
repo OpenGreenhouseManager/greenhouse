@@ -20,7 +20,7 @@ const SECTOR: u32 = FlashStorage::SECTOR_SIZE;
 const MAGIC: [u8; 4] = *b"GHC1";
 const HEADER_LEN: usize = 16;
 /// Largest config (serialized JSON) that fits into one slot.
-pub const MAX_DATA_LEN: usize = SECTOR as usize - HEADER_LEN;
+pub(crate) const MAX_DATA_LEN: usize = SECTOR as usize - HEADER_LEN;
 
 pub(crate) struct ConfigStore {
     flash: FlashStorage<'static>,

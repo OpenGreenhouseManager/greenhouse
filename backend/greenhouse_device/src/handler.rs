@@ -49,7 +49,7 @@ fn parse<V: DeserializeOwned>(body: &[u8]) -> Result<V, Reply> {
     })
 }
 
-pub(crate) async fn read<T: Clone + Default>(state: &DeviceState<T>) -> Reply {
+pub(crate) async fn read<T>(state: &DeviceState<T>) -> Reply {
     let Some(handler) = state.read_handler.as_ref() else {
         return Reply::status(StatusCode::NOT_FOUND);
     };
@@ -57,7 +57,7 @@ pub(crate) async fn read<T: Clone + Default>(state: &DeviceState<T>) -> Reply {
     Reply::json(&ReadResponseDto { data })
 }
 
-pub(crate) async fn write<T: Clone + Default>(state: &DeviceState<T>, body: &[u8]) -> Reply {
+pub(crate) async fn write<T>(state: &DeviceState<T>, body: &[u8]) -> Reply {
     let Some(handler) = state.write_handler.as_ref() else {
         return Reply::status(StatusCode::NOT_FOUND);
     };
@@ -67,22 +67,20 @@ pub(crate) async fn write<T: Clone + Default>(state: &DeviceState<T>, body: &[u8
     }
 }
 
-pub(crate) async fn status<T: Clone + Default>(state: &DeviceState<T>) -> Reply {
+pub(crate) async fn status<T>(state: &DeviceState<T>) -> Reply {
     Reply::json(&(state.status_handler)(state.config()).await)
 }
 
 pub(crate) async fn get_config<T>(state: &DeviceState<T>) -> Reply
 where
-    T: Clone + Default + Serialize,
+    T: Clone + Serialize,
 {
-    // `Option` for compatibility: the response used to be `null` when the
-    // config file was unreadable. The config is always in memory now.
-    Reply::json(&Some(state.config().to_response_dto(&state.mode)))
+    Reply::json(&state.config().to_response_dto(&state.mode))
 }
 
 pub(crate) async fn post_config<T>(state: &DeviceState<T>, body: &[u8]) -> Reply
 where
-    T: Clone + Default + Serialize + DeserializeOwned,
+    T: Clone + Serialize + DeserializeOwned,
 {
     let request = match parse::<ConfigRequestDto<T>>(body) {
         Ok(request) => request,
@@ -95,7 +93,7 @@ where
 
 pub(crate) async fn activate<T>(state: &DeviceState<T>, body: &[u8]) -> Reply
 where
-    T: Clone + Default + Serialize,
+    T: Clone + Serialize,
 {
     let request = match parse::<ActivateRequestDto>(body) {
         Ok(request) => request,
@@ -110,10 +108,14 @@ where
 /// storage. Callers hold the storage lock for the whole read-modify-write.
 fn persist<T>(state: &DeviceState<T>, storage: &mut ConfigStore, config: Config<T>) -> Reply
 where
-    T: Clone + Default + Serialize,
+    T: Clone + Serialize,
 {
-    let Ok(bytes) = serde_json::to_vec(&config) else {
-        return Reply::status(StatusCode::INTERNAL_SERVER_ERROR);
+    let bytes = match serde_json::to_vec(&config) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            log::error!("config serialization failed: {e}");
+            return Reply::status(StatusCode::INTERNAL_SERVER_ERROR);
+        }
     };
     if let Err(e) = storage.store(&bytes) {
         log::error!("failed to persist config: {e}");

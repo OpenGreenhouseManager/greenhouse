@@ -1,8 +1,8 @@
 //! Building blocks for OpenGreenhouseManager smart devices.
 //!
 //! One API on every platform: async handlers taking `Arc<Config<T>>`, a
-//! [`DeviceBuilder`] with `new_hybrid_device` / `new_output_device` /
-//! `new_input_device`, [`DeviceBuilder::run`], and
+//! [`DeviceBuilder`] (`read` / `write` handlers, optional `status` /
+//! `config_interceptor`) that builds a [`Device`], [`Device::run`], and
 //! [`device_service::trigger_alert`]. Every device serves the same HTTP contract
 //! (`/read`, `/write`, `/status`, `/config`, `/activate`).
 //!
@@ -26,8 +26,8 @@ mod error;
 mod handler;
 mod platform;
 
-pub use config::{Config, Mode, ScriptingApi};
-pub use device_builder::{ConfigHandle, DeviceBuilder};
+pub use config::{Config, ScriptingApi};
+pub use device_builder::{ConfigHandle, Device, DeviceBuilder};
 pub use error::{Error, Result};
 pub use platform::{Arc, MaybeSend, MaybeSync, Platform, StatusCode};
 

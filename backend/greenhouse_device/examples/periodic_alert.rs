@@ -2,11 +2,7 @@ use std::{collections::BTreeMap, sync::LazyLock};
 
 use greenhouse_core::{
     data_storage_service_dto::alert_dto::alert::Severity,
-    smart_device_dto::{
-        Type,
-        config::{ConfigRequestDto, TypeOption},
-        status::{DeviceStatusDto, DeviceStatusResponseDto},
-    },
+    smart_device_dto::{Type, config::TypeOption},
 };
 use greenhouse_device::{
     Arc, Config, ConfigHandle, DeviceBuilder, Error, Platform,
@@ -46,7 +42,7 @@ struct AlertCounter {
     count: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone)]
 struct ExampleDeviceConfig {
     pub interval: u64,
     pub random_jitter: u64,
@@ -54,10 +50,11 @@ struct ExampleDeviceConfig {
 
 #[tokio::main]
 async fn main() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "./config/periodic_alert/config.json".to_string());
-    println!("using config file: {config_path}");
+    log::info!("using config file: {config_path}");
 
     let default_config = Config {
         port: 6003,
@@ -69,15 +66,10 @@ async fn main() {
         scripting_api: None,
     };
 
-    let device = DeviceBuilder::new_output_device(
-        Platform::new(config_path),
-        default_config,
-        read_handler,
-        status_handler,
-        config_interceptor_handler,
-        TypeOption::Object,
-    )
-    .unwrap();
+    let device = DeviceBuilder::new(Platform::new(config_path), default_config)
+        .read(TypeOption::Object, read_handler)
+        .build()
+        .unwrap();
 
     tokio::spawn(start_periodic_alerts(device.config_handle()));
 
@@ -93,28 +85,6 @@ async fn read_handler(_: Arc<Config<ExampleDeviceConfig>>) -> Type {
             )
         },
     )))
-}
-
-async fn status_handler(config: Arc<Config<ExampleDeviceConfig>>) -> DeviceStatusResponseDto {
-    DeviceStatusResponseDto {
-        status: DeviceStatusDto::Online,
-        datasource_id: config.datasource_id.clone(),
-    }
-}
-
-async fn config_interceptor_handler(
-    config: ConfigRequestDto<ExampleDeviceConfig>,
-    old_config: Arc<Config<ExampleDeviceConfig>>,
-) -> Config<ExampleDeviceConfig> {
-    Config {
-        port: old_config.port,
-        datasource_id: old_config.datasource_id.clone(),
-        additional_config: ExampleDeviceConfig {
-            interval: config.additional_config.interval,
-            random_jitter: config.additional_config.random_jitter,
-        },
-        scripting_api: old_config.scripting_api.clone(),
-    }
 }
 
 /// Sends a random alert every `interval` (+ up to `random_jitter`) seconds,
@@ -151,13 +121,14 @@ async fn start_periodic_alerts(config: ConfigHandle<ExampleDeviceConfig>) {
         .await;
         match res {
             Ok(_) => {
-                println!("Alert triggered successfully after {wait_time} seconds");
+                log::info!("alert triggered after {wait_time} seconds");
                 ALERTS_MUTEX.write().await[random_index].count += 1;
             }
             Err(Error::ScriptingApiNotConfigured) => {
-                println!("Scripting API not configured yet (device not activated)");
+                log::info!("scripting API not configured yet (device not activated)");
             }
-            Err(e) => println!("Error triggering alert: {e}"),
+            // `trigger_alert` logs why it failed.
+            Err(_) => {}
         }
     }
 }

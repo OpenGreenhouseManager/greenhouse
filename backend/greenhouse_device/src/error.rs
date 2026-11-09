@@ -2,14 +2,14 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    /// The stored or received config could not be (de)serialized.
-    IllFormattedConfig,
+    /// Serializing the config or a request body failed.
+    Serialization,
+    /// [`crate::DeviceBuilder::build`] without a read or a write handler.
+    MissingHandler,
     /// Reading/writing the config (file or flash) failed.
     Storage,
     /// `trigger_alert` was called before the device was activated.
     ScriptingApiNotConfigured,
-    /// Serializing a request body failed.
-    SerializationError,
     /// The scripting API answered with a non-2xx status.
     HttpStatus(u16),
     /// The alert request failed before a status was received.

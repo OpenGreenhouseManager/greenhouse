@@ -10,7 +10,7 @@ use picoserve::routing::{PathRouter, get, post};
 use picoserve::{ResponseSent, Router, Server};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::device_builder::{DeviceBuilder, DeviceState};
+use crate::device_builder::DeviceState;
 use crate::handler::{self, Reply};
 
 /// Concurrent connections served.
@@ -54,14 +54,14 @@ impl IntoResponse for Reply {
     }
 }
 
-pub(crate) async fn serve<T>(builder: DeviceBuilder<T>) -> !
+pub(crate) async fn serve<T>(state: &'static DeviceState<T>, server: super::Server) -> !
 where
-    T: Clone + Default + Serialize + DeserializeOwned + 'static,
+    T: Clone + Serialize + DeserializeOwned + 'static,
 {
-    let DeviceBuilder { state, server } = builder;
     let port = state.config().port;
     let app = router(state);
-    let config = picoserve::Config::const_default().keep_connection_alive();
+    // One request per connection, so a client cannot hold on to every worker.
+    let config = picoserve::Config::const_default().close_connection_after_response();
 
     log::info!("serving device API on port {port}");
     embassy_futures::join::join_array(core::array::from_fn::<_, WORKERS, _>(|id| {
@@ -90,7 +90,7 @@ async fn worker<P: PathRouter>(
 
 fn router<T>(state: &'static DeviceState<T>) -> Router<impl PathRouter>
 where
-    T: Clone + Default + Serialize + DeserializeOwned + 'static,
+    T: Clone + Serialize + DeserializeOwned + 'static,
 {
     Router::new()
         .route(READ, get(move || handler::read(state)))

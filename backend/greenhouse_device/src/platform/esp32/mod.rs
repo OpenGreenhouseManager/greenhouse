@@ -14,7 +14,7 @@ use core::pin::Pin;
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 
-pub(crate) use alert::send_alert;
+pub(crate) use alert::http_post;
 pub(crate) use bring_up::Server;
 pub use bring_up::{Platform, PlatformPeripherals, WifiCredentials};
 pub(crate) use server::serve;

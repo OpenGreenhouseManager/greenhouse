@@ -123,6 +123,8 @@ Triggers on every push and pull request. Runs in a matrix:
 | Format | `cargo fmt --all -- --check --color always` |
 | Lint | `cargo clippy --all-targets --all-features --workspace -- -D warnings` |
 | Tests | `cargo test --release --workspace --all-features -- --test-threads=1` |
+| ESP32 (own job) | `cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings` + `cargo esp32-build --example esp32_input_output_int_saver` |
+| TS bindings (own job) | `just check-ts` |
 
 **All CI checks must pass before merging.**
 
@@ -190,13 +192,13 @@ Default credentials for local dev:
 
 ## Smart devices (`greenhouse_device/`)
 
-One crate, one public API (`DeviceBuilder::new_hybrid/output/input_device(platform, default_config, handlers…)`, `run()`, `config_handle()`, `device_service::trigger_alert`, `Arc`, `StatusCode`, `Config`) for two runtimes, **selected by build target, not by feature** (so `--workspace --all-features` never pulls esp-hal onto the host):
+One crate, one public API (`DeviceBuilder::new(platform, default_config).read(type, h).write(type, h)[.status(h)][.config_interceptor(h)].build()? -> Device`, `Device::run()` / `config_handle()`, `device_service::trigger_alert`, `Arc`, `StatusCode`, `Config`) for two runtimes, **selected by build target, not by feature** (so `--workspace --all-features` never pulls esp-hal onto the host):
 
-- **Host** (`cfg(not(target_os = "none"))`, `src/platform/host/`): axum + tokio, config in a JSON file (`Platform::new(path)`), alerts via reqwest. Host-only extra: `DeviceBuilder::into_router()`.
+- **Host** (`cfg(not(target_os = "none"))`, `src/platform/host/`): axum + tokio, config in a JSON file (`Platform::new(path)`), alerts via reqwest. Host-only extra: `Device::into_router()`.
 - **ESP32-C3** (`cfg(target_os = "none")`, `src/platform/esp32/`): bare-metal `no_std` esp-hal + embassy + picoserve + mbedtls; `Platform::start(spawner, peripherals, wifi)`, config in the `nvs` flash partition. No ESP-IDF, no `build-std`.
-- Everything else is shared and must stay `no_std` + `alloc` (import `String`/`Vec` from `alloc`): `config/common.rs` (types, `/config` response, activate merge, stored-config migration), `device_builder.rs`, `handler.rs` (all request logic; the servers only route to it), `device_service.rs`. Put new logic there; each platform module only provides the items listed in `src/platform/mod.rs`. Target-specific dependencies go in the matching `[target.'cfg(…)'.dependencies]` table.
+- Everything else is shared and must stay `no_std` + `alloc` (import `String`/`Vec` from `alloc`): `config.rs` (types, `/config` response, activate merge, stored-config migration), `device_builder.rs` (builder, default status/interceptor), `handler.rs` (all request logic; the servers only route to it), `device_service.rs` (alert DTO, headers, status check; platforms only do the HTTP POST). Put new logic there; each platform module only provides the items listed in `src/platform/mod.rs`. Target-specific dependencies go in the matching `[target.'cfg(…)'.dependencies]` table.
 - Handler bounds use `MaybeSend`/`MaybeSync` (`Send`/`Sync` on the host, nothing on the ESP32).
-- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Examples: `examples/esp32_*.rs` are firmware, the rest run on the host (`just device`). Unit tests and host examples do not build bare-metal, so ESP32 clippy runs on `--lib --example 'esp32_*'`; ESP32 examples compile to a stub `main` on the host, so workspace `--all-targets` works.
+- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Examples: `examples/esp32_*.rs` are firmware, the rest run on the host (`just device`, logs via `env_logger`); code shared between them lives in `examples/common/` (included with `#[path]`, must stay `no_std`-clean). Unit tests and host examples do not build bare-metal, so ESP32 clippy runs on `--lib --example 'esp32_*'`; ESP32 examples compile to a stub `main` on the host, so workspace `--all-targets` works.
 - CI: the `esp32` job in `backend-ci.yml` runs ESP32 clippy and the firmware build — it is also the no_std check for `greenhouse_core`'s DTO modules (std-only DTO code goes behind core's `std` feature).
 - HTTPS trust on the ESP32: `greenhouse_device/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
 

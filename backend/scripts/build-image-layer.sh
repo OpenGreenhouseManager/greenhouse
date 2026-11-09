@@ -19,7 +19,6 @@ tools() {
   else
     apt-get install -y "${LINKER_PACKAGE}"
     rustup target add "${BUILD_TARGET}"
-    rustup component add rust-src # toolchain: rust-toolchain.toml
   fi
 }
 

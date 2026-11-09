@@ -36,11 +36,11 @@ pub struct WifiCredentials {
 }
 
 /// A running platform: connected network stack plus config storage.
-/// Hand it to a [`crate::DeviceBuilder`] constructor; the config is kept in
-/// the `nvs` flash partition.
+/// Hand it to [`crate::DeviceBuilder::new`]; the config is kept in the `nvs`
+/// flash partition.
 pub struct Platform {
     stack: Stack<'static>,
-    pub(crate) storage: ConfigStore,
+    storage: ConfigStore,
 }
 
 impl Platform {
@@ -105,6 +105,10 @@ impl Platform {
 
         Ok(Self { stack, storage })
     }
+
+    pub(crate) fn into_parts(self) -> (ConfigStore, Server) {
+        (self.storage, Server { stack: self.stack })
+    }
 }
 
 #[embassy_executor::task]
@@ -125,12 +129,6 @@ async fn wifi_task(mut controller: WifiController<'static>) {
 #[embassy_executor::task]
 async fn net_task(mut runner: Runner<'static, Interface>) {
     runner.run().await
-}
-
-impl Platform {
-    pub(crate) fn into_parts(self) -> (ConfigStore, Server) {
-        (self.storage, Server { stack: self.stack })
-    }
 }
 
 /// The network stack the HTTP server listens on.

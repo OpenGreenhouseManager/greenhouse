@@ -8,12 +8,6 @@ license = "GPL-3.0"
 [lib]
 proc-macro = true
 
-[features]
-default = ["axum"]
-# Emit the axum `IntoResponse` impl from `#[derive(IntoJsonResponse)]`. Without it
-# the derive expands to nothing, so DTOs stay usable on targets without axum (ESP32).
-axum = []
-
 [dependencies]
 proc-macro2 = "1"
 quote = "1"

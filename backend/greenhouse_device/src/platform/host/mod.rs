@@ -12,7 +12,7 @@ use std::sync::RwLock;
 pub use axum::http::StatusCode;
 pub use std::sync::Arc;
 
-pub(crate) use alert::send_alert;
+pub(crate) use alert::http_post;
 pub(crate) use server::serve;
 pub(crate) use storage::ConfigStore;
 
@@ -72,13 +72,6 @@ impl Platform {
 
     pub(crate) fn into_parts(self) -> (ConfigStore, Server) {
         (ConfigStore::new(self.config_path), Server)
-    }
-}
-
-impl Default for Platform {
-    /// `./config/config.json`
-    fn default() -> Self {
-        Self::new("./config/config.json")
     }
 }
 

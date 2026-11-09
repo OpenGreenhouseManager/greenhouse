@@ -261,23 +261,21 @@ reviews:
         5. Adding fields to `ErrorResponseBody` is a wire-format change — call it out and require
            integration-tests updates.
 
-    - path: "greenhouse_core/src/smart_device_interface/**/*.rs"
+    - path: "greenhouse_device/src/**/*.rs"
       instructions: |
-        Public surface for device implementations (examples/ and external devices). API stability
-        rules apply:
+        Smart-device library (host: axum + tokio; ESP32-C3: esp-hal + embassy, `no_std`). The
+        runtime is selected by build target (`cfg(target_os = "none")`), not by a feature.
 
-        1. Any change to `Config`, `DeviceBuilder`, `init_hybrid_router`, `init_input_router`,
-           `init_output_router`, `read_config_file_with_path`, `update_config_file_with_path`,
-           `AlertCreation`, or `trigger_alert` is breaking. Audit every file under `examples/` and
-           update them in the same PR. The `.github/workflows/examples.yml` workflow catches some
-           breakage but reviewer must verify each example still compiles.
-        2. `Config` is `serde_yaml`-backed; field renames break on-disk configs. Use
-           `#[serde(alias = "old_name")]` for one release before removing the old name.
-        3. New required `Config` fields MUST default via `#[serde(default)]` or be wrapped in
-           `Option<_>` — never break existing on-disk configs.
-        4. Same error-module rules as `services/*/src/**/error.rs`.
-        5. Public exports are gatekept via `mod.rs`. Changing visibility from `pub` to `pub(crate)`
-           of any item already used downstream is breaking.
+        1. Any change to `Config`, `DeviceBuilder`, `Device`, `AlertCreation`, or `trigger_alert`
+           is breaking. Audit every file under `greenhouse_device/examples/` and update them in the
+           same PR; the `esp32` CI job builds the firmware examples, the host jobs the rest.
+        2. `Config` is persisted as JSON (config file on the host, `nvs` flash on the ESP32);
+           field renames break stored configs. Use `#[serde(alias = "old_name")]` for one release
+           before removing the old name.
+        3. Code outside `src/platform/` is shared and MUST stay `no_std` + `alloc`. Platform
+           modules only provide the items listed in `src/platform/mod.rs`.
+        4. Public exports are gatekept via `lib.rs`. Changing visibility from `pub` to `pub(crate)`
+           of any item already used by an example is breaking.
 
     - path: "greenhouse_macro/**/*.rs"
       instructions: |
@@ -340,20 +338,20 @@ reviews:
         2. Pair `tracing::error!` with `sentry::capture_error(&e)` in the same function.
         3. No `.unwrap()` / `.expect()` in middleware bodies.
 
-    - path: "examples/**/*.rs"
+    - path: "greenhouse_device/examples/**/*.rs"
       instructions: |
-        Example devices demonstrating `smart_device_interface`. CI-built.
+        Example devices demonstrating `greenhouse_device`. CI-built (`esp32_*.rs` are ESP32 firmware).
 
         1. `.unwrap()` is acceptable in `main()` startup and config bootstrap — these are demo
            binaries. Do NOT flag it. BUT DO flag `.unwrap()` inside request-handling closures
            (read_handler, write_handler, etc.).
-        2. `#[tokio::main]` is fine.
-        3. When `greenhouse_core::smart_device_interface` API changes, every example MUST still
-           compile. If a PR changes the interface but skips examples, request changes.
+        2. `#[tokio::main]` (host) and `#[esp_hal::main]` (ESP32) are fine.
+        3. When the `greenhouse_device` API changes, every example MUST still compile. If a PR
+           changes the API but skips examples, request changes.
         4. Hardcoded UUIDs (e.g. `datasource_id: "7a224a14-..."`) are fine for examples; flag if
            copy-pasted into `services/` or `api/`.
-        5. Config bootstrap pattern (create parent dir, write `{}`, then
-           `update_config_file_with_path`) is the canonical recovery flow — match it in new examples.
+        5. Code shared between a host and an ESP32 example lives in `examples/common/` and MUST
+           stay `no_std`-clean.
 
     - path: "integration-tests/**/*.rs"
       instructions: |
@@ -388,7 +386,7 @@ reviews:
            genuinely needed.
         5. NEVER add `anyhow` or `thiserror` to any `Cargo.toml`. If a PR adds either, request
            changes and link to `services/auth_service/src/router/error.rs` as the canonical pattern.
-        6. Respect `rust-toolchain.toml` (nightly). Do not pin per-crate `rust-version`.
+        6. Respect `rust-toolchain.toml` (pinned stable). Do not pin per-crate `rust-version`.
         7. Adding `cargo audit` ignores requires the same inline comment style as
            `.github/workflows/rust_ci.yml`.
 
@@ -400,8 +398,8 @@ reviews:
            minimum-scope `permissions:` blocks per-job.
         3. The matrix in `rust_ci.yml` runs `sort`, `build`, `fmt`, `clippy`, `test`. Dropping a
            check is blocking. Adding checks is welcome but must run in <10m on `ubuntu-latest`.
-        4. Nightly toolchain is installed explicitly. Do not switch to stable without removing
-           nightly-only features.
+        4. The toolchain comes from `backend/rust-toolchain.toml` (`rustup toolchain install`).
+           Do not install a different toolchain in a job.
         5. `cargo audit --ignore RUSTSEC-2025-0111` — keep the inline comment explaining why.
            Removing the ignore is fine only once `testcontainers -> bollard` migrates off
            `tokio-tar`.

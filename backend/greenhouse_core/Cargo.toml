@@ -29,7 +29,7 @@ std = [
     "uuid/macro-diagnostics",
 ]
 # axum integration (`IntoResponse` impls on DTOs). Off for embedded consumers.
-axum = ["std", "dep:axum", "greenhouse_macro/axum"]
+axum = ["std", "dep:axum"]
 api_web_dto = []
 api_script_dto = []
 auth_service_dto = ["dep:serde_json"]
@@ -46,7 +46,7 @@ ts = ["std", "dep:ts-rs"]
 [dependencies]
 axum = { workspace = true, optional = true }
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde"] }
-greenhouse_macro = { version = "0.1", path = "../greenhouse_macro", default-features = false }
+greenhouse_macro = { version = "0.1", path = "../greenhouse_macro" }
 serde = { version = "1.0.229", default-features = false, features = ["alloc", "derive"] }
 serde_json = { version = "1.0.154", default-features = false, features = ["alloc"], optional = true }
 tracing = { workspace = true, optional = true }

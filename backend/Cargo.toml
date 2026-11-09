@@ -60,8 +60,3 @@ codegen-units = 1
 debug = 2
 lto = "fat"
 opt-level = "s"
-
-# Unoptimized embassy + Wi-Fi code is too slow / too large to be useful.
-[profile.esp32-dev]
-inherits = "dev"
-opt-level = "s"

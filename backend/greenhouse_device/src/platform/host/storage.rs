@@ -48,12 +48,11 @@ impl ConfigStore {
 mod tests {
     use serde::{Deserialize, Serialize};
 
-    use crate::{Config, DeviceBuilder, Platform, StatusCode};
+    use crate::{Config, Device, DeviceBuilder, Error, Platform, StatusCode};
     use greenhouse_core::smart_device_dto::Type;
-    use greenhouse_core::smart_device_dto::config::{ConfigRequestDto, TypeOption};
-    use greenhouse_core::smart_device_dto::status::{DeviceStatusDto, DeviceStatusResponseDto};
+    use greenhouse_core::smart_device_dto::config::TypeOption;
 
-    #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+    #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
     struct Current {
         min: i32,
     }
@@ -67,23 +66,39 @@ mod tests {
         }
     }
 
-    fn device(path: &std::path::Path) -> DeviceBuilder<Current> {
-        DeviceBuilder::new_input_device(
-            Platform::new(path),
-            default_config(),
-            |_: Type, _| async { StatusCode::OK },
-            |config: crate::Arc<Config<Current>>| async move {
-                DeviceStatusResponseDto {
-                    status: DeviceStatusDto::Online,
-                    datasource_id: config.datasource_id.clone(),
-                }
-            },
-            |_: ConfigRequestDto<Current>, old: crate::Arc<Config<Current>>| async move {
-                (*old).clone()
-            },
-            TypeOption::Number,
-        )
-        .unwrap()
+    fn device(path: &std::path::Path) -> Device<Current> {
+        DeviceBuilder::new(Platform::new(path), default_config())
+            .write(TypeOption::Number, |_: Type, _| async { StatusCode::OK })
+            .build()
+            .unwrap()
+    }
+
+    #[test]
+    fn build_without_handler_fails() {
+        let path = temp_path("no-handler");
+        let result = DeviceBuilder::new(Platform::new(&path), default_config()).build();
+        assert!(matches!(result, Err(Error::MissingHandler)));
+        assert!(!path.exists(), "nothing is stored without a handler");
+    }
+
+    #[tokio::test]
+    async fn default_status_and_config_interceptor() {
+        let path = temp_path("defaults");
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+        let device = device(&path);
+
+        let reply =
+            crate::handler::post_config(&device.state, br#"{"additional_config":{"min":9}}"#).await;
+        assert_eq!(reply.status, StatusCode::OK);
+        assert_eq!(
+            device.config_handle().get().additional_config,
+            Current { min: 9 }
+        );
+
+        let reply = crate::handler::status(&device.state).await;
+        let body: serde_json::Value = serde_json::from_slice(&reply.body.unwrap()).unwrap();
+        assert_eq!(body["datasource_id"], "default");
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
     fn temp_path(name: &str) -> std::path::PathBuf {
