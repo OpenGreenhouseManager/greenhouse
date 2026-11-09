@@ -1,6 +1,6 @@
 use super::Result;
 use super::config::{
-    Config, DEFAULT_CONFIG_FILE_NAME, read_config_file_with_path, update_config_file_with_path,
+    Config, DEFAULT_CONFIG_FILE_NAME, load_config_file_with_migration, update_config_file_with_path,
 };
 use crate::smart_device_dto::Type;
 use crate::smart_device_dto::config::TypeOption;
@@ -103,6 +103,9 @@ where
     pub config_interceptor_handler: ConfigInterceptorHandler<T>,
     pub config: Arc<RwLock<Arc<Config<T>>>>,
     pub config_path: String,
+    /// Serializes config read-modify-write (`/config`, `/activate`) so one
+    /// update cannot overwrite another with a stale base config.
+    pub config_update_lock: Arc<futures::lock::Mutex<()>>,
     pub mode: Mode,
 }
 
@@ -158,7 +161,7 @@ where
         CIH: ConfigHandlerFn<T, CIF>,
         CIF: ConfigFuture<T>,
     {
-        let config = read_config_file_with_path(config_path)?;
+        let config = load_config_file_with_migration(config_path)?;
 
         Ok(DeviceBuilder {
             read_handler: Some(Arc::new(move |cfg: Arc<Config<T>>| {
@@ -181,6 +184,7 @@ where
             ),
             config: Arc::new(RwLock::new(Arc::new(config))),
             config_path: config_path.to_string(),
+            config_update_lock: Arc::new(futures::lock::Mutex::new(())),
             mode: Mode::InputOutput(input_type, output_type),
         })
     }
@@ -223,7 +227,7 @@ where
         CIH: ConfigHandlerFn<T, CIF>,
         CIF: ConfigFuture<T>,
     {
-        let config = match read_config_file_with_path(config_path) {
+        let config = match load_config_file_with_migration(config_path) {
             Ok(config) => config,
             Err(_) => {
                 let default_config = Config::default();
@@ -249,6 +253,7 @@ where
             ),
             config: Arc::new(RwLock::new(Arc::new(config))),
             config_path: config_path.to_string(),
+            config_update_lock: Arc::new(futures::lock::Mutex::new(())),
             mode: Mode::Output(output_type),
         })
     }
@@ -291,7 +296,7 @@ where
         CIH: ConfigHandlerFn<T, CIF>,
         CIF: ConfigFuture<T>,
     {
-        let config = match read_config_file_with_path(config_path) {
+        let config = match load_config_file_with_migration(config_path) {
             Ok(config) => config,
             Err(_) => {
                 let default_config = Config::default();
@@ -317,6 +322,7 @@ where
             ),
             config: Arc::new(RwLock::new(Arc::new(config))),
             config_path: config_path.to_string(),
+            config_update_lock: Arc::new(futures::lock::Mutex::new(())),
             mode: Mode::Input(input_type),
         })
     }

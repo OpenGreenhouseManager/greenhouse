@@ -1,16 +1,9 @@
-use crate::data_storage_service_dto::alert_dto::alert::Severity;
-use crate::data_storage_service_dto::alert_dto::post_create_alert::CreateAlertDto;
 use std::sync::Arc;
+
+pub use crate::smart_device_common::AlertCreation;
 
 use super::config::Config;
 use super::{Error, Result};
-
-pub struct AlertCreation {
-    pub severity: Severity,
-    pub identifier: String,
-    pub value: Option<String>,
-    pub note: Option<String>,
-}
 
 pub async fn trigger_alert<T>(config: Arc<Config<T>>, alert: AlertCreation) -> Result<()>
 where
@@ -19,13 +12,7 @@ where
     if let Some(scripting_api) = &config.scripting_api {
         let client = reqwest::Client::new();
 
-        let alert = CreateAlertDto {
-            severity: alert.severity,
-            identifier: alert.identifier,
-            value: alert.value,
-            note: alert.note,
-            datasource_id: config.datasource_id.clone(),
-        };
+        let alert = alert.into_dto(&config);
 
         let response = client
             .post(format!("{}/alert", scripting_api.url))

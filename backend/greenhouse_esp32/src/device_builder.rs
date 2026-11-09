@@ -8,6 +8,7 @@ use core::pin::Pin;
 use embassy_net::Stack;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
+use greenhouse_core::smart_device_common::{StoredConfig, parse_stored_config};
 use greenhouse_core::smart_device_dto::Type;
 use greenhouse_core::smart_device_dto::config::{ConfigRequestDto, TypeOption};
 use greenhouse_core::smart_device_dto::status::DeviceStatusResponseDto;
@@ -207,20 +208,36 @@ where
     }
 }
 
-/// Like the Linux version: use the stored config, or persist the default one.
+/// Uses the stored config, or persists the default one.
+///
+/// If the stored config no longer matches `Config<T>` (a firmware update
+/// changed `additional_config`), the default is used but `port`,
+/// `datasource_id` and `scripting_api` are kept, so the device stays activated.
 fn load_or_init_config<T>(storage: &mut ConfigStore, default_config: Config<T>) -> Result<Config<T>>
 where
     T: Clone + Default + Serialize + DeserializeOwned,
 {
-    match storage.load()? {
-        Some(bytes) => match serde_json::from_slice(&bytes) {
-            Ok(config) => return Ok(config),
-            Err(e) => log::warn!("stored config is invalid ({e}); using the default"),
+    let config = match storage.load()? {
+        Some(bytes) => match parse_stored_config(&bytes, default_config.clone()) {
+            StoredConfig::Valid(config) => return Ok(config),
+            StoredConfig::Migrated(config) => {
+                log::warn!(
+                    "stored additional_config does not match this firmware; \
+                     using the default, keeping port/datasource/activation"
+                );
+                config
+            }
+            StoredConfig::Invalid => {
+                log::warn!("stored config is not valid JSON; using the default");
+                default_config
+            }
         },
-        None => log::info!("no stored config; using the default"),
-    }
-    let bytes =
-        serde_json::to_vec(&default_config).map_err(|_| crate::Error::IllFormattedConfig)?;
+        None => {
+            log::info!("no stored config; using the default");
+            default_config
+        }
+    };
+    let bytes = serde_json::to_vec(&config).map_err(|_| crate::Error::IllFormattedConfig)?;
     storage.store(&bytes)?;
-    Ok(default_config)
+    Ok(config)
 }

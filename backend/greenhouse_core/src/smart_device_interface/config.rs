@@ -1,7 +1,8 @@
-use crate::smart_device_dto::config::TypeOption;
-
 use super::{Error, Result};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+
+pub use crate::smart_device_common::{Config, Mode, ScriptingApi};
+use crate::smart_device_common::{StoredConfig, parse_stored_config};
 
 // Default config file path for backward compatibility
 pub(crate) const DEFAULT_CONFIG_FILE_NAME: &str = "./config/config.json";
@@ -36,13 +37,28 @@ where
     serde_json::from_str(&data).map_err(|_| Error::IllFormattedConfig)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub enum Mode {
-    Input(TypeOption),
-    Output(TypeOption),
-    InputOutput(TypeOption, TypeOption),
-    #[default]
-    Unknown,
+/// Reads the config file at startup. If it no longer matches `Config<T>` (the
+/// device's `additional_config` changed shape), the device-level fields
+/// (`port`, `datasource_id`, `scripting_api`) are kept, `additional_config` is
+/// reset to `T::default()`, and the migrated config is written back, so the
+/// device stays activated.
+pub(crate) fn load_config_file_with_migration<T>(config_path: &str) -> Result<Config<T>>
+where
+    T: Serialize + DeserializeOwned + Clone + Default,
+{
+    let data = std::fs::read(config_path).map_err(|_| Error::MissingConfig)?;
+    match parse_stored_config(&data, Config::default()) {
+        StoredConfig::Valid(config) => Ok(config),
+        StoredConfig::Migrated(config) => {
+            tracing::warn!(
+                "{config_path}: additional_config does not match this device; \
+                 resetting it, keeping port/datasource_id/scripting_api"
+            );
+            update_config_file_with_path(&config, config_path)?;
+            Ok(config)
+        }
+        StoredConfig::Invalid => Err(Error::IllFormattedConfig),
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
@@ -56,19 +72,34 @@ pub enum TypeOptionDto {
     Unknown,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Config<T>
-where
-    T: Clone + Default,
-{
-    pub port: u16,
-    pub datasource_id: String,
-    pub additional_config: T,
-    pub scripting_api: Option<ScriptingApi>,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ScriptingApi {
-    pub url: String,
-    pub token: String,
+    #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+    struct Current {
+        min: i32,
+    }
+
+    #[test]
+    fn migration_keeps_activation_and_rewrites_file() {
+        let path = std::env::temp_dir().join(format!("gh-migrate-{}.json", std::process::id()));
+        let path = path.to_str().unwrap();
+        std::fs::write(
+            path,
+            r#"{"port":6001,"datasource_id":"ds","additional_config":{"old":true},"scripting_api":{"url":"u","token":"t"}}"#,
+        )
+        .unwrap();
+
+        let config: Config<Current> = load_config_file_with_migration(path).unwrap();
+        assert_eq!(config.port, 6001);
+        assert_eq!(config.datasource_id, "ds");
+        assert_eq!(config.additional_config, Current::default());
+        assert_eq!(config.scripting_api.unwrap().token, "t");
+
+        // The migrated config was written back and now parses directly.
+        let reread: Config<Current> = read_config_file_with_path(path).unwrap();
+        assert_eq!(reread.datasource_id, "ds");
+        std::fs::remove_file(path).unwrap();
+    }
 }

@@ -7,18 +7,26 @@ use crate::{
     smart_device_dto::{
         Type,
         activation::ActivateRequestDto,
-        config::{ConfigRequestDto, ConfigResponseDto, TypeOption},
+        config::{ConfigRequestDto, ConfigResponseDto},
         read::ReadResponseDto,
         status::DeviceStatusResponseDto,
         write::WriteRequestDto,
     },
-    smart_device_interface::config::{Config, Mode, ScriptingApi},
+    smart_device_interface::config::Config,
 };
 
 use super::{
     config::{read_config_file_with_path, update_config_file_with_path},
     device_builder::DeviceBuilder,
 };
+
+fn current_config<T: Clone + Default>(device_service: &DeviceBuilder<T>) -> Arc<Config<T>> {
+    device_service
+        .config
+        .read()
+        .map(|c| c.clone())
+        .unwrap_or_else(|_| Arc::new(Config::<T>::default()))
+}
 
 pub(crate) async fn write_device_handler<T>(
     State(device_service): State<DeviceBuilder<T>>,
@@ -27,11 +35,7 @@ pub(crate) async fn write_device_handler<T>(
 where
     T: Clone + Default + DeserializeOwned,
 {
-    let config = device_service
-        .config
-        .read()
-        .map(|c| c.clone())
-        .unwrap_or_else(|_| Arc::new(Config::<T>::default()));
+    let config = current_config(&device_service);
 
     match device_service.write_handler {
         Some(handler) => handler(payload.data, config).await,
@@ -45,11 +49,7 @@ pub(crate) async fn read_device_handler<T>(
 where
     T: Clone + Default + DeserializeOwned,
 {
-    let config = device_service
-        .config
-        .read()
-        .map(|c| c.clone())
-        .unwrap_or_else(|_| Arc::new(Config::<T>::default()));
+    let config = current_config(&device_service);
 
     match device_service.read_handler {
         None => Json(ReadResponseDto { data: Type::None }),
@@ -66,47 +66,16 @@ pub(crate) async fn get_config_handler<T>(
 where
     T: DeserializeOwned + Clone + Default,
 {
-    match read_config_file_with_path(&device_service.config_path) {
+    // This refreshes the in-memory config from the file, so it must not run
+    // between another update's file write and memory swap.
+    let _update = device_service.config_update_lock.lock().await;
+    match read_config_file_with_path::<T>(&device_service.config_path) {
         Ok(config) => {
+            let response = config.to_response_dto(&device_service.mode);
             if let Ok(mut guard) = device_service.config.write() {
-                *guard = Arc::new(config.clone());
+                *guard = Arc::new(config);
             }
-            let mut input_type: Option<TypeOption> = None;
-            let mut output_type: Option<TypeOption> = None;
-            let mode: crate::smart_device_dto::config::Mode;
-            match device_service.mode {
-                Mode::Input(t) => {
-                    input_type = Some(t);
-                    mode = crate::smart_device_dto::config::Mode::Input;
-                }
-                Mode::Output(t) => {
-                    output_type = Some(t);
-                    mode = crate::smart_device_dto::config::Mode::Output;
-                }
-                Mode::InputOutput(t_i, t_o) => {
-                    input_type = Some(t_i);
-                    output_type = Some(t_o);
-                    mode = crate::smart_device_dto::config::Mode::InputOutput;
-                }
-                _ => {
-                    mode = crate::smart_device_dto::config::Mode::Unknown;
-                }
-            };
-
-            let config_dto = ConfigResponseDto {
-                mode,
-                input_type,
-                output_type,
-                scripting_api: config.scripting_api.map(|s| {
-                    crate::smart_device_dto::config::ScriptingApi {
-                        url: s.url,
-                        token: s.token,
-                    }
-                }),
-                additional_config: config.additional_config,
-            };
-
-            Json(Some(config_dto))
+            Json(Some(response))
         }
         Err(_) => Json(None),
     }
@@ -118,11 +87,7 @@ pub(crate) async fn status_device_handler<T>(
 where
     T: Clone + Default + DeserializeOwned,
 {
-    let config = device_service
-        .config
-        .read()
-        .map(|c| c.clone())
-        .unwrap_or_else(|_| Arc::new(Config::<T>::default()));
+    let config = current_config(&device_service);
 
     Json((device_service.status_handler)(config).await)
 }
@@ -134,49 +99,41 @@ pub(crate) async fn config_update_handler<T>(
 where
     T: Serialize + Clone + Default,
 {
-    let config = (device_service.config_interceptor_handler)(config, {
-        device_service
-            .config
-            .read()
-            .map(|c| c.clone())
-            .unwrap_or_else(|_| Arc::new(Config::<T>::default()))
-    })
-    .await;
+    let _update = device_service.config_update_lock.lock().await;
+    let config =
+        (device_service.config_interceptor_handler)(config, current_config(&device_service)).await;
 
-    if update_config_file_with_path(&config, &device_service.config_path).is_ok() {
-        if let Ok(mut guard) = device_service.config.write() {
-            *guard = Arc::new(config);
-        }
-        StatusCode::OK
-    } else {
-        StatusCode::INTERNAL_SERVER_ERROR
-    }
+    persist(&device_service, config)
 }
 
 pub(crate) async fn activate_device<T>(
     State(device_service): State<DeviceBuilder<T>>,
-    Json(config): Json<ActivateRequestDto>,
+    Json(request): Json<ActivateRequestDto>,
 ) -> StatusCode
 where
     T: Clone + Default + Serialize + DeserializeOwned,
 {
-    let mut base_config: Config<T> = device_service
+    let _update = device_service.config_update_lock.lock().await;
+    let base_config: Arc<Config<T>> = device_service
         .config
         .read()
         .ok()
-        .map(|c| (*c).as_ref().clone())
+        .map(|c| c.clone())
         .unwrap_or_else(|| {
-            read_config_file_with_path(&device_service.config_path).unwrap_or_default()
+            Arc::new(read_config_file_with_path(&device_service.config_path).unwrap_or_default())
         });
 
-    base_config.scripting_api = Some(ScriptingApi {
-        url: config.url,
-        token: config.token,
-    });
+    persist(&device_service, base_config.activated(request))
+}
 
-    if update_config_file_with_path(&base_config, &device_service.config_path).is_ok() {
+/// Writes the config file, then makes the config current.
+fn persist<T>(device_service: &DeviceBuilder<T>, config: Config<T>) -> StatusCode
+where
+    T: Serialize + Clone + Default,
+{
+    if update_config_file_with_path(&config, &device_service.config_path).is_ok() {
         if let Ok(mut guard) = device_service.config.write() {
-            *guard = Arc::new(base_config);
+            *guard = Arc::new(config);
         }
         StatusCode::OK
     } else {

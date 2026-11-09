@@ -30,6 +30,8 @@ pub enum Error {
     Timeout,
     /// Wi-Fi setup failed.
     Wifi,
+    /// Board bring-up (TRNG, TLS context, spawning a task) failed.
+    Platform,
     /// Serializing a request body failed.
     SerializationError,
 }

@@ -59,9 +59,9 @@ impl Platform {
         // Entropy from the SAR ADC; makes `Trng` cryptographically secure even
         // before the radio is up. Kept alive for the rest of the program.
         TRNG_SOURCE.init(TrngSource::new(peripherals.rng, peripherals.adc1));
-        let trng = TRNG.init(Trng::try_new().map_err(|_| Error::NotInitialized)?);
+        let trng = TRNG.init(Trng::try_new().map_err(|_| Error::Platform)?);
         let seed = u64::from(trng.random()) << 32 | u64::from(trng.random());
-        let tls = Tls::new(trng).map_err(|_| Error::NotInitialized)?;
+        let tls = Tls::new(trng).map_err(|_| Error::Platform)?;
 
         let storage = ConfigStore::new(FlashStorage::new(peripherals.flash))?;
 
@@ -93,9 +93,9 @@ impl Platform {
             seed,
         );
 
-        spawner.spawn(wifi_task(controller).map_err(|_| Error::NotInitialized)?);
-        spawner.spawn(net_task(runner).map_err(|_| Error::NotInitialized)?);
-        spawner.spawn(alert_task(stack, tls).map_err(|_| Error::NotInitialized)?);
+        spawner.spawn(wifi_task(controller).map_err(|_| Error::Platform)?);
+        spawner.spawn(net_task(runner).map_err(|_| Error::Platform)?);
+        spawner.spawn(alert_task(stack, tls).map_err(|_| Error::Platform)?);
 
         stack.wait_config_up().await;
         if let Some(config) = stack.config_v4() {

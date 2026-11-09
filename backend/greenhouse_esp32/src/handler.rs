@@ -1,15 +1,15 @@
 //! HTTP routes; same contract as `greenhouse_core::smart_device_interface::handler`.
 //!
 //! All routes are always registered. A route whose handler the device mode does
-//! not have (e.g. `/write` on an output device) answers 404, matching the Linux
-//! routers, which do not register it at all.
+//! not have (e.g. `/write` on an output device) answers 404, like the Linux
+//! routers, which do not register it.
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 use embassy_net::Stack;
 use greenhouse_core::smart_device_dto::activation::ActivateRequestDto;
-use greenhouse_core::smart_device_dto::config::{self as dto, ConfigRequestDto, ConfigResponseDto};
+use greenhouse_core::smart_device_dto::config::ConfigRequestDto;
 use greenhouse_core::smart_device_dto::endpoints::{ACTIVATE, CONFIG, READ, STATUS, WRITE};
 use greenhouse_core::smart_device_dto::read::ReadResponseDto;
 use greenhouse_core::smart_device_dto::write::WriteRequestDto;
@@ -20,8 +20,9 @@ use picoserve::{Router, Server};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::Arc;
-use crate::config::{Config, Mode, ScriptingApi};
+use crate::config::Config;
 use crate::device_builder::{DeviceBuilder, DeviceState};
+use crate::storage::ConfigStore;
 
 /// Concurrent connections served.
 const WORKERS: usize = 3;
@@ -140,24 +141,9 @@ async fn get_config<T>(state: &DeviceState<T>) -> JsonResponse
 where
     T: Clone + Default + Serialize,
 {
-    let config = state.config();
-    let (mode, input_type, output_type) = match &state.mode {
-        Mode::Input(t) => (dto::Mode::Input, Some(t.clone()), None),
-        Mode::Output(t) => (dto::Mode::Output, None, Some(t.clone())),
-        Mode::InputOutput(i, o) => (dto::Mode::InputOutput, Some(i.clone()), Some(o.clone())),
-    };
     // `Option` like the Linux handler, which answers `null` when the config
     // file is unreadable; here the config is always in memory.
-    json(&Some(ConfigResponseDto {
-        mode,
-        input_type,
-        output_type,
-        scripting_api: config.scripting_api.as_ref().map(|s| dto::ScriptingApi {
-            url: s.url.clone(),
-            token: s.token.clone(),
-        }),
-        additional_config: config.additional_config.clone(),
-    }))
+    json(&Some(state.config().to_response_dto(&state.mode)))
 }
 
 async fn post_config<T>(state: &DeviceState<T>, body: Vec<u8>) -> StatusCode
@@ -168,8 +154,11 @@ where
         Ok(request) => request,
         Err(status) => return status,
     };
+    // Held across the read-modify-write so a concurrent `/activate` or
+    // `/config` cannot be overwritten with a stale base config.
+    let mut storage = state.storage.lock().await;
     let config = (state.config_interceptor)(request, state.config()).await;
-    persist(state, config).await
+    persist(state, &mut storage, config)
 }
 
 async fn activate<T>(state: &DeviceState<T>, body: Vec<u8>) -> StatusCode
@@ -180,24 +169,22 @@ where
         Ok(request) => request,
         Err(status) => return status,
     };
-    let mut config = (*state.config()).clone();
-    config.scripting_api = Some(ScriptingApi {
-        url: request.url,
-        token: request.token,
-    });
-    persist(state, config).await
+    let mut storage = state.storage.lock().await;
+    let config = state.config().activated(request);
+    persist(state, &mut storage, config)
 }
 
 /// Stores the config in flash, then makes it current (like the Linux version,
 /// which only swaps the in-memory config after the file write succeeded).
-async fn persist<T>(state: &DeviceState<T>, config: Config<T>) -> StatusCode
+/// Callers hold the storage lock for the whole read-modify-write.
+fn persist<T>(state: &DeviceState<T>, storage: &mut ConfigStore, config: Config<T>) -> StatusCode
 where
     T: Clone + Default + Serialize,
 {
     let Ok(bytes) = serde_json::to_vec(&config) else {
         return StatusCode::INTERNAL_SERVER_ERROR;
     };
-    if let Err(e) = state.storage.lock().await.store(&bytes) {
+    if let Err(e) = storage.store(&bytes) {
         log::error!("failed to persist config: {e}");
         return StatusCode::INTERNAL_SERVER_ERROR;
     }

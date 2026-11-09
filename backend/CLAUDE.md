@@ -195,7 +195,8 @@ Default credentials for local dev:
 ## ESP32 firmware (`greenhouse_esp32/`)
 
 - Bare-metal `no_std` crate (esp-hal + embassy, ESP32-C3), **excluded** from the workspace and built with **stable** Rust from the `esp32` devShell (`backend/nix/esp32-shell.nix`; keep its version in sync with `greenhouse_esp32/rust-toolchain.toml`). No ESP-IDF, no `build-std`.
-- Mirrors `greenhouse_core::smart_device_interface` (same HTTP contract and handler signatures); uses `greenhouse_core` with `default-features = false` + `smart_device_dto`, `data_storage_service_dto`. Those DTO modules must stay `no_std` + `alloc` compatible (import `String`/`Vec` from `alloc`); `std`-only things go behind the `std` feature.
+- Mirrors `greenhouse_core::smart_device_interface` (same HTTP contract and handler signatures); uses `greenhouse_core` with `default-features = false` + `smart_device_common`. Runtime-agnostic device types/logic (`Config`, `Mode`, `ScriptingApi`, `AlertCreation`, the `/config` response, the activate merge, stored-config migration) live in `greenhouse_core::smart_device_common` and are used by both runtimes — put shared logic there, not in either runtime. It and the DTO modules it pulls in must stay `no_std` + `alloc` compatible (import `String`/`Vec` from `alloc`); `std`-only things go behind the `std` feature.
+- CI: the `esp32` job in `backend-ci.yml` runs fmt, clippy and the firmware build — it is the actual no_std check for core.
 - HTTPS trust: `greenhouse_esp32/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
 - Build/flash: `cd greenhouse_esp32 && WIFI_SSID=… WIFI_PASSWORD=… cargo run --release --example input_output_int_saver`.
 

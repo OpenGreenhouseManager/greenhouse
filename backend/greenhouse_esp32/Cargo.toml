@@ -28,10 +28,7 @@ esp-hal = { version = "1.2.2", features = ["esp32c3", "log-04", "unstable"] }
 esp-radio = { version = "1.0.0-beta.1", features = ["esp32c3", "log-04", "wifi"] }
 esp-rtos = { version = "0.4.0", features = ["embassy", "esp-radio", "esp32c3", "log-04"] }
 esp-storage = { version = "0.10.0", features = ["esp32c3"] }
-greenhouse_core = { path = "../greenhouse_core", default-features = false, features = [
-    "data_storage_service_dto",
-    "smart_device_dto",
-] }
+greenhouse_core = { path = "../greenhouse_core", default-features = false, features = ["smart_device_common"] }
 log = "0.4"
 mbedtls-rs = { version = "0.3.0", features = ["esp32c3"] }
 picoserve = { version = "0.20.1", features = ["alloc", "embassy", "log"] }

@@ -23,7 +23,7 @@ default = [
 std = [
     "chrono/std",
     "serde/std",
-    "serde_json/std",
+    "serde_json?/std",
     "uuid/std",
     "uuid/v4",
     "uuid/fast-rng",
@@ -33,12 +33,14 @@ std = [
 axum = ["std", "dep:axum", "greenhouse_macro/axum"]
 api_web_dto = []
 api_script_dto = []
-auth_service_dto = []
+auth_service_dto = ["dep:serde_json"]
 smart_device_dto = []
-smart_device_interface = ["smart_device_dto", "axum", "dep:futures", "dep:tracing", "dep:reqwest"]
+# Runtime-agnostic device types and logic (no_std); shared with greenhouse_esp32.
+smart_device_common = ["smart_device_dto", "data_storage_service_dto", "dep:serde_json"]
+smart_device_interface = ["smart_device_common", "axum", "dep:futures", "dep:tracing", "dep:reqwest"]
 data_storage_service_dto = []
-device_service_dto = ["std"] # backend-only; uses HashMap and std::error
-error_handling = ["axum", "dep:tracing"]
+device_service_dto = ["std", "dep:serde_json"] # backend-only; uses HashMap and std::error
+error_handling = ["axum", "dep:serde_json", "dep:tracing"]
 scripting_service_dto = []
 ts = ["std", "dep:ts-rs"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -52,7 +54,7 @@ futures = { workspace = true, optional = true }
 greenhouse_macro = { version = "0.1", path = "../greenhouse_macro", default-features = false }
 reqwest = { workspace = true, features = ["json"], optional = true }
 serde = { version = "1.0.229", default-features = false, features = ["alloc", "derive"] }
-serde_json = { version = "1.0.154", default-features = false, features = ["alloc"] }
+serde_json = { version = "1.0.154", default-features = false, features = ["alloc"], optional = true }
 tracing = { workspace = true, optional = true }
 ts-rs = { workspace = true, optional = true }
 uuid = { version = "1.28.0", default-features = false, features = ["serde"] }

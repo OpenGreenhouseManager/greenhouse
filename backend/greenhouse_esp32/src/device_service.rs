@@ -15,10 +15,7 @@ use embassy_net::Stack;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::mutex::Mutex;
 use embassy_sync::signal::Signal;
-use embassy_time::{Duration, Instant, with_deadline};
-use greenhouse_core::data_storage_service_dto::alert_dto::{
-    alert::Severity, post_create_alert::CreateAlertDto,
-};
+use embassy_time::{Duration, Instant, with_deadline, with_timeout};
 use mbedtls_rs::Tls;
 
 use crate::Arc;
@@ -26,15 +23,10 @@ use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::http_client;
 
+pub use greenhouse_core::smart_device_common::AlertCreation;
+
 /// Upper bound for one alert including DNS, TCP and the TLS handshake.
 const ALERT_TIMEOUT: Duration = Duration::from_secs(30);
-
-pub struct AlertCreation {
-    pub severity: Severity,
-    pub identifier: String,
-    pub value: Option<String>,
-    pub note: Option<String>,
-}
 
 struct AlertJob {
     id: u32,
@@ -67,14 +59,8 @@ where
         return Err(Error::NotInitialized);
     }
 
-    let dto = CreateAlertDto {
-        severity: alert.severity,
-        identifier: alert.identifier,
-        value: alert.value,
-        note: alert.note,
-        datasource_id: config.datasource_id.clone(),
-    };
-    let body = serde_json::to_vec(&dto).map_err(|_| Error::SerializationError)?;
+    let body =
+        serde_json::to_vec(&alert.into_dto(&config)).map_err(|_| Error::SerializationError)?;
     let url = format!("{}/alert", scripting_api.url.trim_end_matches('/'));
     let token = scripting_api.token.clone();
 
@@ -107,7 +93,11 @@ pub(crate) async fn alert_task(stack: Stack<'static>, tls: Tls<'static>) {
     ALERT_TASK_RUNNING.store(true, Ordering::Relaxed);
     loop {
         let job = REQUEST.wait().await;
-        let result = send(stack, &tls, &job).await;
+        // Bounded here too, so a hung peer cannot keep the task (and every
+        // later alert) busy after the caller has given up.
+        let result = with_timeout(ALERT_TIMEOUT, send(stack, &tls, &job))
+            .await
+            .unwrap_or(Err(Error::Timeout));
         if let Err(e) = &result {
             log::warn!("alert POST to {} failed: {e:?}", job.url);
         }
