@@ -1,2 +1,6 @@
 [toolchain]
-channel = "nightly"
+# Stable for the whole backend, ESP32 firmware included. Nix reads this file too
+# (nix/toolchain.nix), so the version only lives here.
+channel = "1.99.1"
+components = ["rust-src", "rustfmt", "clippy"]
+targets = ["riscv32imc-unknown-none-elf"]

@@ -1,6 +1,5 @@
 .github
 .vscode
-.embuild
 .git
 target
 Dockerfile

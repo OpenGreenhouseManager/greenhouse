@@ -1,8 +1,6 @@
 /target
-.embuild
 .env
 **/config.json
-# The root Cargo.lock is committed: the Nix package builds from it.
-/greenhouse_esp32/Cargo.lock
+# Cargo.lock is committed: the Nix package and the ESP32 firmware build from it.
 logs
 .direnv

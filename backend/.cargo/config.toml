@@ -1,8 +1,26 @@
 [build]
 rustflags = ["-C","relocation-model=pic"]
 
+# ESP32-C3 firmware (greenhouse_device). Target rustflags replace `build.rustflags`,
+# so `relocation-model=pic` stays host-only.
+[target.riscv32imc-unknown-none-elf]
+runner = "espflash flash --monitor"
+rustflags = [
+  "-C", "link-arg=-Tlinkall.x",
+  # Needed by esp-backtrace for useful backtraces.
+  "-C", "force-frame-pointers",
+]
+
+[alias]
+# e.g. `WIFI_SSID=… WIFI_PASSWORD=… cargo esp32-run --example esp32_input_output_int_saver`
+esp32-build = "build -p greenhouse_device --target riscv32imc-unknown-none-elf --profile esp32"
+esp32-run = "run -p greenhouse_device --target riscv32imc-unknown-none-elf --profile esp32"
+esp32-clippy = "clippy -p greenhouse_device --target riscv32imc-unknown-none-elf --profile esp32"
+
 [env]
 # ts-rs bindings for the web frontend (`just backend gen-ts`)
 TS_RS_EXPORT_DIR = { value = "../web/src/app/dtos/generated", relative = true }
 # JSON numbers, not bigint: serde_json emits i64/u64 as plain numbers
 TS_RS_LARGE_INT = "number"
+# Log level compiled into the ESP32 firmware (esp-println).
+ESP_LOG = "info"

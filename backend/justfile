@@ -79,8 +79,20 @@ kill-apis:
 
 stop-all: kill-services kill-apis
 
-lint:
+lint: esp32-lint
     cargo clippy --all-targets --all-features --workspace  -- -D warnings
+
+# Clippy for greenhouse_device's ESP32 half (unit tests don't build bare-metal)
+esp32-lint:
+    cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings
+
+# Build the ESP32 example firmware (needs WIFI_SSID / WIFI_PASSWORD to be useful)
+esp32-build example="esp32_input_output_int_saver":
+    cargo esp32-build --example {{ example }}
+
+# Build, flash and monitor the ESP32 example firmware (board on USB)
+esp32-flash example="esp32_input_output_int_saver":
+    cargo esp32-run --example {{ example }}
 
 test:
     cargo test --release --workspace --all-features -- --test-threads=1
@@ -89,9 +101,9 @@ fmt:
     cargo fmt --all -- --color always
 
 device:
-    cargo run -p examples --example input_output_int_saver &
-    cargo run -p examples --example input_alert_trigger &
-    cargo run -p examples --example periodic_alert 
+    cargo run -p greenhouse_device --example input_output_int_saver &
+    cargo run -p greenhouse_device --example input_alert_trigger &
+    cargo run -p greenhouse_device --example periodic_alert 
 
 device-stop:
     killall periodic_alert || true

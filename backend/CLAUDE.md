@@ -8,7 +8,7 @@ Rust workspace implementing a microservices backend for a greenhouse management 
 
 ## Technology Stack
 
-- **Language**: Rust (nightly toolchain — see `rust-toolchain.toml`)
+- **Language**: Rust (stable, pinned in `rust-toolchain.toml`; also used by Nix)
 - **Web framework**: Axum 0.8
 - **Database ORM**: Diesel 2 + diesel-async with PostgreSQL via bb8 connection pool
 - **Auth**: JWT (`jsonwebtoken`) + bcrypt passwords + HTTP-only cookies (`tower-cookies`)
@@ -22,19 +22,19 @@ Rust workspace implementing a microservices backend for a greenhouse management 
 ```
 greenhouse_backend/
 ├── Cargo.toml              # Workspace manifest
-├── rust-toolchain.toml     # Pins nightly channel
+├── rust-toolchain.toml     # Pins the stable toolchain + ESP32-C3 target
 ├── justfile                # Developer task runner
-├── compose.yaml            # Local dev Docker Compose (PostgreSQL + example devices)
+├── compose.yaml            # Local dev Docker Compose (PostgreSQL)
 ├── Dockerfile              # Base builder image for all services
-├── greenhouse_core/        # Shared library: DTOs + smart-device interface
+├── greenhouse_core/        # Shared library: DTOs (no_std-capable)
 │   └── src/
 │       ├── auth_service_dto/
 │       ├── data_storage_service_dto/
 │       ├── device_service_dto/
 │       ├── scripting_service_dto/
 │       ├── smart_device_dto/
-│       ├── smart_device_interface/
 │       └── http_error.rs
+├── greenhouse_device/      # Smart-device library: host (axum) + ESP32 (embassy), examples/ for both
 ├── greenhouse_macro/       # Procedural macro crate
 ├── services/
 │   ├── auth_service/       # User auth, JWT issuance, bcrypt passwords
@@ -44,7 +44,6 @@ greenhouse_backend/
 ├── api/
 │   ├── web/                # web_api — REST gateway used by the Angular frontend
 │   └── script/             # scripting_api — API for the scripting subsystem
-├── examples/               # Example smart-device binaries (used for local testing)
 ├── integration-tests/      # Workspace-level integration test crate
 ├── docker/                 # Supporting Docker files (e.g. postgres/init.sql)
 └── scripts/                # Build helper scripts (build-image-layer.sh)
@@ -95,7 +94,7 @@ just lint    # cargo clippy --all-targets --all-features --workspace -- -D warni
 just test    # cargo test --release --workspace --all-features -- --test-threads=1
 just fmt     # cargo fmt --all -- --color always
 
-# Run example devices
+# Run the host example devices (greenhouse_device/examples, ports 6001–6003)
 just device
 just device-stop
 ```
@@ -103,7 +102,7 @@ just device-stop
 ### Local database
 
 ```bash
-# Start PostgreSQL (and example devices)
+# Start PostgreSQL
 docker compose up db -d
 
 # Run Diesel migrations for a specific service
@@ -124,6 +123,8 @@ Triggers on every push and pull request. Runs in a matrix:
 | Format | `cargo fmt --all -- --check --color always` |
 | Lint | `cargo clippy --all-targets --all-features --workspace -- -D warnings` |
 | Tests | `cargo test --release --workspace --all-features -- --test-threads=1` |
+| ESP32 (own job) | `cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings` + `cargo esp32-build --example esp32_input_output_int_saver` |
+| TS bindings (own job) | `just check-ts` |
 
 **All CI checks must pass before merging.**
 
@@ -146,9 +147,8 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 ### Rust style
 
-- **Nightly Rust** is required — `rust-toolchain.toml` pins `channel = "nightly"`.
+- **Stable Rust**: `rust-toolchain.toml` pins the version (Nix, CI and Docker read it). Bump it there only.
 - Clippy is run with `-D warnings` — treat every warning as an error.
-- `cargo fmt` uses nightly `rustfmt`.
 - Keep `Cargo.toml` dependency list sorted (`cargo sort`).
 - Spell-check all source files with `typos` before committing.
 
@@ -156,7 +156,6 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 - All inter-service data transfer types live in `greenhouse_core/src/<service>_dto/`.
 - Add new DTOs here — never define them only inside a single service crate.
-- The `smart_device_interface` module defines the trait all example devices implement.
 
 ### Database migrations
 
@@ -187,10 +186,21 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 `compose.yaml` provides:
 - **`db`** — PostgreSQL on port `5432` with `admin`/`password` credentials, initialised by `docker/postgres/init.sql`.
-- Three **example device** containers (ports `6001`–`6003`) with health checks.
 
 Default credentials for local dev:
 - PostgreSQL user: `admin`, password: `password`
+
+## Smart devices (`greenhouse_device/`)
+
+One crate, one public API (`DeviceBuilder::new(platform, default_config).read(type, h).write(type, h)[.status(h)][.config_interceptor(h)].build()? -> Device`, `Device::run()` / `config_handle()`, `device_service::trigger_alert`, `Arc`, `StatusCode`, `Config`) for two runtimes, **selected by build target, not by feature** (so `--workspace --all-features` never pulls esp-hal onto the host):
+
+- **Host** (`cfg(not(target_os = "none"))`, `src/platform/host/`): axum + tokio, config in a JSON file (`Platform::new(path)`), alerts via reqwest. Host-only extra: `Device::into_router()`.
+- **ESP32-C3** (`cfg(target_os = "none")`, `src/platform/esp32/`): bare-metal `no_std` esp-hal + embassy + picoserve + mbedtls; `Platform::start(spawner, peripherals, wifi)`, config in the `nvs` flash partition. No ESP-IDF, no `build-std`.
+- Everything else is shared and must stay `no_std` + `alloc` (import `String`/`Vec` from `alloc`): `config.rs` (types, `/config` response, activate merge, stored-config migration), `device_builder.rs` (builder, default status/interceptor), `handler.rs` (all request logic; the servers only route to it), `device_service.rs` (alert DTO, headers, status check; platforms only do the HTTP POST). Put new logic there; each platform module only provides the items listed in `src/platform/mod.rs`. Target-specific dependencies go in the matching `[target.'cfg(…)'.dependencies]` table.
+- Handler bounds use `MaybeSend`/`MaybeSync` (`Send`/`Sync` on the host, nothing on the ESP32).
+- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Examples: `examples/esp32_*.rs` are firmware, the rest run on the host (`just device`, logs via `env_logger`); code shared between them lives in `examples/common/` (included with `#[path]`, must stay `no_std`-clean). Unit tests and host examples do not build bare-metal, so ESP32 clippy runs on `--lib --example 'esp32_*'`; ESP32 examples compile to a stub `main` on the host, so workspace `--all-targets` works.
+- CI: the `esp32` job in `backend-ci.yml` runs ESP32 clippy and the firmware build — it is also the no_std check for `greenhouse_core`'s DTO modules (std-only DTO code goes behind core's `std` feature).
+- HTTPS trust on the ESP32: `greenhouse_device/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
 
 ## Adding a New Service
 

@@ -7,7 +7,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  LDPROXY_VERSION: "0.3.4"
 
 permissions:
   contents: read
@@ -32,10 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly rustfmt
-        run: |
-          rustup update nightly
-          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Check formatting
         run: cargo fmt --all -- --check --color always
 
@@ -55,23 +52,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly components
-        run: |
-          rustup update nightly
-          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rust-src clippy
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend
-      - name: Cache ldproxy binary
-        uses: actions/cache@v6
-        id: cache-ldproxy
-        with:
-          path: ~/.cargo/bin/ldproxy
-          key: ldproxy-${{ runner.os }}-${{ env.LDPROXY_VERSION }}
-      - name: Install ldproxy
-        if: steps.cache-ldproxy.outputs.cache-hit != 'true'
-        run: cargo install ldproxy --version ${{ env.LDPROXY_VERSION }} --locked
       - name: Build
         run: cargo build --release --workspace
       - name: Clippy
@@ -79,13 +65,36 @@ jobs:
       - name: Test
         run: cargo test --release --workspace --all-features -- --test-threads=1
 
+  # The jobs above build greenhouse_device for the host only; this builds its
+  # ESP32 half (riscv32imc-unknown-none-elf, `esp32-*` aliases in
+  # backend/.cargo/config.toml). It is also the check that greenhouse_core's DTO
+  # modules stay no_std. Unit tests cannot build for a bare-metal target, hence
+  # `--lib --example 'esp32_*'` instead of `--all-targets` (the other
+  # examples are host-only).
+  esp32:
+    name: ESP32 firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+          key: esp32
+      - name: Clippy
+        run: cargo esp32-clippy --lib --example 'esp32_*' -- -D warnings
+      - name: Build example firmware
+        run: cargo esp32-build --example esp32_input_output_int_saver
+
   ts-bindings:
     name: TypeScript DTOs up to date
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly
-        run: rustup update nightly
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:

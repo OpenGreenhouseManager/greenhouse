@@ -12,10 +12,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     libssl-dev \
     libpq-dev  && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    rustup toolchain install nightly && \
-    rustup update nightly && \
-    rustup default nightly
+    rm -rf /var/lib/apt/lists/*
 
 
 COPY scripts/build-image-layer.sh /tmp/

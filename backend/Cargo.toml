@@ -3,8 +3,8 @@ resolver = "2"
 members = [
     "api/script",
     "api/web",
-    "examples",
     "greenhouse_core",
+    "greenhouse_device",
     "greenhouse_macro",
     "integration-tests",
     "services/auth_service",
@@ -50,3 +50,13 @@ ts-rs = { version = "12.0.1", features = ["chrono-impl", "serde-json-impl", "uui
 urlencoding = "2.1"
 uuid = "1.28.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# ESP32 firmware (greenhouse_device on riscv32imc-unknown-none-elf). Used by the
+# `esp32-*` aliases in .cargo/config.toml; profiles only take effect at the
+# workspace root, so they live here instead of in the crate.
+[profile.esp32]
+inherits = "release"
+codegen-units = 1
+debug = 2
+lto = "fat"
+opt-level = "s"

@@ -51,6 +51,10 @@ pub fn authenticate(args: TokenStream, input: TokenStream) -> TokenStream {
     output.into()
 }
 
+/// Implements `axum::response::IntoResponse` by serializing the type as JSON.
+///
+/// The impl is gated on the *deriving* crate's `axum` feature, so DTOs stay usable
+/// on targets without axum (e.g. `greenhouse_core` on the ESP32).
 #[proc_macro_derive(IntoJsonResponse)]
 pub fn into_response_derive(input: TokenStream) -> TokenStream {
     // Construct a representation of Rust code as a syntax tree
@@ -64,7 +68,7 @@ pub fn into_response_derive(input: TokenStream) -> TokenStream {
 fn impl_into_response_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let generated = quote! {
-
+        #[cfg(feature = "axum")]
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
                 axum::Json(self).into_response()

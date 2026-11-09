@@ -1,12 +1,10 @@
-# rust-toolchain.toml pins the nightly channel; pick the most recent nightly
-# that ships every component we ask for. Needs pkgs with the rust-overlay.
+# The toolchain pinned in rust-toolchain.toml (stable, plus the ESP32-C3 target),
+# with rust-analyzer for the devShell. Needs pkgs with the rust-overlay.
 pkgs:
-pkgs.rust-bin.selectLatestNightlyWith (
-  t:
-  t.default.override {
-    extensions = [
-      "rust-src"
-      "rust-analyzer"
-    ];
-  }
-)
+let
+  toolchain = (builtins.fromTOML (builtins.readFile ../rust-toolchain.toml)).toolchain;
+in
+pkgs.rust-bin.stable.${toolchain.channel}.default.override {
+  extensions = toolchain.components ++ [ "rust-analyzer" ];
+  inherit (toolchain) targets;
+}

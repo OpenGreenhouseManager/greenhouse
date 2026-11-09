@@ -29,8 +29,12 @@
         version = self.shortRev or self.dirtyShortRev or "dirty";
       };
 
-      devShells.${system}.default = pkgs.callPackage ./nix/shell.nix {
-        toolchain = import ./nix/toolchain.nix pkgs;
-      };
+      devShells.${system} =
+        let
+          toolchain = import ./nix/toolchain.nix pkgs;
+        in
+        {
+          default = pkgs.callPackage ./nix/shell.nix { inherit toolchain; };
+        };
     };
 }

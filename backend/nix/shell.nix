@@ -10,6 +10,7 @@
   cargo-nextest,
   bacon,
   diesel-cli,
+  espflash,
 }:
 
 mkShell {
@@ -27,6 +28,7 @@ mkShell {
     cargo-sort # CI: cargo sort --workspace --grouped
     cargo-nextest
     bacon
+    espflash # flash + monitor the ESP32 firmware (`cargo esp32-run`)
     (diesel-cli.override {
       sqliteSupport = false;
       mysqlSupport = false;
