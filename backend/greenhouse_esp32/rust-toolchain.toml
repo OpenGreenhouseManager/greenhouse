@@ -1,5 +1,0 @@
-[toolchain]
-# Keep in sync with backend/nix/esp32-shell.nix (which provides it under Nix).
-channel = "1.99.1"
-components = ["rust-src", "rustfmt", "clippy"]
-targets = ["riscv32imc-unknown-none-elf"]

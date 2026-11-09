@@ -14,9 +14,9 @@ use esp_storage::FlashStorage;
 use mbedtls_rs::Tls;
 use static_cell::StaticCell;
 
-use crate::device_service::alert_task;
+use super::alert::alert_task;
+use super::storage::ConfigStore;
 use crate::error::{Error, Result};
-use crate::storage::ConfigStore;
 
 /// Sockets: HTTP server workers + DNS + one alert connection, with headroom.
 const SOCKETS: usize = 7;
@@ -36,9 +36,10 @@ pub struct WifiCredentials {
 }
 
 /// A running platform: connected network stack plus config storage.
-/// Hand it to a [`crate::DeviceBuilder`] constructor.
+/// Hand it to a [`crate::DeviceBuilder`] constructor; the config is kept in
+/// the `nvs` flash partition.
 pub struct Platform {
-    pub stack: Stack<'static>,
+    stack: Stack<'static>,
     pub(crate) storage: ConfigStore,
 }
 
@@ -124,4 +125,15 @@ async fn wifi_task(mut controller: WifiController<'static>) {
 #[embassy_executor::task]
 async fn net_task(mut runner: Runner<'static, Interface>) {
     runner.run().await
+}
+
+impl Platform {
+    pub(crate) fn into_parts(self) -> (ConfigStore, Server) {
+        (self.storage, Server { stack: self.stack })
+    }
+}
+
+/// The network stack the HTTP server listens on.
+pub(crate) struct Server {
+    pub stack: Stack<'static>,
 }

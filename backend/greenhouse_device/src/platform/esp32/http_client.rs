@@ -20,11 +20,12 @@ use mbedtls_rs::{
 use crate::error::{Error, Result};
 
 /// Root CAs accepted for `https://` (see `certs/roots.pem` for the list).
-const ROOT_CAS: &CStr =
-    match CStr::from_bytes_with_nul(concat!(include_str!("../certs/roots.pem"), "\0").as_bytes()) {
-        Ok(s) => s,
-        Err(_) => panic!("roots.pem must not contain NUL bytes"),
-    };
+const ROOT_CAS: &CStr = match CStr::from_bytes_with_nul(
+    concat!(include_str!("../../../certs/roots.pem"), "\0").as_bytes(),
+) {
+    Ok(s) => s,
+    Err(_) => panic!("roots.pem must not contain NUL bytes"),
+};
 
 const SOCKET_TIMEOUT: Duration = Duration::from_secs(10);
 const TCP_BUF_LEN: usize = 2048;

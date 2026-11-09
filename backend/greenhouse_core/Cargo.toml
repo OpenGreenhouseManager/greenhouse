@@ -13,13 +13,12 @@ default = [
     "api_script_dto",
     "auth_service_dto",
     "smart_device_dto",
-    "smart_device_interface",
     "data_storage_service_dto",
     "device_service_dto",
     "error_handling",
     "scripting_service_dto",
 ]
-# Without `std` the DTO modules build as `no_std` + `alloc` (used by greenhouse_esp32).
+# Without `std` the DTO modules build as `no_std` + `alloc` (used by greenhouse_device on the ESP32).
 std = [
     "chrono/std",
     "serde/std",
@@ -35,9 +34,6 @@ api_web_dto = []
 api_script_dto = []
 auth_service_dto = ["dep:serde_json"]
 smart_device_dto = []
-# Runtime-agnostic device types and logic (no_std); shared with greenhouse_esp32.
-smart_device_common = ["smart_device_dto", "data_storage_service_dto", "dep:serde_json"]
-smart_device_interface = ["smart_device_common", "axum", "dep:futures", "dep:tracing", "dep:reqwest"]
 data_storage_service_dto = []
 device_service_dto = ["std", "dep:serde_json"] # backend-only; uses HashMap and std::error
 error_handling = ["axum", "dep:serde_json", "dep:tracing"]
@@ -50,9 +46,7 @@ ts = ["std", "dep:ts-rs"]
 [dependencies]
 axum = { workspace = true, optional = true }
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde"] }
-futures = { workspace = true, optional = true }
 greenhouse_macro = { version = "0.1", path = "../greenhouse_macro", default-features = false }
-reqwest = { workspace = true, features = ["json"], optional = true }
 serde = { version = "1.0.229", default-features = false, features = ["alloc", "derive"] }
 serde_json = { version = "1.0.154", default-features = false, features = ["alloc"], optional = true }
 tracing = { workspace = true, optional = true }

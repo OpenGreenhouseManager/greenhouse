@@ -31,10 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly rustfmt
-        run: |
-          rustup update nightly
-          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Check formatting
         run: cargo fmt --all -- --check --color always
 
@@ -54,10 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly components
-        run: |
-          rustup update nightly
-          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rust-src clippy
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:
@@ -69,15 +65,14 @@ jobs:
       - name: Test
         run: cargo test --release --workspace --all-features -- --test-threads=1
 
-  # greenhouse_esp32 is excluded from the workspace (own stable toolchain and
-  # riscv target), so nothing above builds it. This is also the real check that
-  # the greenhouse_core DTO / smart_device_common modules stay no_std.
+  # The jobs above build greenhouse_device for the host only; this builds its
+  # ESP32 half (riscv32imc-unknown-none-elf, `esp32-*` aliases in
+  # backend/.cargo/config.toml). It is also the check that greenhouse_core's DTO
+  # modules stay no_std. Unit tests cannot build for a bare-metal target, hence
+  # `--lib --examples` instead of `--all-targets`.
   esp32:
     name: ESP32 firmware
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend/greenhouse_esp32
     steps:
       - uses: actions/checkout@v7
       - name: Install toolchain from rust-toolchain.toml
@@ -85,21 +80,20 @@ jobs:
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: backend/greenhouse_esp32
-      - name: Format
-        run: cargo fmt -- --check --color always
+          workspaces: backend
+          key: esp32
       - name: Clippy
-        run: cargo clippy --release --all-targets -- -D warnings
+        run: cargo esp32-clippy --lib --examples -- -D warnings
       - name: Build example firmware
-        run: cargo build --release --example input_output_int_saver
+        run: cargo esp32-build --example esp32_input_output_int_saver
 
   ts-bindings:
     name: TypeScript DTOs up to date
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install nightly
-        run: rustup update nightly
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:

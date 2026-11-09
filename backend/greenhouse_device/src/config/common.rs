@@ -1,16 +1,15 @@
-//! Transport-agnostic smart-device types and logic, shared by the Linux runtime
-//! (`smart_device_interface`, axum) and the ESP32 firmware (`greenhouse_esp32`,
-//! embassy). `no_std` + `alloc`: keep anything runtime-specific out of here.
+//! Transport-agnostic device types and logic: compiled for every platform, so
+//! `no_std` + `alloc` (no platform code in here).
 
 use alloc::string::String;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::data_storage_service_dto::alert_dto::{
+use greenhouse_core::data_storage_service_dto::alert_dto::{
     alert::Severity, post_create_alert::CreateAlertDto,
 };
-use crate::smart_device_dto::activation::ActivateRequestDto;
-use crate::smart_device_dto::config::{self as dto, ConfigResponseDto, TypeOption};
+use greenhouse_core::smart_device_dto::activation::ActivateRequestDto;
+use greenhouse_core::smart_device_dto::config::{self as dto, ConfigResponseDto, TypeOption};
 
 /// Device configuration as persisted by the device (config file / flash).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -40,7 +39,7 @@ pub enum Mode {
     Unknown,
 }
 
-/// An alert raised by a device handler; see `trigger_alert` of each runtime.
+/// An alert raised by a device handler; see [`crate::device_service::trigger_alert`].
 pub struct AlertCreation {
     pub severity: Severity,
     pub identifier: String,

@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use axum::http::StatusCode;
 use greenhouse_core::{
     data_storage_service_dto::alert_dto::alert::Severity,
     smart_device_dto::{
@@ -8,14 +5,12 @@ use greenhouse_core::{
         config::{ConfigRequestDto, TypeOption},
         status::{DeviceStatusDto, DeviceStatusResponseDto},
     },
-    smart_device_interface::{
-        config::{Config, read_config_file_with_path, update_config_file_with_path},
-        device_builder::DeviceBuilder,
-        device_service::{AlertCreation, trigger_alert},
-        hybrid_device::init_hybrid_router,
-    },
 };
-use serde_derive::{Deserialize, Serialize};
+use greenhouse_device::{
+    Arc, Config, DeviceBuilder, Platform, StatusCode,
+    device_service::{AlertCreation, trigger_alert},
+};
+use serde::{Deserialize, Serialize};
 
 const LOW_ALERT_IDENTIFIER: &str = "low_alert";
 const HIGH_ALERT_IDENTIFIER: &str = "high_alert";
@@ -26,58 +21,31 @@ struct ExampleDeviceConfig {
     pub max: i32,
 }
 
-#[allow(clippy::needless_return)]
 #[tokio::main]
 async fn main() {
-    // Get config path from command line arguments, default to "./config/config.json"
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "./config/input_alert_trigger/config.json".to_string());
+    println!("using config file: {config_path}");
 
-    let config = match read_config_file_with_path(&config_path) {
-        Ok(config) => config,
-        Err(_) => {
-            let default_config = Config {
-                port: 6002,
-
-                datasource_id: "7a224a14-6e07-45a3-91da-b7584a5731c1".to_string(),
-                additional_config: ExampleDeviceConfig { min: 0, max: 10 },
-                scripting_api: None,
-            };
-
-            // Create config directory if it doesn't exist
-            if let Some(parent) = std::path::Path::new(&config_path).parent()
-                && !parent.exists()
-            {
-                std::fs::create_dir_all(parent).unwrap();
-            }
-
-            // Create empty config file if it doesn't exist
-            if !std::path::Path::new(&config_path).exists() {
-                std::fs::write(&config_path, "{}").unwrap();
-            }
-
-            update_config_file_with_path(&default_config, &config_path).unwrap();
-            default_config
-        }
+    let default_config = Config {
+        port: 6002,
+        datasource_id: "7a224a14-6e07-45a3-91da-b7584a5731c1".to_string(),
+        additional_config: ExampleDeviceConfig { min: 0, max: 10 },
+        scripting_api: None,
     };
 
-    let device_service = DeviceBuilder::new_input_device_with_config_path(
+    let device = DeviceBuilder::new_input_device(
+        Platform::new(config_path),
+        default_config,
         write_handler,
         status_handler,
         config_interceptor_handler,
-        &config_path,
         TypeOption::Number,
     )
     .unwrap();
-    let router = init_hybrid_router(device_service);
 
-    let url = format!("0.0.0.0:{}", config.port);
-
-    let listener = tokio::net::TcpListener::bind(url).await.unwrap();
-    println!("listening on {}", listener.local_addr().unwrap());
-    println!("using config file: {config_path}");
-    axum::serve(listener, router).await.unwrap();
+    device.run().await
 }
 
 async fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> StatusCode {
@@ -85,33 +53,26 @@ async fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> 
         Type::Number(number) => number,
         _ => return StatusCode::BAD_REQUEST,
     };
-    if number > config.additional_config.max as f64 {
-        trigger_alert(
-            config.clone(),
-            AlertCreation {
-                severity: Severity::Error,
-                identifier: HIGH_ALERT_IDENTIFIER.to_string(),
-                value: Some(number.to_string()),
-                note: None,
-            },
-        )
-        .await
-        .unwrap();
+    let identifier = if number > config.additional_config.max as f64 {
+        HIGH_ALERT_IDENTIFIER
+    } else if number < config.additional_config.min as f64 {
+        LOW_ALERT_IDENTIFIER
+    } else {
+        return StatusCode::OK;
+    };
+    let alert = AlertCreation {
+        severity: Severity::Error,
+        identifier: identifier.to_string(),
+        value: Some(number.to_string()),
+        note: None,
+    };
+    match trigger_alert(config, alert).await {
+        Ok(()) => StatusCode::OK,
+        Err(e) => {
+            println!("failed to send {identifier}: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
-    if number < config.additional_config.min as f64 {
-        trigger_alert(
-            config.clone(),
-            AlertCreation {
-                severity: Severity::Error,
-                identifier: LOW_ALERT_IDENTIFIER.to_string(),
-                value: Some(number.to_string()),
-                note: None,
-            },
-        )
-        .await
-        .unwrap();
-    }
-    StatusCode::OK
 }
 
 async fn status_handler(config: Arc<Config<ExampleDeviceConfig>>) -> DeviceStatusResponseDto {
@@ -128,11 +89,9 @@ async fn config_interceptor_handler(
     Config {
         port: old_config.port,
         datasource_id: old_config.datasource_id.clone(),
-        additional_config: {
-            ExampleDeviceConfig {
-                min: config.additional_config.min,
-                max: config.additional_config.max,
-            }
+        additional_config: ExampleDeviceConfig {
+            min: config.additional_config.min,
+            max: config.additional_config.max,
         },
         scripting_api: old_config.scripting_api.clone(),
     }

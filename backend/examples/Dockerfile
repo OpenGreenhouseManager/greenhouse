@@ -11,10 +11,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
       libssl-dev \
       libpq-dev \
       ca-certificates && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    rustup toolchain install nightly && \
-    rustup update nightly && \
-    rustup default nightly
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Build only the selected example (defaults to periodic_alert)
 ARG EXAMPLE_BIN=periodic_alert
@@ -23,6 +20,7 @@ ENV EXAMPLE_BIN=${EXAMPLE_BIN}
 # Leverage caching by copying manifests first
 COPY Cargo.toml ./
 COPY greenhouse_core/Cargo.toml greenhouse_core/Cargo.toml
+COPY greenhouse_device/Cargo.toml greenhouse_device/Cargo.toml
 COPY greenhouse_macro/Cargo.toml greenhouse_macro/Cargo.toml
 COPY services/auth_service/Cargo.toml services/auth_service/Cargo.toml
 COPY services/data_storage_service/Cargo.toml services/data_storage_service/Cargo.toml

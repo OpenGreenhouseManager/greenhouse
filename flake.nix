@@ -28,7 +28,6 @@
       backendShell = pkgs.callPackage ./backend/nix/shell.nix {
         toolchain = import ./backend/nix/toolchain.nix pkgs;
       };
-      esp32Shell = pkgs.callPackage ./backend/nix/esp32-shell.nix { };
       webShell = pkgs.callPackage ./web/nix/shell.nix { inherit nodejs; };
     in
     {
@@ -42,7 +41,6 @@
       devShells.${system} = {
         backend = backendShell;
         web = webShell;
-        esp32 = esp32Shell;
         default = pkgs.mkShell {
           inputsFrom = [
             backendShell

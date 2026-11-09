@@ -9,7 +9,7 @@ Monorepo of the Open Greenhouse Manager.
 
 ## Development
 
-`direnv allow` loads the root Nix devShell (Rust nightly + Node 24). Per-project
+`direnv allow` loads the root Nix devShell (Rust stable from `backend/rust-toolchain.toml` + Node 24). Per-project
 shells: `nix develop .#backend` / `nix develop .#web`.
 
 ```sh

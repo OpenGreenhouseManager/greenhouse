@@ -35,8 +35,6 @@
         in
         {
           default = pkgs.callPackage ./nix/shell.nix { inherit toolchain; };
-          # ESP32 firmware (greenhouse_esp32); see nix/esp32-shell.nix.
-          esp32 = pkgs.callPackage ./nix/esp32-shell.nix { };
         };
     };
 }

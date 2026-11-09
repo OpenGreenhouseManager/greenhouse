@@ -1,21 +1,14 @@
-use std::sync::Arc;
+use std::sync::atomic::{AtomicI32, Ordering};
 
-use axum::http::StatusCode;
-use greenhouse_core::{
-    smart_device_dto::{
-        Type,
-        config::{ConfigRequestDto, TypeOption},
-        status::{DeviceStatusDto, DeviceStatusResponseDto},
-    },
-    smart_device_interface::{
-        config::{Config, read_config_file_with_path, update_config_file_with_path},
-        device_builder::DeviceBuilder,
-        hybrid_device::init_hybrid_router,
-    },
+use greenhouse_core::smart_device_dto::{
+    Type,
+    config::{ConfigRequestDto, TypeOption},
+    status::{DeviceStatusDto, DeviceStatusResponseDto},
 };
-use serde_derive::{Deserialize, Serialize};
+use greenhouse_device::{Arc, Config, DeviceBuilder, Platform, StatusCode};
+use serde::{Deserialize, Serialize};
 
-static mut SAVED_NUMBER: i32 = 20;
+static SAVED_NUMBER: AtomicI32 = AtomicI32::new(20);
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct ExampleDeviceConfig {
@@ -23,63 +16,37 @@ struct ExampleDeviceConfig {
     pub max: i32,
 }
 
-#[allow(clippy::needless_return)]
 #[tokio::main]
 async fn main() {
-    // Get config path from command line arguments, default to "./config/config.json"
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "./config/input_output_int_saver/config.json".to_string());
+    println!("using config file: {config_path}");
 
-    let config = match read_config_file_with_path(&config_path) {
-        Ok(config) => config,
-        Err(_) => {
-            let default_config = Config {
-                port: 6001,
-                datasource_id: "7a224a14-6e07-45a3-91da-b7584a5731c1".to_string(),
-                additional_config: ExampleDeviceConfig { min: 0, max: 100 },
-                scripting_api: None,
-            };
-
-            // Create config directory if it doesn't exist
-            if let Some(parent) = std::path::Path::new(&config_path).parent()
-                && !parent.exists()
-            {
-                std::fs::create_dir_all(parent).unwrap();
-            }
-
-            // Create empty config file if it doesn't exist
-            if !std::path::Path::new(&config_path).exists() {
-                std::fs::write(&config_path, "{}").unwrap();
-            }
-
-            update_config_file_with_path(&default_config, &config_path).unwrap();
-            default_config
-        }
+    let default_config = Config {
+        port: 6001,
+        datasource_id: "7a224a14-6e07-45a3-91da-b7584a5731c1".to_string(),
+        additional_config: ExampleDeviceConfig { min: 0, max: 100 },
+        scripting_api: None,
     };
 
-    let device_service = DeviceBuilder::new_hybrid_device_with_config_path(
+    let device = DeviceBuilder::new_hybrid_device(
+        Platform::new(config_path),
+        default_config,
         read_handler,
         write_handler,
         status_handler,
         config_interceptor_handler,
-        &config_path,
         TypeOption::Number,
         TypeOption::Number,
     )
     .unwrap();
-    let router = init_hybrid_router(device_service);
 
-    let url = format!("0.0.0.0:{}", config.port);
-
-    let listener = tokio::net::TcpListener::bind(url).await.unwrap();
-    println!("listening on {}", listener.local_addr().unwrap());
-    println!("using config file: {config_path}");
-    axum::serve(listener, router).await.unwrap();
+    device.run().await
 }
 
 async fn read_handler(_: Arc<Config<ExampleDeviceConfig>>) -> Type {
-    Type::Number(unsafe { SAVED_NUMBER } as f64)
+    Type::Number(SAVED_NUMBER.load(Ordering::Relaxed) as f64)
 }
 
 async fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> StatusCode {
@@ -87,7 +54,7 @@ async fn write_handler(data: Type, config: Arc<Config<ExampleDeviceConfig>>) -> 
         Type::Number(number) => number,
         _ => return StatusCode::BAD_REQUEST,
     };
-    unsafe { SAVED_NUMBER = number as i32 };
+    SAVED_NUMBER.store(number as i32, Ordering::Relaxed);
     if config.additional_config.min > number as i32 || config.additional_config.max < number as i32
     {
         return StatusCode::INTERNAL_SERVER_ERROR;
@@ -109,11 +76,9 @@ async fn config_interceptor_handler(
     Config {
         port: old_config.port,
         datasource_id: old_config.datasource_id.clone(),
-        additional_config: {
-            ExampleDeviceConfig {
-                min: config.additional_config.min,
-                max: config.additional_config.max,
-            }
+        additional_config: ExampleDeviceConfig {
+            min: config.additional_config.min,
+            max: config.additional_config.max,
         },
         scripting_api: old_config.scripting_api.clone(),
     }

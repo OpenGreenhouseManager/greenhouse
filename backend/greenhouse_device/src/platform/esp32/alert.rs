@@ -1,10 +1,9 @@
-//! Alerts to the scripting API, mirroring
-//! `greenhouse_core::smart_device_interface::device_service`.
+//! Sending alerts on the ESP32.
 //!
 //! The network stack and TLS context are owned by an alert task spawned in
-//! [`crate::Platform::start`]; `trigger_alert` hands the request to it and
-//! waits for the result, so handlers keep the Linux signature
-//! (`trigger_alert(config, alert).await`).
+//! [`crate::Platform::start`]; `send_alert` hands the request to it and waits
+//! for the result, so `trigger_alert(config, alert).await` works from any
+//! handler, like on the host.
 
 use alloc::format;
 use alloc::string::String;
@@ -18,12 +17,8 @@ use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Instant, with_deadline, with_timeout};
 use mbedtls_rs::Tls;
 
-use crate::Arc;
-use crate::config::Config;
+use super::http_client;
 use crate::error::{Error, Result};
-use crate::http_client;
-
-pub use greenhouse_core::smart_device_common::AlertCreation;
 
 /// Upper bound for one alert including DNS, TCP and the TLS handshake.
 const ALERT_TIMEOUT: Duration = Duration::from_secs(30);
@@ -42,27 +37,15 @@ static ONE_AT_A_TIME: Mutex<CriticalSectionRawMutex, ()> = Mutex::new(());
 static REQUEST: Signal<CriticalSectionRawMutex, AlertJob> = Signal::new();
 static RESPONSE: Signal<CriticalSectionRawMutex, (u32, Result<()>)> = Signal::new();
 
-/// POSTs an alert to the configured scripting API (`{url}/alert`).
+/// POSTs a serialized alert to `url`, authenticated with the device's token.
 ///
 /// `https://` URLs are verified against the root CAs in `certs/roots.pem`
 /// (chain, signature and hostname). Certificate validity dates are **not**
 /// checked: the device has no wall clock.
-pub async fn trigger_alert<T>(config: Arc<Config<T>>, alert: AlertCreation) -> Result<()>
-where
-    T: Clone + Default,
-{
-    let scripting_api = config.scripting_api.as_ref().ok_or_else(|| {
-        log::warn!("scripting_api missing; cannot send alert");
-        Error::ScriptingApiNotConfigured
-    })?;
+pub(crate) async fn send_alert(url: String, token: String, body: Vec<u8>) -> Result<()> {
     if !ALERT_TASK_RUNNING.load(Ordering::Relaxed) {
         return Err(Error::NotInitialized);
     }
-
-    let body =
-        serde_json::to_vec(&alert.into_dto(&config)).map_err(|_| Error::SerializationError)?;
-    let url = format!("{}/alert", scripting_api.url.trim_end_matches('/'));
-    let token = scripting_api.token.clone();
 
     let deadline = Instant::now() + ALERT_TIMEOUT;
     let _guard = with_deadline(deadline, ONE_AT_A_TIME.lock())

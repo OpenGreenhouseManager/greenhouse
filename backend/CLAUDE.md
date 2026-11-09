@@ -8,7 +8,7 @@ Rust workspace implementing a microservices backend for a greenhouse management 
 
 ## Technology Stack
 
-- **Language**: Rust (nightly toolchain — see `rust-toolchain.toml`)
+- **Language**: Rust (stable, pinned in `rust-toolchain.toml`; also used by Nix)
 - **Web framework**: Axum 0.8
 - **Database ORM**: Diesel 2 + diesel-async with PostgreSQL via bb8 connection pool
 - **Auth**: JWT (`jsonwebtoken`) + bcrypt passwords + HTTP-only cookies (`tower-cookies`)
@@ -22,19 +22,19 @@ Rust workspace implementing a microservices backend for a greenhouse management 
 ```
 greenhouse_backend/
 ├── Cargo.toml              # Workspace manifest
-├── rust-toolchain.toml     # Pins nightly channel
+├── rust-toolchain.toml     # Pins the stable toolchain + ESP32-C3 target
 ├── justfile                # Developer task runner
 ├── compose.yaml            # Local dev Docker Compose (PostgreSQL + example devices)
 ├── Dockerfile              # Base builder image for all services
-├── greenhouse_core/        # Shared library: DTOs + smart-device interface
+├── greenhouse_core/        # Shared library: DTOs (no_std-capable)
 │   └── src/
 │       ├── auth_service_dto/
 │       ├── data_storage_service_dto/
 │       ├── device_service_dto/
 │       ├── scripting_service_dto/
 │       ├── smart_device_dto/
-│       ├── smart_device_interface/
 │       └── http_error.rs
+├── greenhouse_device/      # Smart-device library: host (axum) + ESP32 (embassy)
 ├── greenhouse_macro/       # Procedural macro crate
 ├── services/
 │   ├── auth_service/       # User auth, JWT issuance, bcrypt passwords
@@ -146,9 +146,8 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 ### Rust style
 
-- **Nightly Rust** is required — `rust-toolchain.toml` pins `channel = "nightly"`.
+- **Stable Rust**: `rust-toolchain.toml` pins the version (Nix, CI and Docker read it). Bump it there only.
 - Clippy is run with `-D warnings` — treat every warning as an error.
-- `cargo fmt` uses nightly `rustfmt`.
 - Keep `Cargo.toml` dependency list sorted (`cargo sort`).
 - Spell-check all source files with `typos` before committing.
 
@@ -156,7 +155,6 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 
 - All inter-service data transfer types live in `greenhouse_core/src/<service>_dto/`.
 - Add new DTOs here — never define them only inside a single service crate.
-- The `smart_device_interface` module defines the trait all example devices implement.
 
 ### Database migrations
 
@@ -192,13 +190,17 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 Default credentials for local dev:
 - PostgreSQL user: `admin`, password: `password`
 
-## ESP32 firmware (`greenhouse_esp32/`)
+## Smart devices (`greenhouse_device/`)
 
-- Bare-metal `no_std` crate (esp-hal + embassy, ESP32-C3), **excluded** from the workspace and built with **stable** Rust from the `esp32` devShell (`backend/nix/esp32-shell.nix`; keep its version in sync with `greenhouse_esp32/rust-toolchain.toml`). No ESP-IDF, no `build-std`.
-- Mirrors `greenhouse_core::smart_device_interface` (same HTTP contract and handler signatures); uses `greenhouse_core` with `default-features = false` + `smart_device_common`. Runtime-agnostic device types/logic (`Config`, `Mode`, `ScriptingApi`, `AlertCreation`, the `/config` response, the activate merge, stored-config migration) live in `greenhouse_core::smart_device_common` and are used by both runtimes — put shared logic there, not in either runtime. It and the DTO modules it pulls in must stay `no_std` + `alloc` compatible (import `String`/`Vec` from `alloc`); `std`-only things go behind the `std` feature.
-- CI: the `esp32` job in `backend-ci.yml` runs fmt, clippy and the firmware build — it is the actual no_std check for core.
-- HTTPS trust: `greenhouse_esp32/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
-- Build/flash: `cd greenhouse_esp32 && WIFI_SSID=… WIFI_PASSWORD=… cargo run --release --example input_output_int_saver`.
+One crate, one public API (`DeviceBuilder::new_hybrid/output/input_device(platform, default_config, handlers…)`, `run()`, `config_handle()`, `device_service::trigger_alert`, `Arc`, `StatusCode`, `Config`) for two runtimes, **selected by build target, not by feature** (so `--workspace --all-features` never pulls esp-hal onto the host):
+
+- **Host** (`cfg(not(target_os = "none"))`, `src/platform/host/`): axum + tokio, config in a JSON file (`Platform::new(path)`), alerts via reqwest. Host-only extra: `DeviceBuilder::into_router()`.
+- **ESP32-C3** (`cfg(target_os = "none")`, `src/platform/esp32/`): bare-metal `no_std` esp-hal + embassy + picoserve + mbedtls; `Platform::start(spawner, peripherals, wifi)`, config in the `nvs` flash partition. No ESP-IDF, no `build-std`.
+- Everything else is shared and must stay `no_std` + `alloc` (import `String`/`Vec` from `alloc`): `config/common.rs` (types, `/config` response, activate merge, stored-config migration), `device_builder.rs`, `handler.rs` (all request logic; the servers only route to it), `device_service.rs`. Put new logic there; each platform module only provides the items listed in `src/platform/mod.rs`. Target-specific dependencies go in the matching `[target.'cfg(…)'.dependencies]` table.
+- Handler bounds use `MaybeSend`/`MaybeSync` (`Send`/`Sync` on the host, nothing on the ESP32).
+- ESP32 builds use the cargo aliases in `.cargo/config.toml` (`esp32-build`/`esp32-run`/`esp32-clippy`: target + `esp32` profile from the root `Cargo.toml`), wrapped by `just esp32-lint` / `esp32-build` / `esp32-flash`. Flash: `WIFI_SSID=… WIFI_PASSWORD=… just esp32-flash` (espflash is in the devShell). Unit tests are host-only, so ESP32 clippy runs on `--lib --examples`; ESP32 examples compile to a stub `main` on the host.
+- CI: the `esp32` job in `backend-ci.yml` runs ESP32 clippy and the firmware build — it is also the no_std check for `greenhouse_core`'s DTO modules (std-only DTO code goes behind core's `std` feature).
+- HTTPS trust on the ESP32: `greenhouse_device/certs/roots.pem` (curated roots). Certificate validity dates are not checked (no wall clock).
 
 ## Adding a New Service
 
