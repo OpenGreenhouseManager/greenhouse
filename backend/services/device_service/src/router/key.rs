@@ -31,8 +31,10 @@ pub(crate) async fn check_key(
     }
 }
 
-/// Sends `device` a fresh scripting key. Once the device took it, its older
-/// keys are revoked; if the device could not be reached, the new key is.
+/// Sends `device` a fresh scripting key. Once the device confirmed it, its
+/// older keys are revoked. If the call failed, every key stays valid: the
+/// device may still have received the new one, or still use an old one. The
+/// next successful activation or the device's deletion cleans up.
 pub(crate) async fn activate_with_new_key(
     config: &Config,
     pool: &Pool,
@@ -51,19 +53,7 @@ pub(crate) async fn activate_with_new_key(
     )
     .await;
 
-    match activation {
-        Ok(_) => key.revoke_others(pool).await?,
-        Err(e) => {
-            if let Err(revoke_error) = key.revoke(pool).await {
-                tracing::warn!(
-                    device = %device.id,
-                    error = %revoke_error,
-                    "could not revoke key of failed activation"
-                );
-            }
-            return Err(e);
-        }
-    }
-
+    activation?;
+    key.revoke_others(pool).await?;
     Ok(())
 }

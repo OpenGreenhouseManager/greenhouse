@@ -53,22 +53,6 @@ impl DeviceKey {
         })
     }
 
-    /// Removes this key.
-    pub(crate) async fn revoke(&self, pool: &Pool) -> Result<()> {
-        let mut conn = pool.get().await.map_err(|e| {
-            sentry::capture_error(&e);
-            Error::DatabaseConnection
-        })?;
-        diesel::delete(device_key::table.filter(device_key::key.eq(&self.key)))
-            .execute(&mut conn)
-            .await
-            .map_err(|e| {
-                sentry::capture_error(&e);
-                Error::Delete
-            })?;
-        Ok(())
-    }
-
     /// Removes every other key of this key's device, so only this one stays
     /// valid.
     pub(crate) async fn revoke_others(&self, pool: &Pool) -> Result<()> {

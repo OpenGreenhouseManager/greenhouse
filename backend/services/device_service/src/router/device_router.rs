@@ -85,7 +85,7 @@ pub(crate) async fn create_device(
 
     // The device may not be online yet; it can be activated later.
     if let Err(e) = activate_with_new_key(&config, &pool, &devices, &device).await {
-        tracing::info!(device = %device.id, error = %e, "device not activated on creation");
+        tracing::warn!(device = %device.id, error = %e, "device not activated on creation");
     }
 
     Ok(device.into())
