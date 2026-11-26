@@ -19,6 +19,8 @@ mod auth;
 mod data_storage;
 #[cfg(feature = "device_service_dto")]
 mod device;
+#[cfg(feature = "smart_device_dto")]
+mod smart_device;
 
 #[cfg(feature = "auth_service_dto")]
 pub use auth::AuthServiceClient;
@@ -26,6 +28,8 @@ pub use auth::AuthServiceClient;
 pub use data_storage::DataStorageServiceClient;
 #[cfg(feature = "device_service_dto")]
 pub use device::DeviceServiceClient;
+#[cfg(feature = "smart_device_dto")]
+pub use smart_device::SmartDeviceClient;
 
 /// Builds the `reqwest::Client` that should be shared by all service clients
 /// of one process. Cloning a `reqwest::Client` shares its connection pool.

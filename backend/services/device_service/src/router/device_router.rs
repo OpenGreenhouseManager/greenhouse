@@ -49,7 +49,7 @@ pub(crate) fn routes(state: AppState) -> Router {
 
 #[axum::debug_handler]
 pub(crate) async fn update_device(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
     Path(id): Path<Uuid>,
     Json(update): Json<PutDeviceDtoRequest>,
 ) -> HttpResult<DeviceResponseDto> {
@@ -66,7 +66,12 @@ pub(crate) async fn update_device(
 
 #[axum::debug_handler]
 pub(crate) async fn create_device(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState {
+        config,
+        pool,
+        devices,
+        ..
+    }): State<AppState>,
     Json(entry): Json<PostDeviceDtoRequest>,
 ) -> HttpResult<DeviceResponseDto> {
     let mut device = Device::new(
@@ -79,7 +84,7 @@ pub(crate) async fn create_device(
     device.flush(&pool).await?;
 
     // The device may not be online yet; it can be activated later.
-    if let Err(e) = activate_with_new_key(&config, &pool, &device).await {
+    if let Err(e) = activate_with_new_key(&config, &pool, &devices, &device).await {
         tracing::info!(device = %device.id, error = %e, "device not activated on creation");
     }
 
@@ -88,7 +93,7 @@ pub(crate) async fn create_device(
 
 #[axum::debug_handler]
 pub(crate) async fn get_device(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<DeviceResponseDto> {
     Ok(Device::find_by_id(id, &pool).await?.into())
@@ -96,7 +101,7 @@ pub(crate) async fn get_device(
 
 #[axum::debug_handler]
 pub(crate) async fn delete_device(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<StatusCode> {
     Device::delete_by_id(id, &pool).await?;
@@ -105,11 +110,11 @@ pub(crate) async fn delete_device(
 
 #[axum::debug_handler]
 pub(crate) async fn get_device_config(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, devices, .. }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<impl IntoResponse> {
     let device = Device::find_by_id(id, &pool).await?;
-    let response = request_device_config(&device.address).await?;
+    let response = request_device_config(&devices, &device.address).await?;
     Ok((
         StatusCode::OK,
         [(
@@ -122,22 +127,22 @@ pub(crate) async fn get_device_config(
 
 #[axum::debug_handler]
 pub(crate) async fn update_device_config(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, devices, .. }): State<AppState>,
     Path(id): Path<Uuid>,
     Json(payload): Json<serde_json::Value>,
 ) -> HttpResult<StatusCode> {
     let device = Device::find_by_id(id, &pool).await?;
-    let _ = request_device_config_update(&device.address, payload).await?;
+    let _ = request_device_config_update(&devices, &device.address, payload).await?;
     Ok(StatusCode::OK)
 }
 
 #[axum::debug_handler]
 pub(crate) async fn get_device_status(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, devices, .. }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<impl IntoResponse> {
     let device = Device::find_by_id(id, &pool).await?;
-    let response = request_device_status(&device.address).await?;
+    let response = request_device_status(&devices, &device.address).await?;
     Ok((
         StatusCode::OK,
         [(
@@ -150,7 +155,7 @@ pub(crate) async fn get_device_status(
 
 #[axum::debug_handler]
 pub(crate) async fn get_devices(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
 ) -> HttpResult<DevicesResponseDto> {
     let entries = Device::all(&pool).await?;
     Ok(entries
@@ -162,34 +167,39 @@ pub(crate) async fn get_devices(
 
 #[axum::debug_handler]
 pub(crate) async fn activate_device(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState {
+        config,
+        pool,
+        devices,
+        ..
+    }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<StatusCode> {
     let device = Device::find_by_id(id, &pool).await?;
-    activate_with_new_key(&config, &pool, &device).await?;
+    activate_with_new_key(&config, &pool, &devices, &device).await?;
     Ok(StatusCode::OK)
 }
 
 #[axum::debug_handler]
 pub(crate) async fn get_device_timeseries(
-    State(AppState { config, pool: _ }): State<AppState>,
+    State(AppState { config, http, .. }): State<AppState>,
     Path(id): Path<Uuid>,
     Query(query): Query<PromQuery>,
 ) -> HttpResult<GetTimeseriesDto> {
-    Ok(get_device_query_timeseries(&config.prometheus_url, id, query).await?)
+    Ok(get_device_query_timeseries(&http, &config.prometheus_url, id, query).await?)
 }
 
 #[axum::debug_handler]
 pub(crate) async fn get_batch_timeseries(
-    State(AppState { config, pool: _ }): State<AppState>,
+    State(AppState { config, http, .. }): State<AppState>,
     Json(request): Json<BatchTimeseriesRequestDto>,
 ) -> HttpResult<BatchTimeseriesResponseDto> {
-    Ok(get_batch_query_timeseries(&config.prometheus_url, request).await?)
+    Ok(get_batch_query_timeseries(&http, &config.prometheus_url, request).await?)
 }
 
 async fn get_device_query_operations(
-    State(AppState { config, pool: _ }): State<AppState>,
+    State(AppState { config, http, .. }): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<OperationsDto> {
-    Ok(request_device_query_operations(&config.prometheus_url, &id.to_string()).await?)
+    Ok(request_device_query_operations(&http, &config.prometheus_url, &id.to_string()).await?)
 }

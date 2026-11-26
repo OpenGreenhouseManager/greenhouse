@@ -9,6 +9,7 @@ use crate::{
 use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
 use greenhouse_core::{
     device_service_dto::{endpoints::CHECK_KEY, key::DeviceKeyDto},
+    service_client::SmartDeviceClient,
     smart_device_dto::activation::ActivateRequestDto,
 };
 
@@ -20,7 +21,7 @@ pub(crate) fn routes(state: AppState) -> Router {
 
 #[axum::debug_handler]
 pub(crate) async fn check_key(
-    State(AppState { config: _, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
     Json(DeviceKeyDto { key }): Json<DeviceKeyDto>,
 ) -> HttpResult<StatusCode> {
     if DeviceKey::exists(&key, &pool).await? {
@@ -35,11 +36,13 @@ pub(crate) async fn check_key(
 pub(crate) async fn activate_with_new_key(
     config: &Config,
     pool: &Pool,
+    devices: &SmartDeviceClient,
     device: &Device,
 ) -> Result<()> {
     let key = DeviceKey::issue(device.id, pool).await?;
 
     let activation = request_device_activate(
+        devices,
         &device.address,
         ActivateRequestDto {
             url: config.scripting_api.clone(),
