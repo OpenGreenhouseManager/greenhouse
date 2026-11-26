@@ -8,6 +8,7 @@ use diesel::{Connection, PgConnection};
 use diesel_async::AsyncPgConnection;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
+use greenhouse_core::service_client::{self, SmartDeviceClient};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use serde::Deserialize;
 use tower_http::trace::TraceLayer;
@@ -46,12 +47,27 @@ pub type Pool = bb8::Pool<AsyncDieselConnectionManager<AsyncPgConnection>>;
 pub struct AppState {
     pub config: Config,
     pub pool: Pool,
+    /// Pooled HTTP client shared by all outgoing calls.
+    pub http: reqwest::Client,
+    pub devices: SmartDeviceClient,
+}
+
+impl AppState {
+    fn new(config: Config, pool: Pool) -> Self {
+        let http = service_client::http_client();
+        Self {
+            config,
+            pool,
+            devices: SmartDeviceClient::new(http.clone()),
+            http,
+        }
+    }
 }
 
 pub fn app(config: Config, pool: Pool) -> Router {
     run_migration(&config.database_url);
 
-    let state = AppState { config, pool };
+    let state = AppState::new(config, pool);
     let recorder_handle = setup_metrics_recorder();
 
     scrape_service::start_scrape_devices(state.clone());
@@ -65,7 +81,7 @@ pub fn app(config: Config, pool: Pool) -> Router {
 pub fn test_app(config: Config, pool: Pool) -> Router {
     run_migration(&config.database_url);
 
-    let state = AppState { config, pool };
+    let state = AppState::new(config, pool);
 
     Router::new()
         .merge(router::device_router::routes(state.clone()))

@@ -1,111 +1,62 @@
 use super::error::{Error, Result};
 use greenhouse_core::{
     scripting_service_dto::{self, token::TokenDto},
-    smart_device_dto::{activation::ActivateRequestDto, endpoints},
+    service_client::{ClientError, SmartDeviceClient},
+    smart_device_dto::activation::ActivateRequestDto,
 };
 
-pub(crate) async fn request_device_config(device_address: &str) -> Result<String> {
-    let resp = reqwest::Client::new()
-        .get(device_address.to_string() + endpoints::CONFIG)
-        .send()
+pub(crate) async fn request_device_config(
+    devices: &SmartDeviceClient,
+    device_address: &str,
+) -> Result<String> {
+    devices
+        .get_config(device_address)
         .await
-        .map_err(|e| {
-            sentry::capture_error(&e);
-
-            tracing::error!(
-                "Error in get to smart device: {:?} for url {}",
-                e,
-                device_address
-            );
-
-            Error::SmartDeviceNotReachable
-        })?;
-    resp.text().await.map_err(|e| {
-        sentry::capture_error(&e);
-
-        tracing::error!("Error in response from smart device: {:?}", e);
-
-        Error::SmartDeviceResponse
-    })
+        .map_err(|e| device_error(&e, device_address))
 }
 
 pub(crate) async fn request_device_config_update(
+    devices: &SmartDeviceClient,
     device_address: &str,
     body: serde_json::Value,
 ) -> Result<String> {
-    let resp = reqwest::Client::new()
-        .post(device_address.to_string() + endpoints::CONFIG)
-        .json(&body)
-        .send()
+    devices
+        .update_config(device_address, &body)
         .await
-        .map_err(|e| {
-            sentry::capture_error(&e);
-
-            tracing::error!(
-                "Error in post to smart device for config update: {:?} for url {}",
-                e,
-                device_address
-            );
-
-            Error::SmartDeviceNotReachable
-        })?;
-    resp.text().await.map_err(|e| {
-        sentry::capture_error(&e);
-
-        tracing::error!("Error in response from smart device: {:?}", e);
-
-        Error::SmartDeviceResponse
-    })
+        .map_err(|e| device_error(&e, device_address))
 }
 
-pub(crate) async fn request_device_status(device_address: &str) -> Result<String> {
-    let resp = reqwest::Client::new()
-        .get(device_address.to_string() + endpoints::STATUS)
-        .send()
+pub(crate) async fn request_device_status(
+    devices: &SmartDeviceClient,
+    device_address: &str,
+) -> Result<String> {
+    devices
+        .get_status(device_address)
         .await
-        .map_err(|e| {
-            sentry::capture_error(&e);
-
-            tracing::error!(
-                "Error in get to smart device: {:?} for url {}",
-                e,
-                device_address
-            );
-
-            Error::SmartDeviceNotReachable
-        })?;
-    resp.text().await.map_err(|e| {
-        sentry::capture_error(&e);
-
-        tracing::error!("Error in response from smart device: {:?}", e);
-
-        Error::SmartDeviceResponse
-    })
+        .map_err(|e| device_error(&e, device_address))
 }
 
 pub(crate) async fn request_device_activate(
+    devices: &SmartDeviceClient,
     device_address: &str,
     scripting_api: ActivateRequestDto,
 ) -> Result<String> {
-    let resp = reqwest::Client::new()
-        .post(device_address.to_string() + endpoints::ACTIVATE)
-        .json(&scripting_api)
-        .send()
+    devices
+        .activate(device_address, &scripting_api)
         .await
-        .map_err(|e| {
-            sentry::capture_error(&e);
+        .map_err(|e| device_error(&e, device_address))
+}
 
-            tracing::error!("Error in activate to smart device: {:?}", e);
+/// Maps a failed device call: no connection means the device is not
+/// reachable, anything else is a bad response.
+fn device_error(e: &ClientError, device_address: &str) -> Error {
+    sentry::capture_error(e);
+    tracing::error!("Error in call to smart device {}: {:?}", device_address, e);
 
-            Error::SmartDeviceNotReachable
-        })?;
-    resp.text().await.map_err(|e| {
-        sentry::capture_error(&e);
-
-        tracing::error!("Error in response from smart device: {:?}", e);
-
-        Error::SmartDeviceResponse
-    })
+    match e {
+        ClientError::Request(_) => Error::SmartDeviceNotReachable,
+        ClientError::Decode(_) | ClientError::Api { .. } => Error::SmartDeviceResponse,
+    }
 }
 
 pub(crate) async fn request_device_token(scripting_api_address: &str) -> Result<TokenDto> {

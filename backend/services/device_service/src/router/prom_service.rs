@@ -63,26 +63,24 @@ pub(crate) const MAX_BATCH_QUERIES: usize = 50;
 const BATCH_CONCURRENCY: usize = 8;
 
 pub(crate) async fn get_device_query_timeseries(
+    client: &Client,
     prometheus_url: &str,
     device_id: Uuid,
     query: PromQuery,
 ) -> Result<GetTimeseriesDto> {
-    Ok(
-        fetch_timeseries(&Client::new(), prometheus_url, device_id, &query)
-            .await?
-            .into(),
-    )
+    Ok(fetch_timeseries(client, prometheus_url, device_id, &query)
+        .await?
+        .into())
 }
 
 pub(crate) async fn get_batch_query_timeseries(
+    client: &Client,
     prometheus_url: &str,
     request: BatchTimeseriesRequestDto,
 ) -> Result<BatchTimeseriesResponseDto> {
     if request.queries.len() > MAX_BATCH_QUERIES {
         return Err(Error::BatchTooLarge);
     }
-
-    let client = &Client::new();
 
     let results = stream::iter(request.queries)
         .map(|query| async move {
@@ -215,10 +213,10 @@ async fn fetch_timeseries(
 }
 
 pub(crate) async fn request_device_query_operations(
+    client: &Client,
     prometheus_url: &str,
     id: &str,
 ) -> Result<OperationsDto> {
-    let client = Client::new();
     let id = id.to_string().replace("-", "_");
     let url_prefix = "{__name__=~'";
     let url_suffix = ".*'}";
