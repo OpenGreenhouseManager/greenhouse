@@ -1,7 +1,13 @@
-use auth::middleware::check_token;
+use auth::guard::require_auth;
 use axum::extract::FromRef;
 use axum::routing::get;
 use axum::{Router, middleware};
+use greenhouse_core::{
+    auth::AuthVerifier,
+    service_client::{
+        AuthServiceClient, DataStorageServiceClient, DeviceServiceClient, http_client,
+    },
+};
 use reqwest::{
     Method,
     header::{ACCEPT, AUTHORIZATION},
@@ -45,11 +51,28 @@ fn default_environment() -> String {
 
 #[derive(FromRef, Clone)]
 struct AppState {
-    config: Config,
+    auth: AuthServiceClient,
+    device: DeviceServiceClient,
+    data_storage: DataStorageServiceClient,
+    verifier: AuthVerifier,
+}
+
+impl AppState {
+    fn new(addresses: &ServiceAddresses) -> Self {
+        // One pooled client shared by every service client.
+        let http = http_client();
+        let auth = AuthServiceClient::new(http.clone(), &addresses.auth_service);
+        Self {
+            verifier: AuthVerifier::AuthService(auth.clone()),
+            auth,
+            device: DeviceServiceClient::new(http.clone(), &addresses.device_service),
+            data_storage: DataStorageServiceClient::new(http, &addresses.data_storage_service),
+        }
+    }
 }
 
 pub fn app(config: Config) -> Router {
-    let state = AppState { config };
+    let state = AppState::new(&config.service_addresses);
 
     let cors = CorsLayer::new()
         .allow_headers([AUTHORIZATION, ACCEPT, reqwest::header::CONTENT_TYPE])
@@ -68,7 +91,7 @@ pub fn app(config: Config) -> Router {
         .nest("/api/alert", alert::router::routes(state.clone()))
         .nest("/api/device", device::router::routes(state.clone()))
         .nest("/api/user", auth::router::user_routes(state.clone()))
-        .layer(middleware::from_fn_with_state(state.clone(), check_token))
+        .layer(middleware::from_fn_with_state(state.clone(), require_auth))
         .merge(auth::router::auth_routes(state))
         .layer(CookieManagerLayer::new())
         .layer(cors)

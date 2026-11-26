@@ -1,4 +1,4 @@
-use crate::{AppState, device::service, helper::error::HttpResult};
+use crate::{AppState, helper::error::HttpResult};
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
@@ -16,6 +16,7 @@ use greenhouse_core::device_service_dto::{
     put_device::PutDeviceDtoRequest,
     query::PromQuery,
 };
+use greenhouse_core::service_client::DeviceServiceClient;
 use reqwest::{StatusCode, header};
 use uuid::Uuid;
 
@@ -36,53 +37,53 @@ pub(crate) fn routes(state: AppState) -> Router {
         .with_state(state)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn create_device(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Json(entry): Json<PostDeviceDtoRequest>,
 ) -> HttpResult<DeviceResponseDto> {
-    Ok(service::create_device(&config.service_addresses.device_service, entry).await?)
+    Ok(device.create_device(&entry).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_devices(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
 ) -> HttpResult<DevicesResponseDto> {
-    Ok(service::get_devices(&config.service_addresses.device_service).await?)
+    Ok(device.get_devices().await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn update_device(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
     Json(update): Json<PutDeviceDtoRequest>,
 ) -> HttpResult<DeviceResponseDto> {
-    Ok(service::update_device(&config.service_addresses.device_service, id, update).await?)
+    Ok(device.update_device(id, &update).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_device(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<DeviceResponseDto> {
-    Ok(service::get_device(&config.service_addresses.device_service, id).await?)
+    Ok(device.get_device(id).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn delete_device(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<StatusCode> {
-    service::delete_device(&config.service_addresses.device_service, id).await?;
+    device.delete_device(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_device_config(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<impl IntoResponse> {
-    let response = service::get_device_config(&config.service_addresses.device_service, id).await?;
+    let response = device.get_device_config(id).await?;
     Ok((
         StatusCode::OK,
         [(
@@ -93,22 +94,22 @@ pub(crate) async fn get_device_config(
     ))
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn update_device_config(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
     Json(body): Json<serde_json::Value>,
 ) -> HttpResult<StatusCode> {
-    service::update_device_config(&config.service_addresses.device_service, id, body).await?;
+    device.update_device_config(id, &body).await?;
     Ok(StatusCode::OK)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_device_status(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<impl IntoResponse> {
-    let response = service::get_device_status(&config.service_addresses.device_service, id).await?;
+    let response = device.get_device_status(id).await?;
     Ok((
         StatusCode::OK,
         [(
@@ -119,35 +120,35 @@ pub(crate) async fn get_device_status(
     ))
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn activate_device(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<StatusCode> {
-    service::activate_device(&config.service_addresses.device_service, id).await?;
+    device.activate_device(id).await?;
     Ok(StatusCode::OK)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_device_timeseries(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
     Query(query): Query<PromQuery>,
 ) -> HttpResult<GetTimeseriesDto> {
-    Ok(service::get_device_timeseries(&config.service_addresses.device_service, id, query).await?)
+    Ok(device.get_device_timeseries(id, &query).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_batch_timeseries(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Json(request): Json<BatchTimeseriesRequestDto>,
 ) -> HttpResult<BatchTimeseriesResponseDto> {
-    Ok(service::get_batch_timeseries(&config.service_addresses.device_service, request).await?)
+    Ok(device.get_batch_timeseries(&request).await?)
 }
 
 pub(crate) async fn get_device_operations(
-    State(AppState { config }): State<AppState>,
+    State(device): State<DeviceServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<OperationsDto> {
-    Ok(service::get_device_operations(&config.service_addresses.device_service, id).await?)
+    Ok(device.get_device_operations(id).await?)
 }

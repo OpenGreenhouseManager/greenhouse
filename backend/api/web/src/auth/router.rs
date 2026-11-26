@@ -5,14 +5,18 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use greenhouse_core::auth_service_dto::{
-    login::LoginRequestDto,
-    register::RegisterRequestDto,
-    user_preferences::{UserPreferencesRequestDto, UserPreferencesResponseDto},
+use greenhouse_core::{
+    auth::AuthUser,
+    auth_service_dto::{
+        login::LoginRequestDto,
+        register::RegisterRequestDto,
+        user_preferences::{UserPreferencesRequestDto, UserPreferencesResponseDto},
+    },
+    service_client::AuthServiceClient,
 };
 use tower_cookies::{Cookie, Cookies, cookie::SameSite};
 
-use super::{AUTH_TOKEN, service};
+use super::AUTH_TOKEN;
 
 pub(crate) fn auth_routes(state: AppState) -> Router {
     Router::new()
@@ -28,9 +32,9 @@ pub(crate) fn user_routes(state: AppState) -> Router {
         .with_state(state)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn api_register_handler(
-    State(AppState { config }): State<AppState>,
+    State(auth): State<AuthServiceClient>,
     cookie: Cookies,
     Json(register_request): Json<RegisterRequestDto>,
 ) -> HttpResult<Response> {
@@ -39,7 +43,7 @@ pub(crate) async fn api_register_handler(
         register_request.username,
         register_request.one_time_token
     );
-    match service::register(&config.service_addresses.auth_service, register_request).await {
+    match auth.register(&register_request).await {
         Ok(token) => {
             let mut c = Cookie::new(AUTH_TOKEN, token.token.clone());
             c.set_same_site(SameSite::None);
@@ -57,14 +61,14 @@ pub(crate) async fn api_register_handler(
     }
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn api_login_handler(
-    State(AppState { config }): State<AppState>,
+    State(auth): State<AuthServiceClient>,
     cookie: Cookies,
     Json(login_request): Json<LoginRequestDto>,
 ) -> HttpResult<Response> {
     tracing::trace!("Logging in user with username: {}", login_request.username,);
-    match service::login(&config.service_addresses.auth_service, login_request).await {
+    match auth.login(&login_request).await {
         Ok(token) => {
             let mut c = Cookie::new(AUTH_TOKEN, token.token.clone());
             c.set_same_site(SameSite::None);
@@ -82,37 +86,19 @@ pub(crate) async fn api_login_handler(
     }
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn api_get_user_preferences_handler(
-    State(AppState { config }): State<AppState>,
-    cookies: Cookies,
+    State(auth): State<AuthServiceClient>,
+    user: AuthUser,
 ) -> HttpResult<UserPreferencesResponseDto> {
-    let token = cookies
-        .get(AUTH_TOKEN)
-        .map(|c| c.value().to_string())
-        .ok_or(crate::auth::Error::CookieNotFound)?;
-
-    let resp =
-        service::get_user_preferences(&config.service_addresses.auth_service, &token).await?;
-    Ok(resp)
+    Ok(auth.get_preferences(&user.token).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn api_set_user_preferences_handler(
-    State(AppState { config }): State<AppState>,
-    cookies: Cookies,
+    State(auth): State<AuthServiceClient>,
+    user: AuthUser,
     Json(user_preferences): Json<UserPreferencesRequestDto>,
 ) -> HttpResult<UserPreferencesResponseDto> {
-    let token = cookies
-        .get(AUTH_TOKEN)
-        .map(|c| c.value().to_string())
-        .ok_or(crate::auth::Error::CookieNotFound)?;
-
-    let resp = service::set_user_preferences(
-        &config.service_addresses.auth_service,
-        &token,
-        user_preferences,
-    )
-    .await?;
-    Ok(resp)
+    Ok(auth.set_preferences(&user.token, user_preferences).await?)
 }
