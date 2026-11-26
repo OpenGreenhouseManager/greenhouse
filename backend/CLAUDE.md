@@ -26,8 +26,10 @@ greenhouse_backend/
 ├── justfile                # Developer task runner
 ├── compose.yaml            # Local dev Docker Compose (PostgreSQL + example devices)
 ├── Dockerfile              # Base builder image for all services
-├── greenhouse_core/        # Shared library: DTOs + smart-device interface
+├── greenhouse_core/        # Shared library: DTOs, auth, service client, smart-device interface
 │   └── src/
+│       ├── auth/               # AuthUser / RequireRole axum extractors (feature `auth`)
+│       ├── service_client/     # Pooled, typed HTTP clients for internal services (feature `service_client`)
 │       ├── auth_service_dto/
 │       ├── data_storage_service_dto/
 │       ├── device_service_dto/
@@ -157,6 +159,11 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 - All inter-service data transfer types live in `greenhouse_core/src/<service>_dto/`.
 - Add new DTOs here — never define them only inside a single service crate.
 - The `smart_device_interface` module defines the trait all example devices implement.
+
+### Auth and service calls in the APIs
+
+- Authenticate with `greenhouse_core::auth::AuthUser` (router-wide via `from_extractor_with_state` / `from_fn`, or as a handler argument; it is verified once per request). Use `RequireRole<Admin>` for role checks.
+- Call internal services through the typed clients in `greenhouse_core::service_client` held in `AppState`; never build a `reqwest::Client` per request. Add a method to the typed client when a new endpoint is needed.
 
 ### Database migrations
 

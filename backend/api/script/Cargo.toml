@@ -8,8 +8,7 @@ license = "GPL-3.0"
 
 [dependencies]
 axum = { workspace = true, features = ["tracing"] }
-greenhouse_core = { workspace = true, features = ["scripting_service_dto", "data_storage_service_dto"] }
-greenhouse_macro = { workspace = true }
+greenhouse_core = { workspace = true, features = ["auth", "data_storage_service_dto", "service_client"] }
 reqwest = { workspace = true, features = ["json"] }
 sentry = { workspace = true, features = ["debug-images", "tower"] }
 serde = { workspace = true }

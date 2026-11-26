@@ -19,6 +19,7 @@ default = [
 ]
 api_web_dto = []
 api_script_dto = []
+auth = ["service_client", "auth_service_dto", "scripting_service_dto", "dep:tower-cookies"]
 auth_service_dto = []
 smart_device_dto = []
 smart_device_interface = ["smart_device_dto", "dep:axum", "dep:tracing", "dep:reqwest"]
@@ -26,6 +27,7 @@ data_storage_service_dto = []
 device_service_dto = []
 error_handling = ["dep:axum", "dep:tracing"]
 scripting_service_dto = []
+service_client = ["error_handling", "dep:reqwest", "dep:urlencoding"]
 ts = ["dep:ts-rs"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -37,8 +39,10 @@ greenhouse_macro = { version = "0.1", path = "../greenhouse_macro" }
 reqwest = { workspace = true, features = ["json"], optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tower-cookies = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 ts-rs = { workspace = true, optional = true }
+urlencoding = { workspace = true, optional = true }
 uuid = { workspace = true, features = [
     "v4",
     "fast-rng",
@@ -48,3 +52,5 @@ uuid = { workspace = true, features = [
 
 [dev-dependencies]
 httpc-test = "0.1.10"
+tokio = { workspace = true }
+tower = { version = "0.5.3", features = ["util"] }

@@ -1,7 +1,10 @@
-use auth::middleware::check_token;
 use axum::extract::FromRef;
 use axum::routing::get;
-use axum::{Router, middleware};
+use axum::{Router, middleware::from_extractor_with_state};
+use greenhouse_core::{
+    auth::{AuthUser, AuthVerifier},
+    service_client::{DataStorageServiceClient, ScriptingServiceClient, http_client},
+};
 use reqwest::{
     Method,
     header::{ACCEPT, AUTHORIZATION},
@@ -11,7 +14,6 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 pub(crate) mod alert;
-pub(crate) mod auth;
 pub(crate) mod helper;
 
 #[derive(Clone, Deserialize)]
@@ -40,11 +42,29 @@ fn default_environment() -> String {
 
 #[derive(FromRef, Clone)]
 struct AppState {
-    config: Config,
+    data_storage: DataStorageServiceClient,
+    verifier: AuthVerifier,
+}
+
+impl AppState {
+    fn new(addresses: &ServiceAddresses) -> Self {
+        // One pooled client shared by every service client.
+        let http = http_client();
+        Self {
+            data_storage: DataStorageServiceClient::new(
+                http.clone(),
+                &addresses.data_storage_service,
+            ),
+            verifier: AuthVerifier::ScriptingService(ScriptingServiceClient::new(
+                http,
+                &addresses.scripting_service,
+            )),
+        }
+    }
 }
 
 pub fn app(config: Config) -> Router {
-    let state = AppState { config };
+    let state = AppState::new(&config.service_addresses);
 
     let cors = CorsLayer::new()
         .allow_headers([AUTHORIZATION, ACCEPT, reqwest::header::CONTENT_TYPE])
@@ -59,7 +79,7 @@ pub fn app(config: Config) -> Router {
         ]);
     Router::new()
         .nest("/alert", alert::router::routes(state.clone()))
-        .layer(middleware::from_fn_with_state(state.clone(), check_token))
+        .layer(from_extractor_with_state::<AuthUser, _>(state))
         .layer(CookieManagerLayer::new())
         .layer(cors)
         .route("/health", get(|| async {}))

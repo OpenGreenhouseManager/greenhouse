@@ -1444,8 +1444,12 @@ dependencies = [
  "reqwest 0.13.5",
  "serde",
  "serde_json",
+ "tokio",
+ "tower",
+ "tower-cookies",
  "tracing",
  "ts-rs",
+ "urlencoding",
  "uuid",
 ]
 
@@ -3330,7 +3334,6 @@ version = "0.0.1"
 dependencies = [
  "axum",
  "greenhouse_core",
- "greenhouse_macro",
  "reqwest 0.13.5",
  "sentry",
  "serde",
@@ -4678,8 +4681,6 @@ version = "0.0.1"
 dependencies = [
  "axum",
  "greenhouse_core",
- "greenhouse_macro",
- "jsonwebtoken",
  "reqwest 0.13.5",
  "sentry",
  "serde",
@@ -4690,7 +4691,6 @@ dependencies = [
  "tower-http 0.7.1",
  "tracing",
  "tracing-subscriber",
- "urlencoding",
  "uuid",
 ]
 

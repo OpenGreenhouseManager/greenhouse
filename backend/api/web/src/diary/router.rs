@@ -1,5 +1,4 @@
 use crate::AppState;
-use crate::diary::service;
 use crate::helper::error::HttpResult;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -10,6 +9,7 @@ use greenhouse_core::data_storage_service_dto::diary_dtos::get_diary_entry::Diar
 use greenhouse_core::data_storage_service_dto::diary_dtos::post_diary_entry::PostDiaryEntryDtoRequest;
 use greenhouse_core::data_storage_service_dto::diary_dtos::post_diary_tag::PostDiaryTagDtoRequest;
 use greenhouse_core::data_storage_service_dto::diary_dtos::put_diary_entry::PutDiaryEntryDtoRequest;
+use greenhouse_core::service_client::DataStorageServiceClient;
 use uuid::Uuid;
 
 pub(crate) fn routes(state: AppState) -> Router {
@@ -24,64 +24,64 @@ pub(crate) fn routes(state: AppState) -> Router {
         .with_state(state)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn create_diary_entry(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Json(entry): Json<PostDiaryEntryDtoRequest>,
 ) -> HttpResult<()> {
-    service::create_diary_entry(&config.service_addresses.data_storage_service, entry).await?;
+    data_storage.create_diary_entry(&entry).await?;
     Ok(())
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn update_diary_entry(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path(id): Path<Uuid>,
     Json(update): Json<PutDiaryEntryDtoRequest>,
 ) -> HttpResult<()> {
-    service::update_diary_entry(&config.service_addresses.data_storage_service, id, update).await?;
+    data_storage.update_diary_entry(id, &update).await?;
     Ok(())
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_diary_entry(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path(id): Path<Uuid>,
 ) -> HttpResult<DiaryEntryResponseDto> {
-    Ok(service::get_diary_entry(&config.service_addresses.data_storage_service, id).await?)
+    Ok(data_storage.get_diary_entry(id).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn get_diary(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path((start, end)): Path<(String, String)>,
 ) -> HttpResult<GetDiaryResponseDto> {
-    Ok(service::get_diary(&config.service_addresses.data_storage_service, start, end).await?)
+    Ok(data_storage.get_diary(&start, &end).await?)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn add_tag_to_entry(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path(id): Path<Uuid>,
     Json(body): Json<PostDiaryTagDtoRequest>,
 ) -> HttpResult<StatusCode> {
-    service::add_tag(&config.service_addresses.data_storage_service, id, body).await?;
+    data_storage.add_tag(id, &body).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn remove_tag_from_entry(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path((id, tag_name)): Path<(Uuid, String)>,
 ) -> HttpResult<StatusCode> {
-    service::remove_tag(&config.service_addresses.data_storage_service, id, tag_name).await?;
+    data_storage.remove_tag(id, &tag_name).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub(crate) async fn search_entries_by_tag(
-    State(AppState { config }): State<AppState>,
+    State(data_storage): State<DataStorageServiceClient>,
     Path(tag_name): Path<String>,
 ) -> HttpResult<GetDiaryResponseDto> {
-    Ok(service::search_by_tag(&config.service_addresses.data_storage_service, tag_name).await?)
+    Ok(data_storage.search_by_tag(&tag_name).await?)
 }
