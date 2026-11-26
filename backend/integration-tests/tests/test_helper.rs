@@ -376,6 +376,7 @@ pub async fn scripting_login() -> String {
         .await
         .unwrap();
     assert!(response.status().is_success(), "Failed scripting login");
-    let user_token: String = response.text().await.unwrap();
-    user_token
+    let token: greenhouse_core::scripting_service_dto::token::TokenDto =
+        response.json().await.unwrap();
+    token.token
 }
