@@ -3,7 +3,7 @@ use axum::routing::get;
 use axum::{Router, middleware::from_extractor_with_state};
 use greenhouse_core::{
     auth::{AuthUser, AuthVerifier},
-    service_client::{DataStorageServiceClient, ScriptingServiceClient, http_client},
+    service_client::{DataStorageServiceClient, DeviceServiceClient, http_client},
 };
 use reqwest::{
     Method,
@@ -18,8 +18,8 @@ pub(crate) mod helper;
 
 #[derive(Clone, Deserialize)]
 pub struct ServiceAddresses {
-    #[serde(rename = "SCRIPTING_SERVICE")]
-    pub scripting_service: String,
+    #[serde(rename = "DEVICE_SERVICE")]
+    pub device_service: String,
     #[serde(rename = "DATA_STORAGE_SERVICE")]
     pub data_storage_service: String,
 }
@@ -55,9 +55,9 @@ impl AppState {
                 http.clone(),
                 &addresses.data_storage_service,
             ),
-            verifier: AuthVerifier::ScriptingService(ScriptingServiceClient::new(
+            verifier: AuthVerifier::DeviceKey(DeviceServiceClient::new(
                 http,
-                &addresses.scripting_service,
+                &addresses.device_service,
             )),
         }
     }

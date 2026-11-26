@@ -3,14 +3,12 @@ use crate::{
     database::device::Device,
     router::{
         error::HttpResult,
+        key::activate_with_new_key,
         prom_service::{
             get_batch_query_timeseries, get_device_query_timeseries,
             request_device_query_operations,
         },
-        service::{
-            request_device_activate, request_device_config, request_device_config_update,
-            request_device_status, request_device_token,
-        },
+        service::{request_device_config, request_device_config_update, request_device_status},
     },
 };
 use axum::{
@@ -20,18 +18,15 @@ use axum::{
     response::IntoResponse,
     routing::{delete, get, post, put},
 };
-use greenhouse_core::{
-    device_service_dto::{
-        batch_timeseries::{BatchTimeseriesRequestDto, BatchTimeseriesResponseDto},
-        endpoints::{ACTIVATE, CONFIG, STATUS},
-        get_device::{DeviceResponseDto, DevicesResponseDto},
-        get_timeseries::GetTimeseriesDto,
-        operations::OperationsDto,
-        post_device::PostDeviceDtoRequest,
-        put_device::PutDeviceDtoRequest,
-        query::PromQuery,
-    },
-    smart_device_dto::activation::ActivateRequestDto,
+use greenhouse_core::device_service_dto::{
+    batch_timeseries::{BatchTimeseriesRequestDto, BatchTimeseriesResponseDto},
+    endpoints::{ACTIVATE, CONFIG, STATUS},
+    get_device::{DeviceResponseDto, DevicesResponseDto},
+    get_timeseries::GetTimeseriesDto,
+    operations::OperationsDto,
+    post_device::PostDeviceDtoRequest,
+    put_device::PutDeviceDtoRequest,
+    query::PromQuery,
 };
 use uuid::Uuid;
 
@@ -88,15 +83,10 @@ pub(crate) async fn create_device(
     );
     device.flush(&pool).await?;
 
-    let _ = request_device_activate(
-        &devices,
-        &entry.address,
-        ActivateRequestDto {
-            url: config.scripting_api.clone(),
-            token: request_device_token(&config.scripting_service).await?.token,
-        },
-    )
-    .await;
+    // The device may not be online yet; it can be activated later.
+    if let Err(e) = activate_with_new_key(&config, &pool, &devices, &device).await {
+        tracing::warn!(device = %device.id, error = %e, "device not activated on creation");
+    }
 
     Ok(device.into())
 }
@@ -186,15 +176,7 @@ pub(crate) async fn activate_device(
     Path(id): Path<Uuid>,
 ) -> HttpResult<StatusCode> {
     let device = Device::find_by_id(id, &pool).await?;
-    let _ = request_device_activate(
-        &devices,
-        &device.address,
-        ActivateRequestDto {
-            url: config.scripting_api.clone(),
-            token: request_device_token(&config.scripting_service).await?.token,
-        },
-    )
-    .await?;
+    activate_with_new_key(&config, &pool, &devices, &device).await?;
     Ok(StatusCode::OK)
 }
 

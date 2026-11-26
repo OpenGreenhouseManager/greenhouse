@@ -1,5 +1,12 @@
+use std::sync::Mutex;
+
+use axum::{Json, Router, http::StatusCode, routing::post};
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
-use greenhouse_core::auth_service_dto::register_admin::RegisterAdminRequestDto;
+use greenhouse_core::{
+    auth_service_dto::register_admin::RegisterAdminRequestDto,
+    device_service_dto::{get_device::DeviceResponseDto, post_device::PostDeviceDtoRequest},
+    smart_device_dto::{self, activation::ActivateRequestDto},
+};
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::{self, Postgres};
 use testcontainers_modules::testcontainers::runners::AsyncRunner;
@@ -13,10 +20,9 @@ pub struct TestContext {
     auth_postgres_container: Option<ContainerAsync<Postgres>>,
     data_storage_postgres_container: Option<ContainerAsync<Postgres>>,
     device_postgres_container: Option<ContainerAsync<Postgres>>,
-    scripting_postgres_container: Option<ContainerAsync<Postgres>>,
     auth_service: Option<JoinHandle<Result<(), std::io::Error>>>,
     data_storage_service: Option<JoinHandle<Result<(), std::io::Error>>>,
-    scripting_service: Option<JoinHandle<Result<(), std::io::Error>>>,
+    fake_device: Option<JoinHandle<Result<(), std::io::Error>>>,
     device_service: Option<JoinHandle<Result<(), std::io::Error>>>,
     web_api: Option<JoinHandle<Result<(), std::io::Error>>>,
     scripting_api: Option<JoinHandle<Result<(), std::io::Error>>>,
@@ -28,10 +34,9 @@ impl TestContext {
             auth_postgres_container: None,
             data_storage_postgres_container: None,
             device_postgres_container: None,
-            scripting_postgres_container: None,
             auth_service: None,
             data_storage_service: None,
-            scripting_service: None,
+            fake_device: None,
             device_service: None,
             web_api: None,
             scripting_api: None,
@@ -55,17 +60,6 @@ impl TestContext {
         }
         let device_port = self
             .device_postgres_container
-            .as_ref()
-            .unwrap()
-            .get_host_port_ipv4(5432)
-            .await
-            .unwrap();
-
-        if self.scripting_postgres_container.is_none() {
-            self.scripting_postgres_container = Some(start_scripting_postgres().await);
-        }
-        let scripting_port = self
-            .scripting_postgres_container
             .as_ref()
             .unwrap()
             .get_host_port_ipv4(5432)
@@ -100,13 +94,8 @@ impl TestContext {
                 .await,
             );
         }
-        if self.scripting_service.is_none() {
-            self.scripting_service = Some(
-                start_scripting_service(format!(
-                    "postgres://postgres:postgres@localhost:{scripting_port}/scripting"
-                ))
-                .await,
-            );
+        if self.fake_device.is_none() {
+            self.fake_device = Some(start_fake_device().await);
         }
         if self.data_storage_service.is_none() {
             self.data_storage_service = Some(
@@ -115,9 +104,6 @@ impl TestContext {
                 ))
                 .await,
             );
-        }
-        if self.scripting_service.is_none() {
-            self.scripting_service = None;
         }
         if self.web_api.is_none() {
             self.web_api = Some(start_web_api().await);
@@ -148,6 +134,12 @@ impl TestContext {
         }
         if let Some(web_api) = &self.web_api {
             web_api.abort();
+        }
+        if let Some(scripting_api) = &self.scripting_api {
+            scripting_api.abort();
+        }
+        if let Some(fake_device) = &self.fake_device {
+            fake_device.abort();
         }
     }
 }
@@ -185,15 +177,6 @@ async fn start_device_postgres() -> ContainerAsync<Postgres> {
         .unwrap()
 }
 
-async fn start_scripting_postgres() -> ContainerAsync<Postgres> {
-    postgres::Postgres::default()
-        .with_db_name("scripting")
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap()
-}
-
 async fn start_auth_service(db_url: String) -> tokio::task::JoinHandle<Result<(), std::io::Error>> {
     let auth_service_config = auth_service::Config {
         database_url: db_url,
@@ -223,7 +206,6 @@ async fn start_device_service(
         database_url: db_url,
         service_port: 3003,
         sentry_url: String::new(),
-        scripting_service: String::from("http://localhost:3004"),
         scripting_api: String::from("http://localhost:3100"),
         environment: String::from("test"),
         prometheus_url: String::from("http://localhost:9090"),
@@ -269,30 +251,6 @@ async fn start_data_storage_service(
     tokio::spawn(async move { axum::serve(listener, data_storage_service_app).await })
 }
 
-async fn start_scripting_service(
-    db_url: String,
-) -> tokio::task::JoinHandle<Result<(), std::io::Error>> {
-    let scripting_service_config = scripting_service::Config {
-        database_url: db_url,
-        service_port: 3004,
-        sentry_url: String::new(),
-        scripting_api: String::from("http://localhost:3100"),
-        environment: String::from("test"),
-    };
-
-    let scripting_pool = scripting_service::Pool::builder()
-        .build(AsyncDieselConnectionManager::new(
-            scripting_service_config.database_url.clone(),
-        ))
-        .await
-        .unwrap();
-    let scripting_service_app =
-        scripting_service::app(scripting_service_config.clone(), scripting_pool.clone());
-
-    let url = format!("0.0.0.0:{}", scripting_service_config.service_port);
-    let listener = tokio::net::TcpListener::bind(url).await.unwrap();
-    tokio::spawn(async move { axum::serve(listener, scripting_service_app).await })
-}
 async fn start_web_api() -> tokio::task::JoinHandle<Result<(), std::io::Error>> {
     let web_api_config = web_api::Config {
         api_port: 3000,
@@ -316,7 +274,7 @@ async fn start_scripting_api() -> tokio::task::JoinHandle<Result<(), std::io::Er
         api_port: 3100,
         service_addresses: scripting_api::ServiceAddresses {
             data_storage_service: String::from("http://localhost:3002"),
-            scripting_service: String::from("http://localhost:3004"),
+            device_service: String::from("http://localhost:3003"),
         },
         sentry_url: String::new(),
         environment: String::from("test"),
@@ -367,16 +325,56 @@ pub async fn api_login() -> String {
     user_token.token
 }
 
-#[allow(dead_code)]
-pub async fn scripting_login() -> String {
-    let client = reqwest::Client::new();
-    let response = client
-        .post("http://localhost:3004/token")
+/// Address of the fake smart device started by [`TestContext`].
+pub const FAKE_DEVICE: &str = "http://localhost:3200";
+
+/// Keys the fake device received on activation, newest last.
+static ACTIVATION_KEYS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+/// A smart device that accepts every activation and remembers its key.
+async fn start_fake_device() -> tokio::task::JoinHandle<Result<(), std::io::Error>> {
+    async fn activate(Json(request): Json<ActivateRequestDto>) -> StatusCode {
+        ACTIVATION_KEYS.lock().unwrap().push(request.token);
+        StatusCode::OK
+    }
+
+    let app = Router::new().route(smart_device_dto::endpoints::ACTIVATE, post(activate));
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3200").await.unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await })
+}
+
+/// The key the fake device received last.
+pub fn last_activation_key() -> String {
+    ACTIVATION_KEYS
+        .lock()
+        .unwrap()
+        .last()
+        .cloned()
+        .expect("fake device was never activated")
+}
+
+/// Registers the fake device with `device_service` and returns its id.
+pub async fn create_fake_device() -> String {
+    let response = reqwest::Client::new()
+        .post("http://localhost:3003")
+        .json(&PostDeviceDtoRequest {
+            name: String::from("fake device"),
+            description: String::from("integration test device"),
+            address: FAKE_DEVICE.to_string(),
+            can_script: true,
+            scraping: false,
+        })
         .send()
         .await
         .unwrap();
-    assert!(response.status().is_success(), "Failed scripting login");
-    let token: greenhouse_core::scripting_service_dto::token::TokenDto =
-        response.json().await.unwrap();
-    token.token
+    assert!(response.status().is_success(), "Failed to create device");
+    let device: DeviceResponseDto = response.json().await.unwrap();
+    device.id
+}
+
+/// Registers a device and returns the scripting key it was activated with.
+#[allow(dead_code)]
+pub async fn scripting_login() -> String {
+    create_fake_device().await;
+    last_activation_key()
 }

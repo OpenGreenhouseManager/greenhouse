@@ -19,8 +19,6 @@ mod auth;
 mod data_storage;
 #[cfg(feature = "device_service_dto")]
 mod device;
-#[cfg(feature = "scripting_service_dto")]
-mod scripting;
 #[cfg(feature = "smart_device_dto")]
 mod smart_device;
 
@@ -30,8 +28,6 @@ pub use auth::AuthServiceClient;
 pub use data_storage::DataStorageServiceClient;
 #[cfg(feature = "device_service_dto")]
 pub use device::DeviceServiceClient;
-#[cfg(feature = "scripting_service_dto")]
-pub use scripting::ScriptingServiceClient;
 #[cfg(feature = "smart_device_dto")]
 pub use smart_device::SmartDeviceClient;
 

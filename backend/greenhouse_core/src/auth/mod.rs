@@ -22,12 +22,12 @@ use axum::{
 };
 use tower_cookies::{Cookie, Cookies};
 
-use crate::service_client::{AuthServiceClient, ClientError, ScriptingServiceClient};
+use crate::service_client::{AuthServiceClient, ClientError, DeviceServiceClient};
 
 /// Name of the cookie that carries the token.
 pub const AUTH_COOKIE: &str = "auth-token";
 
-/// Role carried by tokens verified by [`AuthVerifier::ScriptingService`].
+/// Role carried by tokens verified by [`AuthVerifier::DeviceKey`].
 pub const SCRIPT_ROLE: &str = "script";
 
 /// Who verifies tokens for an API.
@@ -35,8 +35,8 @@ pub const SCRIPT_ROLE: &str = "script";
 pub enum AuthVerifier {
     /// User JWTs, checked by `auth_service`.
     AuthService(AuthServiceClient),
-    /// Scripting tokens, checked by `scripting_service`.
-    ScriptingService(ScriptingServiceClient),
+    /// Device scripting keys, checked by `device_service`.
+    DeviceKey(DeviceServiceClient),
 }
 
 impl AuthVerifier {
@@ -44,8 +44,8 @@ impl AuthVerifier {
     pub async fn verify(&self, token: &str) -> Result<String, ClientError> {
         match self {
             AuthVerifier::AuthService(client) => Ok(client.check_token(token).await?.role),
-            AuthVerifier::ScriptingService(client) => {
-                client.check_token(token).await?;
+            AuthVerifier::DeviceKey(client) => {
+                client.check_key(token).await?;
                 Ok(SCRIPT_ROLE.to_string())
             }
         }

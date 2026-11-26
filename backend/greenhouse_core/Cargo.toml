@@ -15,18 +15,16 @@ default = [
     "data_storage_service_dto",
     "device_service_dto",
     "error_handling",
-    "scripting_service_dto",
 ]
 api_web_dto = []
 api_script_dto = []
-auth = ["service_client", "auth_service_dto", "scripting_service_dto", "dep:tower-cookies"]
+auth = ["service_client", "auth_service_dto", "device_service_dto", "dep:tower-cookies"]
 auth_service_dto = []
 smart_device_dto = []
 smart_device_interface = ["smart_device_dto", "dep:axum", "dep:tracing", "dep:reqwest"]
 data_storage_service_dto = []
 device_service_dto = []
 error_handling = ["dep:axum", "dep:tracing"]
-scripting_service_dto = []
 service_client = ["error_handling", "dep:reqwest", "dep:urlencoding"]
 ts = ["dep:ts-rs"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

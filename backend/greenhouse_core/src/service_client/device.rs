@@ -5,6 +5,7 @@ use crate::device_service_dto::{
     endpoints,
     get_device::{DeviceResponseDto, DevicesResponseDto},
     get_timeseries::GetTimeseriesDto,
+    key::DeviceKeyDto,
     operations::OperationsDto,
     post_device::PostDeviceDtoRequest,
     put_device::PutDeviceDtoRequest,
@@ -113,5 +114,16 @@ impl DeviceServiceClient {
 
     pub async fn get_device_operations(&self, id: Uuid) -> ClientResult<OperationsDto> {
         self.0.get(&format!("/{id}/options")).send_json().await
+    }
+
+    /// Succeeds when `key` is a known device scripting key.
+    pub async fn check_key(&self, key: &str) -> ClientResult<()> {
+        self.0
+            .post(endpoints::CHECK_KEY)
+            .json(&DeviceKeyDto {
+                key: key.to_string(),
+            })
+            .send_empty()
+            .await
     }
 }

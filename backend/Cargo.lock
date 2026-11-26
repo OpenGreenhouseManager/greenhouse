@@ -1938,7 +1938,6 @@ dependencies = [
  "once_cell",
  "reqwest 0.13.5",
  "scripting_api",
- "scripting_service",
  "serde",
  "serde_json",
  "testcontainers",
@@ -3340,30 +3339,6 @@ dependencies = [
  "serde_yaml",
  "tokio",
  "tower-cookies",
- "tower-http 0.7.1",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
-name = "scripting_service"
-version = "0.1.0"
-dependencies = [
- "axum",
- "bb8",
- "chrono",
- "derive_more",
- "diesel",
- "diesel-async",
- "diesel_migrations",
- "greenhouse_core",
- "reqwest 0.13.5",
- "sentry",
- "serde",
- "serde_json",
- "serde_yaml",
- "tokio",
  "tower-http 0.7.1",
  "tracing",
  "tracing-subscriber",

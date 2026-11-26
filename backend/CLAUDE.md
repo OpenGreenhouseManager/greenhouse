@@ -33,7 +33,6 @@ greenhouse_backend/
 │       ├── auth_service_dto/
 │       ├── data_storage_service_dto/
 │       ├── device_service_dto/
-│       ├── scripting_service_dto/
 │       ├── smart_device_dto/
 │       ├── smart_device_interface/
 │       └── http_error.rs
@@ -41,8 +40,7 @@ greenhouse_backend/
 ├── services/
 │   ├── auth_service/       # User auth, JWT issuance, bcrypt passwords
 │   ├── data_storage_service/ # Time-series / sensor data persistence
-│   ├── device_service/     # Smart-device registration and management
-│   └── scripting_service/  # Automation scripting engine
+│   └── device_service/     # Smart-device registration, activation and scripting keys
 ├── api/
 │   ├── web/                # web_api — REST gateway used by the Angular frontend
 │   └── script/             # scripting_api — API for the scripting subsystem
@@ -136,7 +134,6 @@ Triggers on every push and pull request. Runs in a matrix:
   - `auth_service`
   - `data_storage`
   - `device_service`
-  - `scripting_service`
   - `web_api`
   - `script_api`
 
