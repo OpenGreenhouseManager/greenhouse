@@ -28,6 +28,15 @@ async fn test_check_scripting_key() {
     let status = check_token(&client, &uuid::Uuid::new_v4().to_string()).await;
     assert_eq!(status, reqwest::StatusCode::UNAUTHORIZED);
 
+    // ... and the scripting API turns it away
+    let response = client
+        .post("http://localhost:3100/alert")
+        .header("Cookie", format!("auth-token={}", uuid::Uuid::new_v4()))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::FORBIDDEN);
+
     // Generated key is accepted
     let response = client
         .post(format!("{SCRIPTING_SERVICE}/token"))
