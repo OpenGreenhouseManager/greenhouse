@@ -9,6 +9,7 @@ pub(crate) type HttpResult<T> = core::result::Result<T, HttpErrorResponse<Error>
 pub(crate) enum Error {
     DatabaseConnection,
     Creation,
+    Database,
     NotFound,
 }
 
@@ -26,6 +27,7 @@ impl HttpErrorMapping for Error {
         match self {
             Error::DatabaseConnection => StatusCode::INTERNAL_SERVER_ERROR,
             Error::Creation => StatusCode::INTERNAL_SERVER_ERROR,
+            Error::Database => StatusCode::INTERNAL_SERVER_ERROR,
             Error::NotFound => StatusCode::UNAUTHORIZED,
         }
     }
@@ -34,6 +36,7 @@ impl HttpErrorMapping for Error {
         match self {
             Error::DatabaseConnection => String::from("Database connection error"),
             Error::Creation => String::from("Creation error"),
+            Error::Database => String::from("Database error"),
             Error::NotFound => String::from("Token not authorized"),
         }
     }
