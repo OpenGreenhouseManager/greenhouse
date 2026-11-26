@@ -59,14 +59,17 @@ pub(crate) async fn check_scripting_key(
         Error::DatabaseConnection
     })?;
 
-    let _ = scripting_device::table
+    scripting_device::table
         .filter(scripting_device::scriptig_key.eq(check_token_dto_request.token))
         .first::<ScriptingDevice>(&mut conn)
         .await
-        .map_err(|e| {
-            sentry::capture_error(&e);
-            Error::NotFound
-        });
+        .map_err(|e| match e {
+            diesel::result::Error::NotFound => Error::NotFound,
+            e => {
+                sentry::capture_error(&e);
+                Error::Database
+            }
+        })?;
 
     Ok(StatusCode::OK)
 }
