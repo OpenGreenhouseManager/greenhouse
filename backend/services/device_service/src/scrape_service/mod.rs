@@ -1,7 +1,10 @@
 mod error;
 
 use error::{Error, Result};
-use greenhouse_core::smart_device_dto::{Type, read::ReadResponseDto};
+use greenhouse_core::{
+    service_client::{ClientError, SmartDeviceClient},
+    smart_device_dto::Type,
+};
 use metrics::gauge;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
@@ -46,6 +49,7 @@ async fn scrape_devices(state: AppState) -> Result<()> {
     for scrape_devices in devices {
         tracing::debug!("Scraping device: {}", scrape_devices.address);
         handles.push(read_device(
+            &state.devices,
             scrape_devices.id,
             scrape_devices.address.clone(),
         ));
@@ -65,22 +69,18 @@ async fn scrape_devices(state: AppState) -> Result<()> {
     Ok(())
 }
 
-async fn read_device(id: Uuid, address: String) -> Result<()> {
-    let client = reqwest::Client::new();
-
-    let response: ReadResponseDto = client
-        .get(format!("{address}/read"))
-        .timeout(Duration::from_secs(4))
-        .send()
+async fn read_device(devices: &SmartDeviceClient, id: Uuid, address: String) -> Result<()> {
+    let response = devices
+        .read(&address, Duration::from_secs(4))
         .await
-        .map_err(|e| {
-            tracing::error!("Error scraping device: {:?}", e);
+        .map_err(|e| match e {
+            ClientError::Decode(_) => Error::Json,
+            e => {
+                tracing::error!("Error scraping device: {:?}", e);
 
-            Error::Request
-        })?
-        .json()
-        .await
-        .map_err(|_| Error::Json)?;
+                Error::Request
+            }
+        })?;
 
     generate_metric(format!("scrape_service_duration_{id}"), &response.data);
 
