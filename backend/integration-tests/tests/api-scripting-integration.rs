@@ -1,15 +1,16 @@
-use greenhouse_core::scripting_service_dto::token::TokenDto;
+use greenhouse_core::device_service_dto::key::DeviceKeyDto;
+use reqwest::StatusCode;
 use test_helper::TestContext;
 #[allow(dead_code)]
 mod test_helper;
 
-const SCRIPTING_SERVICE: &str = "http://localhost:3004";
+const DEVICE_SERVICE: &str = "http://localhost:3003";
 
-async fn check_token(client: &reqwest::Client, token: &str) -> reqwest::StatusCode {
+async fn check_key(client: &reqwest::Client, key: &str) -> StatusCode {
     client
-        .post(format!("{SCRIPTING_SERVICE}/token/check"))
-        .json(&TokenDto {
-            token: token.to_string(),
+        .post(format!("{DEVICE_SERVICE}/key/check"))
+        .json(&DeviceKeyDto {
+            key: key.to_string(),
         })
         .send()
         .await
@@ -18,15 +19,15 @@ async fn check_token(client: &reqwest::Client, token: &str) -> reqwest::StatusCo
 }
 
 #[tokio::test]
-async fn test_check_scripting_key() {
+async fn test_device_scripting_key_lifecycle() {
     let mut context = TestContext::new();
     context.start_all_services().await;
 
     let client = reqwest::Client::new();
 
     // Unknown key is rejected
-    let status = check_token(&client, &uuid::Uuid::new_v4().to_string()).await;
-    assert_eq!(status, reqwest::StatusCode::UNAUTHORIZED);
+    let status = check_key(&client, &uuid::Uuid::new_v4().to_string()).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
 
     // ... and the scripting API turns it away
     let response = client
@@ -35,37 +36,38 @@ async fn test_check_scripting_key() {
         .send()
         .await
         .unwrap();
-    assert_eq!(response.status(), reqwest::StatusCode::FORBIDDEN);
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 
-    // Generated key is accepted
+    // Creating a device activates it with a valid key
+    let device_id = test_helper::create_fake_device().await;
+    let first_key = test_helper::last_activation_key();
+    assert_eq!(check_key(&client, &first_key).await, StatusCode::OK);
+
+    // Activating again hands out a new key and revokes the old one
     let response = client
-        .post(format!("{SCRIPTING_SERVICE}/token"))
+        .put(format!("{DEVICE_SERVICE}/{device_id}/activate"))
         .send()
         .await
         .unwrap();
-    assert!(
-        response.status().is_success(),
-        "Failed to generate scripting key"
-    );
-    let TokenDto { token } = response.json().await.unwrap();
-    assert_eq!(check_token(&client, &token).await, reqwest::StatusCode::OK);
-
-    // Deleted key is rejected again
-    let response = client
-        .delete(format!("{SCRIPTING_SERVICE}/token"))
-        .json(&TokenDto {
-            token: token.clone(),
-        })
-        .send()
-        .await
-        .unwrap();
-    assert!(
-        response.status().is_success(),
-        "Failed to delete scripting key"
-    );
+    assert!(response.status().is_success(), "Failed to activate device");
+    let second_key = test_helper::last_activation_key();
+    assert_ne!(first_key, second_key);
+    assert_eq!(check_key(&client, &second_key).await, StatusCode::OK);
     assert_eq!(
-        check_token(&client, &token).await,
-        reqwest::StatusCode::UNAUTHORIZED
+        check_key(&client, &first_key).await,
+        StatusCode::UNAUTHORIZED
+    );
+
+    // Deleting the device revokes its key
+    let response = client
+        .delete(format!("{DEVICE_SERVICE}/{device_id}"))
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_success(), "Failed to delete device");
+    assert_eq!(
+        check_key(&client, &second_key).await,
+        StatusCode::UNAUTHORIZED
     );
 
     context.stop().await;

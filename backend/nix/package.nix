@@ -1,6 +1,5 @@
-# The six service binaries (the workspace's default-members): web_api,
-# scripting_api, auth_service, data_storage_service, device_service,
-# scripting_service.
+# The five service binaries (the workspace's default-members): web_api,
+# scripting_api, auth_service, data_storage_service, device_service.
 {
   rustPlatform,
   pkg-config,

@@ -24,8 +24,6 @@ pub struct Config {
     pub service_port: u32,
     #[serde(rename = "SCRIPTING_API")]
     pub scripting_api: String,
-    #[serde(rename = "SCRIPTING_SERVICE")]
-    pub scripting_service: String,
     #[serde(rename = "DATABASE_URL")]
     pub database_url: String,
     #[serde(rename = "PROMETHEUS_URL")]
@@ -58,6 +56,7 @@ pub fn app(config: Config, pool: Pool) -> Router {
     Router::new()
         .route("/metrics", get(move || ready(recorder_handle.render())))
         .merge(router::device_router::routes(state.clone()))
+        .merge(router::key::routes(state.clone()))
         .route("/health", get(|| async {}))
         .layer(TraceLayer::new_for_http())
 }
@@ -69,6 +68,7 @@ pub fn test_app(config: Config, pool: Pool) -> Router {
 
     Router::new()
         .merge(router::device_router::routes(state.clone()))
+        .merge(router::key::routes(state.clone()))
         .layer(TraceLayer::new_for_http())
 }
 
