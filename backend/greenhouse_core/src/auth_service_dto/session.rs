@@ -21,3 +21,10 @@ pub struct SessionDto {
 pub struct RefreshRequestDto {
     pub refresh_token: String,
 }
+
+/// Ends session `sid` of `user_name` if it is still the current one.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LogoutRequestDto {
+    pub user_name: String,
+    pub sid: String,
+}

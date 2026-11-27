@@ -3,7 +3,7 @@ use crate::auth_service_dto::{
     generate_one_time_token::{GenerateOneTimeTokenRequestDto, GenerateOneTimeTokenResponseDto},
     login::LoginRequestDto,
     register::RegisterRequestDto,
-    session::{RefreshRequestDto, SessionDto},
+    session::{LogoutRequestDto, RefreshRequestDto, SessionDto},
     user_preferences::{
         GetPreferencesRequestDto, SetPreferencesRequestDto, UserPreferencesRequestDto,
         UserPreferencesResponseDto,
@@ -50,6 +50,18 @@ impl AuthServiceClient {
                 refresh_token: refresh_token.to_string(),
             })
             .send_json()
+            .await
+    }
+
+    /// Ends session `sid` of `user_name`, so its refresh token stops working.
+    pub async fn logout(&self, user_name: &str, sid: &str) -> ClientResult<()> {
+        self.0
+            .post(endpoints::LOGOUT)
+            .json(&LogoutRequestDto {
+                user_name: user_name.to_string(),
+                sid: sid.to_string(),
+            })
+            .send_empty()
             .await
     }
 

@@ -44,6 +44,8 @@ pub const SCRIPT_ROLE: &str = "script";
 pub struct JwtVerifier {
     key: Arc<DecodingKey>,
     validation: Arc<Validation>,
+    /// Same checks without `exp`, for logout.
+    validation_any_age: Arc<Validation>,
 }
 
 impl fmt::Debug for JwtVerifier {
@@ -60,9 +62,13 @@ impl JwtVerifier {
         validation.set_audience(&[AUDIENCE]);
         validation.set_required_spec_claims(&["exp", "iss", "aud"]);
         validation.leeway = 30;
+        let mut validation_any_age = validation.clone();
+        validation_any_age.validate_exp = false;
+        validation_any_age.set_required_spec_claims(&["iss", "aud"]);
         Ok(Self {
             key: Arc::new(DecodingKey::from_ed_pem(pem)?),
             validation: Arc::new(validation),
+            validation_any_age: Arc::new(validation_any_age),
         })
     }
 
@@ -83,6 +89,14 @@ impl JwtVerifier {
                 ErrorKind::ExpiredSignature => VerifyError::Expired,
                 _ => VerifyError::Invalid,
             })
+    }
+
+    /// Like [`Self::verify`] but accepts an expired token. Only for ending
+    /// the session the token names, never for granting access.
+    pub fn verify_ignoring_expiry(&self, token: &str) -> Result<UserToken, VerifyError> {
+        jsonwebtoken::decode::<UserToken>(token, &self.key, &self.validation_any_age)
+            .map(|data| data.claims)
+            .map_err(|_| VerifyError::Invalid)
     }
 }
 

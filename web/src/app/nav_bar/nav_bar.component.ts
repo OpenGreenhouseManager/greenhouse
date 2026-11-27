@@ -16,13 +16,14 @@ export class NavBarComponent {
   private http = inject(HttpClient);
 
   signOut() {
-    const done = () => {
-      this.cookieService.delete('auth-token');
-      this.router.navigate(['/login']);
-    };
-    // Clears the HTTP-only refresh cookie, which only the server can do.
-    this.http
-      .post(logout, null, { withCredentials: true })
-      .subscribe({ complete: done, error: done });
+    // The server revokes the session and clears the HTTP-only refresh
+    // cookie. Local state is only dropped once that succeeded, so a failed
+    // sign-out can be retried instead of leaving the session alive.
+    this.http.post(logout, null, { withCredentials: true }).subscribe({
+      complete: () => {
+        this.cookieService.delete('auth-token');
+        this.router.navigate(['/login']);
+      },
+    });
   }
 }

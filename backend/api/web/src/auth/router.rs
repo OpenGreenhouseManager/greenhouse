@@ -7,7 +7,7 @@ use axum::{
     routing::{get, post},
 };
 use greenhouse_core::{
-    auth::{AuthUser, REFRESH_COOKIE},
+    auth::{AuthUser, JwtVerifier, REFRESH_COOKIE},
     auth_service_dto::{
         login::{LoginRequestDto, LoginResponseDto},
         register::RegisterRequestDto,
@@ -81,9 +81,14 @@ fn start_session(cookies: &Cookies, session: SessionDto) -> Json<LoginResponseDt
     })
 }
 
+/// Expires both cookies. `Cookies::remove` only emits a removal for cookies
+/// the request carried, and the refresh cookie is not sent outside
+/// `/api/refresh`, so the removals are added explicitly.
 fn end_session(cookies: &Cookies) {
-    cookies.remove(auth_cookie(String::new()));
-    cookies.remove(refresh_cookie(String::new()));
+    for mut cookie in [auth_cookie(String::new()), refresh_cookie(String::new())] {
+        cookie.make_removal();
+        cookies.add(cookie);
+    }
 }
 
 #[axum::debug_handler(state = AppState)]
@@ -148,10 +153,26 @@ pub(crate) async fn api_refresh_handler(
     }
 }
 
+/// Revokes the session named by the access token (expired or not) and
+/// clears both cookies, so neither this browser nor a refresh that was still
+/// in flight can continue it.
 #[axum::debug_handler(state = AppState)]
-pub(crate) async fn api_logout_handler(cookies: Cookies) -> StatusCode {
+pub(crate) async fn api_logout_handler(
+    State(auth): State<AuthServiceClient>,
+    State(jwt): State<JwtVerifier>,
+    cookies: Cookies,
+) -> HttpResult<StatusCode> {
+    let claims = cookies
+        .get(AUTH_TOKEN)
+        .and_then(|c| jwt.verify_ignoring_expiry(c.value()).ok());
+    if let Some(claims) = claims
+        && let Err(e) = auth.logout(&claims.user_name, &claims.sid).await
+    {
+        tracing::error!("Error during logout: {:?}", e);
+        return Err(e.into());
+    }
     end_session(&cookies);
-    StatusCode::OK
+    Ok(StatusCode::OK)
 }
 
 #[axum::debug_handler(state = AppState)]

@@ -9,6 +9,7 @@ use crate::{
     token::one_time_token::check_one_time_token, token::session::hash_refresh_token,
     token::user_token::TokenSigner,
 };
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{Json, extract::State, response::Response};
 use database::schema::users::{id, login_session, session_expires_at, session_id, username};
@@ -24,7 +25,7 @@ use greenhouse_core::auth_service_dto::{
     login::LoginRequestDto,
     register::RegisterRequestDto,
     register_admin::RegisterAdminRequestDto,
-    session::{RefreshRequestDto, SessionDto},
+    session::{LogoutRequestDto, RefreshRequestDto, SessionDto},
 };
 
 #[axum::debug_handler]
@@ -231,6 +232,38 @@ pub(crate) async fn refresh(
         refresh_token: request.refresh_token,
         refresh_expires_at: expires_at.timestamp(),
     }))
+}
+
+/// Ends a session so its refresh token stops working. Does nothing if a
+/// newer login already replaced it.
+#[axum::debug_handler]
+pub(crate) async fn logout(
+    State(AppState { pool, .. }): State<AppState>,
+    Json(request): Json<LogoutRequestDto>,
+) -> HttpResult<StatusCode> {
+    let Ok(sid) = uuid::Uuid::parse_str(&request.sid) else {
+        return Ok(StatusCode::OK);
+    };
+    let mut conn = pool.get().await.map_err(|e| {
+        sentry::capture_error(&e);
+        Error::DatabaseConnection
+    })?;
+
+    diesel::update(users)
+        .filter(username.eq(&request.user_name))
+        .filter(session_id.eq(sid))
+        .set((
+            login_session.eq(""),
+            session_id.eq(None::<uuid::Uuid>),
+            session_expires_at.eq(None::<chrono::DateTime<chrono::Utc>>),
+        ))
+        .execute(&mut conn)
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+            Error::DatabaseConnection
+        })?;
+    Ok(StatusCode::OK)
 }
 
 #[axum::debug_handler]

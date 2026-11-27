@@ -1,5 +1,5 @@
 use crate::router::auth_router::{
-    generate_one_time_token, get_preferences, login, refresh, register, register_admin,
+    generate_one_time_token, get_preferences, login, logout, refresh, register, register_admin,
     register_guest, set_preferences,
 };
 use crate::token::user_token::TokenSigner;
@@ -89,6 +89,7 @@ pub fn app(config: Config, pool: Pool) -> Router {
         .route(endpoints::REGISTER, post(register))
         .route(endpoints::LOGIN, post(login))
         .route(endpoints::REFRESH, post(refresh))
+        .route(endpoints::LOGOUT, post(logout))
         .route(endpoints::ADMIN_REGISTER, post(register_admin))
         .route(endpoints::GUEST_REGISTER, post(register_guest))
         .route(

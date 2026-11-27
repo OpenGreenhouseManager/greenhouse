@@ -316,6 +316,43 @@ async fn new_login_ends_old_session_at_refresh() {
 }
 
 #[tokio::test]
+async fn logout_revokes_session_and_expires_cookies() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    test_helper::register_admin().await;
+    let (access, refresh_token) = test_helper::api_login_session().await;
+
+    // Only the access cookie is sent: the refresh cookie is scoped to
+    // /api/refresh.
+    let response = reqwest::Client::new()
+        .post("http://localhost:3000/api/logout")
+        .header("Cookie", format!("auth-token={access}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    let removals: Vec<String> = response
+        .headers()
+        .get_all(reqwest::header::SET_COOKIE)
+        .iter()
+        .map(|v| v.to_str().unwrap().to_string())
+        .collect();
+    assert!(
+        removals
+            .iter()
+            .any(|c| c.starts_with("refresh-token=;") && c.contains("Path=/api/refresh"))
+    );
+    assert!(removals.iter().any(|c| c.starts_with("auth-token=;")));
+
+    assert_eq!(
+        refresh(Some(&refresh_token)).await.status(),
+        reqwest::StatusCode::FORBIDDEN
+    );
+
+    context.stop().await;
+}
+
+#[tokio::test]
 async fn refresh_without_or_with_unknown_cookie_is_forbidden() {
     let mut context = TestContext::new();
     context.start_all_services().await;
