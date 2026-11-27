@@ -110,3 +110,18 @@ check-ts: gen-ts
         echo "::error::TypeScript DTOs are out of date. Run 'just backend gen-ts' and commit the result."
         exit 1
     fi
+
+# Create the Ed25519 key pair for user access tokens (local dev). auth_service
+# signs with the private key, web_api verifies with the public key.
+gen-jwt-key:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    private=services/auth_service/config/jwt_private.pem
+    public=api/web/config/jwt_public.pem
+    if [[ -e "$private" ]]; then
+        echo "$private already exists; delete it first to rotate"
+        exit 1
+    fi
+    openssl genpkey -algorithm ed25519 -out "$private"
+    openssl pkey -in "$private" -pubout -out "$public"
+    echo "wrote $private and $public"

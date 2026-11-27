@@ -160,6 +160,9 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 ### Auth and service calls in the APIs
 
 - Authenticate with `greenhouse_core::auth::AuthUser` (router-wide via `from_extractor_with_state` / `from_fn`, or as a handler argument; it is verified once per request). Use `RequireRole<Admin>` for role checks.
+- User access tokens are Ed25519 JWTs that live 10 minutes. auth_service signs them (`JWT_PRIVATE_KEY_PATH`) and web_api verifies them locally with `AuthVerifier::Jwt` (`JWT_PUBLIC_KEY_PATH`), so normal requests never call auth_service. Create a local key pair with `just backend gen-jwt-key`.
+- Sessions: login stores a refresh session on the user (`login_session` holds the SHA-256 of the refresh token). web_api keeps the refresh token in an HTTP-only `refresh-token` cookie scoped to `/api/refresh`. An expired access token gets a 401; the frontend then calls `POST /api/refresh` and retries. A refresh that auth_service rejects (expired, or replaced by a newer login) gets a 403, which logs the frontend out. A replaced session therefore keeps working for at most one access-token lifetime.
+- Services that need the user get the `user_name` from the verified token through web_api (for example the preferences endpoints), never a token to decode themselves.
 - Call internal services through the typed clients in `greenhouse_core::service_client` held in `AppState`; never build a `reqwest::Client` per request. Add a method to the typed client when a new endpoint is needed.
 
 ### Database migrations
@@ -186,6 +189,8 @@ Tag the commit with `v*` (e.g. `v1.2.3`) to trigger Docker image publication. Se
 | `RUST_LOG` | All services | Log filter (e.g. `auth_service=debug,info`) |
 | `CONFIG_PATH` | All services | Path to the service YAML/JSON config file |
 | `DATABASE_URL` | Services with Diesel | PostgreSQL connection string (also used by diesel CLI) |
+
+New config keys (YAML): `JWT_PRIVATE_KEY_PATH` and `JWT_KEY_ID` in auth_service (default `config/jwt_private.pem`, `1`), `JWT_PUBLIC_KEY_PATH` in web_api (default `config/jwt_public.pem`). `JWT_SECRET` is now only used for one-time registration tokens.
 
 ## Docker Compose (Local Dev)
 

@@ -6,3 +6,5 @@
 /greenhouse_esp32/Cargo.lock
 logs
 .direnv
+# JWT keys from `just gen-jwt-key`
+**/config/*.pem

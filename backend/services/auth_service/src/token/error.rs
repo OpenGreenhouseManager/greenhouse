@@ -4,9 +4,8 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug, Serialize, PartialEq)]
 pub(crate) enum Error {
-    InvalidTime,
     JwtEncode,
-    JwtDecode,
+    KeyLoad,
     RegisterToken,
 }
 

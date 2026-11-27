@@ -24,117 +24,176 @@ pub(crate) mod one_time_token {
 
 pub(crate) mod user_token {
     pub(crate) use super::error::{Error, Result};
+    use std::{path::Path, sync::Arc};
+
     use chrono::Utc;
-    use greenhouse_core::auth_service_dto::user_token::UserToken;
-    use jsonwebtoken::{EncodingKey, Header};
-    static THREE_HOUR: i64 = 60 * 60 * 3;
+    use greenhouse_core::auth_service_dto::user_token::{
+        ACCESS_TOKEN_TTL_SECS, AUDIENCE, ISSUER, UserToken,
+    };
+    use jsonwebtoken::{Algorithm, EncodingKey, Header};
 
-    pub(crate) fn generate_token(user_name: &str, role: &str, secret: &str) -> Result<String> {
-        let now = Utc::now().timestamp_nanos_opt().ok_or(Error::InvalidTime)? / 1_000_000_000;
-        let payload = UserToken {
-            iat: now,
-            exp: now + THREE_HOUR,
-            user_name: String::from(user_name),
-            role: String::from(role),
-        };
-
-        jsonwebtoken::encode(
-            &Header::default(),
-            &payload,
-            &EncodingKey::from_secret(secret.as_bytes()),
-        )
-        .map_err(|e| {
-            sentry::configure_scope(|scope| {
-                scope.set_user(Some(sentry::User {
-                    username: Some(String::from(user_name)),
-                    ..Default::default()
-                }));
-                let mut map = std::collections::BTreeMap::new();
-                map.insert(String::from("username"), user_name.into());
-
-                scope.set_context("user_long", sentry::protocol::Context::Other(map));
-            });
-            sentry::capture_error(&e);
-            Error::JwtEncode
-        })
+    /// Signs user access tokens with auth_service's Ed25519 private key.
+    #[derive(Clone)]
+    pub(crate) struct TokenSigner {
+        key: Arc<EncodingKey>,
+        kid: String,
     }
 
-    pub(crate) fn get_claims(token: &str, secret: &str) -> Result<UserToken> {
-        Ok(jsonwebtoken::decode::<UserToken>(
-            token,
-            &jsonwebtoken::DecodingKey::from_secret(secret.as_bytes()),
-            &jsonwebtoken::Validation::default(),
-        )
-        .map_err(|e| {
-            sentry::configure_scope(|scope| {
-                let mut map = std::collections::BTreeMap::new();
-                map.insert(String::from("token"), token.into());
+    impl TokenSigner {
+        /// Builds a signer from a PEM encoded Ed25519 private key (PKCS#8).
+        pub(crate) fn from_pem(pem: &[u8], kid: &str) -> Result<Self> {
+            Ok(Self {
+                key: Arc::new(EncodingKey::from_ed_pem(pem).map_err(|_| Error::KeyLoad)?),
+                kid: kid.to_string(),
+            })
+        }
 
-                scope.set_context("token", sentry::protocol::Context::Other(map));
-            });
-            sentry::capture_error(&e);
-            Error::JwtDecode
-        })?
-        .claims)
+        pub(crate) fn from_file(path: impl AsRef<Path>, kid: &str) -> Result<Self> {
+            let pem = std::fs::read(path).map_err(|_| Error::KeyLoad)?;
+            Self::from_pem(&pem, kid)
+        }
+
+        /// Issues a short-lived access token for session `sid`.
+        pub(crate) fn issue(&self, user_name: &str, role: &str, sid: &str) -> Result<String> {
+            let now = Utc::now().timestamp();
+            let payload = UserToken {
+                iat: now,
+                exp: now + ACCESS_TOKEN_TTL_SECS,
+                user_name: String::from(user_name),
+                role: String::from(role),
+                sid: String::from(sid),
+                iss: String::from(ISSUER),
+                aud: String::from(AUDIENCE),
+            };
+
+            let mut header = Header::new(Algorithm::EdDSA);
+            header.kid = Some(self.kid.clone());
+
+            jsonwebtoken::encode(&header, &payload, &self.key).map_err(|e| {
+                sentry::configure_scope(|scope| {
+                    scope.set_user(Some(sentry::User {
+                        username: Some(String::from(user_name)),
+                        ..Default::default()
+                    }));
+                });
+                sentry::capture_error(&e);
+                Error::JwtEncode
+            })
+        }
+    }
+}
+
+pub(crate) mod session {
+    use sha2::{Digest, Sha256};
+    use uuid::Uuid;
+
+    /// A new random refresh token (244 bits of entropy).
+    pub(crate) fn new_refresh_token() -> String {
+        format!("{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple())
+    }
+
+    /// What is stored for a refresh token, so a database leak does not
+    /// hand out live sessions.
+    pub(crate) fn hash_refresh_token(token: &str) -> String {
+        Sha256::digest(token.as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use greenhouse_core::auth_service_dto::user_token::UserToken;
+    use greenhouse_core::{
+        auth::{JwtVerifier, VerifyError},
+        auth_service_dto::user_token::ACCESS_TOKEN_TTL_SECS,
+    };
 
     use super::*;
     const SECRET: &str = "XOJ~uQ7&AlPVs?1tm~4bD5nU$~E$iI702st]l|im:p8uTTj+dZX,R_QFvx4`*{r";
-    const EXPIRED_TOKEN: &str = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3MTk4NTQwANDYsImV4cCI6MTcxOTg2NDg0NiwidXNlcl9uYW1lIjoidGVzdFVzZXIxIiwicm9sZSI6InRlc3QifQ.mEg0pe-AxO3Cn3JnaXDenuN-ZR2BmVS310T_zi6z_M8";
-    static THREE_HOUR: i64 = 60 * 60 * 3;
+    const PRIVATE_KEY: &[u8] = include_bytes!("../../../../test-fixtures/jwt/test_jwt_private.pem");
+    const OTHER_PRIVATE_KEY: &[u8] =
+        include_bytes!("../../../../test-fixtures/jwt/test_jwt_other_private.pem");
+    const PUBLIC_KEY: &[u8] = include_bytes!("../../../../test-fixtures/jwt/test_jwt_public.pem");
 
-    #[test]
-    fn create_token() {
-        let token = user_token::generate_token("testUser1", "test", SECRET).unwrap();
+    fn signer() -> user_token::TokenSigner {
+        user_token::TokenSigner::from_pem(PRIVATE_KEY, "test").unwrap()
+    }
 
-        let token = jsonwebtoken::decode::<UserToken>(
-            &token,
-            &jsonwebtoken::DecodingKey::from_secret(SECRET.as_bytes()),
-            &jsonwebtoken::Validation::default(),
-        )
-        .unwrap();
-        assert_eq!(token.claims.user_name, "testUser1");
-        assert_eq!(token.claims.role, "test");
-        assert_eq!(token.claims.exp - token.claims.iat, THREE_HOUR);
+    fn verifier() -> JwtVerifier {
+        JwtVerifier::from_public_key_pem(PUBLIC_KEY).unwrap()
     }
 
     #[test]
-    fn verify_token() {
-        let token = user_token::generate_token("testUser1", "test", SECRET).unwrap();
-        user_token::get_claims(&token, SECRET).unwrap();
-    }
-
-    #[test]
-    fn verify_token_different_secret() {
-        let token = user_token::generate_token("testUser1", "test", SECRET).unwrap();
-
-        assert_eq!(
-            user_token::get_claims(&token, "broken").unwrap_err(),
-            (Error::JwtDecode)
-        );
-    }
-
-    #[test]
-    fn expired_get_claims() {
-        assert_eq!(
-            user_token::get_claims(EXPIRED_TOKEN, SECRET).unwrap_err(),
-            (Error::JwtDecode)
-        );
-    }
-
-    #[test]
-    fn get_claims() {
-        let token = user_token::generate_token("testUser1", "test", SECRET).unwrap();
-
-        let claims = user_token::get_claims(&token, SECRET).unwrap();
-
+    fn issued_token_verifies_with_public_key() {
+        let token = signer().issue("testUser1", "test", "sid-1").unwrap();
+        let claims = verifier().verify(&token).unwrap();
         assert_eq!(claims.user_name, "testUser1");
         assert_eq!(claims.role, "test");
+        assert_eq!(claims.sid, "sid-1");
+        assert_eq!(claims.exp - claims.iat, ACCESS_TOKEN_TTL_SECS);
+    }
+
+    #[test]
+    fn issued_token_carries_kid() {
+        let token = signer().issue("testUser1", "test", "sid-1").unwrap();
+        let header = jsonwebtoken::decode_header(&token).unwrap();
+        assert_eq!(header.kid.as_deref(), Some("test"));
+        assert_eq!(header.alg, jsonwebtoken::Algorithm::EdDSA);
+    }
+
+    #[test]
+    fn token_from_other_key_is_rejected() {
+        let other = user_token::TokenSigner::from_pem(OTHER_PRIVATE_KEY, "test").unwrap();
+        let token = other.issue("testUser1", "admin", "sid-1").unwrap();
+        assert_eq!(verifier().verify(&token).unwrap_err(), VerifyError::Invalid);
+    }
+
+    #[test]
+    fn tampered_token_is_rejected() {
+        let token = signer().issue("testUser1", "guest", "sid-1").unwrap();
+        let mut parts: Vec<String> = token.split('.').map(String::from).collect();
+        let forged = signer().issue("testUser1", "admin", "sid-1").unwrap();
+        parts[1] = forged.split('.').nth(1).unwrap().to_string();
+        // Payload of the admin token with the signature of the guest token.
+        let tampered = parts.join(".");
+        assert_ne!(tampered, forged);
+        assert_eq!(
+            verifier().verify(&tampered).unwrap_err(),
+            VerifyError::Invalid
+        );
+    }
+
+    #[test]
+    fn hs256_token_is_rejected() {
+        // Old-style token signed with a shared secret.
+        let claims = serde_json::json!({
+            "iat": 0, "exp": i64::MAX / 2, "user_name": "u", "role": "admin",
+            "sid": "s", "iss": "greenhouse-auth", "aud": "greenhouse-web"
+        });
+        let token = jsonwebtoken::encode(
+            &jsonwebtoken::Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(SECRET.as_bytes()),
+        )
+        .unwrap();
+        assert_eq!(verifier().verify(&token).unwrap_err(), VerifyError::Invalid);
+    }
+
+    #[test]
+    fn refresh_token_hash_is_stable_and_distinct() {
+        let a = session::new_refresh_token();
+        let b = session::new_refresh_token();
+        assert_ne!(a, b);
+        assert_eq!(
+            session::hash_refresh_token(&a),
+            session::hash_refresh_token(&a)
+        );
+        assert_ne!(
+            session::hash_refresh_token(&a),
+            session::hash_refresh_token(&b)
+        );
+        assert_eq!(session::hash_refresh_token(&a).len(), 64);
     }
 
     #[test]

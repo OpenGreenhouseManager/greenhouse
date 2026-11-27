@@ -30,6 +30,16 @@ pub struct UserPreferencesResponseDto {
     ts(export, export_to = "auth_service/")
 )]
 pub struct SetPreferencesRequestDto {
-    pub token: String,
+    pub user_name: String,
     pub preferences: UserPreferencesRequestDto,
+}
+
+#[derive(Serialize, Deserialize, Debug, IntoJsonResponse)]
+#[cfg_attr(
+    feature = "ts",
+    derive(ts_rs::TS),
+    ts(export, export_to = "auth_service/")
+)]
+pub struct GetPreferencesRequestDto {
+    pub user_name: String,
 }

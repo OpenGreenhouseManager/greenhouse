@@ -259,8 +259,137 @@ async fn register_user(username: String, password: String, one_time_token: Strin
     );
 
     result
-        .json::<greenhouse_core::auth_service_dto::register::RegisterResponseDto>()
+        .json::<greenhouse_core::auth_service_dto::login::LoginResponseDto>()
         .await
         .unwrap()
         .token
+}
+
+async fn refresh(refresh_token: Option<&str>) -> reqwest::Response {
+    let mut request = reqwest::Client::new().post("http://localhost:3000/api/refresh");
+    if let Some(token) = refresh_token {
+        request = request.header("Cookie", format!("refresh-token={token}"));
+    }
+    request.send().await.unwrap()
+}
+
+#[tokio::test]
+async fn refresh_issues_working_access_token() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    test_helper::register_admin().await;
+    let (_, refresh_token) = test_helper::api_login_session().await;
+
+    let response = refresh(Some(&refresh_token)).await;
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    let access = test_helper::set_cookie(&response, "auth-token").expect("no auth cookie");
+    assert_eq!(
+        test_helper::set_cookie(&response, "refresh-token").as_deref(),
+        Some(refresh_token.as_str())
+    );
+
+    // The refreshed token passes the local check and the admin role check.
+    let one_time_token = get_one_time_token(access, String::from("normaluser")).await;
+    assert!(!one_time_token.is_empty());
+
+    context.stop().await;
+}
+
+#[tokio::test]
+async fn new_login_ends_old_session_at_refresh() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    test_helper::register_admin().await;
+    let (_, old_refresh) = test_helper::api_login_session().await;
+    let (_, new_refresh) = test_helper::api_login_session().await;
+
+    assert_eq!(
+        refresh(Some(&old_refresh)).await.status(),
+        reqwest::StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        refresh(Some(&new_refresh)).await.status(),
+        reqwest::StatusCode::OK
+    );
+
+    context.stop().await;
+}
+
+#[tokio::test]
+async fn refresh_without_or_with_unknown_cookie_is_forbidden() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+
+    assert_eq!(refresh(None).await.status(), reqwest::StatusCode::FORBIDDEN);
+    assert_eq!(
+        refresh(Some("not-a-session")).await.status(),
+        reqwest::StatusCode::FORBIDDEN
+    );
+
+    context.stop().await;
+}
+
+#[tokio::test]
+async fn forged_access_token_is_forbidden() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    let token = test_helper::admin_login().await;
+    // Swap the payload for one claiming another role; the signature no
+    // longer matches.
+    let mut parts: Vec<&str> = token.split('.').collect();
+    let payload = "eyJpYXQiOjAsImV4cCI6OTk5OTk5OTk5OSwidXNlcl9uYW1lIjoieCIsInJvbGUiOiJhZG1pbiIsInNpZCI6InMiLCJpc3MiOiJncmVlbmhvdXNlLWF1dGgiLCJhdWQiOiJncmVlbmhvdXNlLXdlYiJ9";
+    parts[1] = payload;
+    let forged = parts.join(".");
+
+    let response = reqwest::Client::new()
+        .post("http://localhost:3000/api/settings/generate_one_time_token")
+        .header("Cookie", format!("auth-token={forged}"))
+        .json(&GenerateOneTimeTokenRequestDto {
+            username: String::from("normaluser"),
+        })
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::FORBIDDEN);
+
+    context.stop().await;
+}
+
+#[tokio::test]
+async fn preferences_follow_the_verified_user() {
+    use greenhouse_core::auth_service_dto::user_preferences::{
+        UserPreferencesRequestDto, UserPreferencesResponseDto,
+    };
+
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    let token = test_helper::admin_login().await;
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post("http://localhost:3000/api/user/preferences")
+        .header("Cookie", format!("auth-token={token}"))
+        .json(&UserPreferencesRequestDto {
+            dashboard_preferences: serde_json::json!({ "cards": [1] }),
+            alert_preferences: serde_json::json!({}),
+        })
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_success(), "{}", response.status());
+
+    let response = client
+        .get("http://localhost:3000/api/user/preferences")
+        .header("Cookie", format!("auth-token={token}"))
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_success(), "{}", response.status());
+    let prefs: UserPreferencesResponseDto = response.json().await.unwrap();
+    assert_eq!(
+        prefs.dashboard_preferences,
+        serde_json::json!({ "cards": [1] })
+    );
+
+    context.stop().await;
 }

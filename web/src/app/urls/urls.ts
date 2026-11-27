@@ -2,6 +2,8 @@ import { environment } from '../../environments/environment';
 
 export const register = `${environment.baseUrl}/api/register`;
 export const login = `${environment.baseUrl}/api/login`;
+export const refresh = `${environment.baseUrl}/api/refresh`;
+export const logout = `${environment.baseUrl}/api/logout`;
 export const otp = `${environment.baseUrl}/api/settings/generate_one_time_token`;
 export const diary = `${environment.baseUrl}/api/diary`;
 export const alert = `${environment.baseUrl}/api/alert`;

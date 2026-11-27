@@ -1,7 +1,9 @@
 //! Request authentication for the public APIs.
 //!
 //! [`AuthUser`] is an axum extractor that reads the `auth-token` cookie and
-//! verifies it with the service named by the state's [`AuthVerifier`]. The
+//! verifies it with the state's [`AuthVerifier`]. User access tokens are
+//! Ed25519 JWTs checked locally by [`JwtVerifier`], so a request costs no call
+//! to `auth_service`. Device keys are still checked by `device_service`. The
 //! result is cached in the request extensions, so a router-wide
 //! `from_extractor` layer and a handler argument cost one verification.
 //!
@@ -13,41 +15,130 @@
 //! async fn handler(_: RequireRole<Admin>, user: AuthUser) { /* ... */ }
 //! ```
 
-use std::marker::PhantomData;
+use std::{fmt, marker::PhantomData, path::Path, sync::Arc};
 
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::{StatusCode, request::Parts},
     response::{IntoResponse, Response},
 };
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, errors::ErrorKind};
 use tower_cookies::{Cookie, Cookies};
 
-use crate::service_client::{AuthServiceClient, ClientError, DeviceServiceClient};
+use crate::{
+    auth_service_dto::user_token::{AUDIENCE, ISSUER, UserToken},
+    service_client::{ClientError, DeviceServiceClient},
+};
 
-/// Name of the cookie that carries the token.
+/// Name of the cookie that carries the access token.
 pub const AUTH_COOKIE: &str = "auth-token";
+
+/// Name of the HTTP-only cookie that carries the refresh token.
+pub const REFRESH_COOKIE: &str = "refresh-token";
 
 /// Role carried by tokens verified by [`AuthVerifier::DeviceKey`].
 pub const SCRIPT_ROLE: &str = "script";
 
+/// Verifies user access tokens with `auth_service`'s Ed25519 public key.
+#[derive(Clone)]
+pub struct JwtVerifier {
+    key: Arc<DecodingKey>,
+    validation: Arc<Validation>,
+}
+
+impl fmt::Debug for JwtVerifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("JwtVerifier").finish_non_exhaustive()
+    }
+}
+
+impl JwtVerifier {
+    /// Builds a verifier from a PEM encoded Ed25519 public key (SPKI).
+    pub fn from_public_key_pem(pem: &[u8]) -> Result<Self, jsonwebtoken::errors::Error> {
+        let mut validation = Validation::new(Algorithm::EdDSA);
+        validation.set_issuer(&[ISSUER]);
+        validation.set_audience(&[AUDIENCE]);
+        validation.set_required_spec_claims(&["exp", "iss", "aud"]);
+        validation.leeway = 30;
+        Ok(Self {
+            key: Arc::new(DecodingKey::from_ed_pem(pem)?),
+            validation: Arc::new(validation),
+        })
+    }
+
+    /// Reads the public key from `path`.
+    pub fn from_public_key_file(path: impl AsRef<Path>) -> Result<Self, String> {
+        let path = path.as_ref();
+        let pem = std::fs::read(path)
+            .map_err(|e| format!("cannot read JWT public key {}: {e}", path.display()))?;
+        Self::from_public_key_pem(&pem)
+            .map_err(|e| format!("invalid JWT public key {}: {e}", path.display()))
+    }
+
+    /// Checks signature, `exp`, `iss` and `aud` and returns the claims.
+    pub fn verify(&self, token: &str) -> Result<UserToken, VerifyError> {
+        jsonwebtoken::decode::<UserToken>(token, &self.key, &self.validation)
+            .map(|data| data.claims)
+            .map_err(|e| match e.kind() {
+                ErrorKind::ExpiredSignature => VerifyError::Expired,
+                _ => VerifyError::Invalid,
+            })
+    }
+}
+
+/// Why a token could not be verified.
+#[derive(Debug, PartialEq, Eq)]
+pub enum VerifyError {
+    /// The token was valid but its `exp` has passed.
+    Expired,
+    /// The token is forged, malformed or for someone else.
+    Invalid,
+    /// The verifying service could not be reached or answered garbage.
+    Unavailable,
+}
+
+/// Identity taken from a verified token.
+#[derive(Clone, Debug)]
+pub struct Verified {
+    pub role: String,
+    /// Set for user tokens, `None` for device keys.
+    pub user_name: Option<String>,
+}
+
 /// Who verifies tokens for an API.
 #[derive(Clone, Debug)]
 pub enum AuthVerifier {
-    /// User JWTs, checked by `auth_service`.
-    AuthService(AuthServiceClient),
+    /// User access JWTs, verified locally.
+    Jwt(JwtVerifier),
     /// Device scripting keys, checked by `device_service`.
     DeviceKey(DeviceServiceClient),
 }
 
 impl AuthVerifier {
-    /// Verifies `token` and returns its role.
-    pub async fn verify(&self, token: &str) -> Result<String, ClientError> {
+    /// Verifies `token` and returns who it belongs to.
+    pub async fn verify(&self, token: &str) -> Result<Verified, VerifyError> {
         match self {
-            AuthVerifier::AuthService(client) => Ok(client.check_token(token).await?.role),
-            AuthVerifier::DeviceKey(client) => {
-                client.check_key(token).await?;
-                Ok(SCRIPT_ROLE.to_string())
+            AuthVerifier::Jwt(verifier) => {
+                let claims = verifier.verify(token)?;
+                Ok(Verified {
+                    role: claims.role,
+                    user_name: Some(claims.user_name),
+                })
             }
+            AuthVerifier::DeviceKey(client) => match client.check_key(token).await {
+                Ok(_) => Ok(Verified {
+                    role: SCRIPT_ROLE.to_string(),
+                    user_name: None,
+                }),
+                Err(ClientError::Api { status, .. }) if !status.is_server_error() => {
+                    tracing::trace!(%status, "device key rejected");
+                    Err(VerifyError::Invalid)
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "device key verification failed");
+                    Err(VerifyError::Unavailable)
+                }
+            },
         }
     }
 }
@@ -58,6 +149,8 @@ pub struct AuthUser {
     /// The verified token, for forwarding to services that need it.
     pub token: String,
     pub role: String,
+    /// The user the token was issued to. `None` for device keys.
+    pub user_name: Option<String>,
 }
 
 impl AuthUser {
@@ -73,6 +166,8 @@ pub enum AuthRejection {
     MissingToken,
     /// The verifier rejected the token.
     InvalidToken,
+    /// The access token expired; the client should refresh and retry.
+    ExpiredToken,
     /// The token is valid but lacks the required role.
     MissingRole(&'static str),
     /// The verifying service could not be reached or answered garbage.
@@ -89,6 +184,9 @@ impl IntoResponse for AuthRejection {
             AuthRejection::MissingToken | AuthRejection::InvalidToken => {
                 StatusCode::FORBIDDEN.into_response()
             }
+            // 401 without a role message makes the frontend refresh the
+            // session and retry once.
+            AuthRejection::ExpiredToken => StatusCode::UNAUTHORIZED.into_response(),
             AuthRejection::MissingRole(role) => {
                 (StatusCode::UNAUTHORIZED, format!("requires role {role}")).into_response()
             }
@@ -119,20 +217,25 @@ where
             return Err(AuthRejection::MissingToken);
         };
 
-        let role = match AuthVerifier::from_ref(state).verify(&token).await {
-            Ok(role) => role,
-            Err(ClientError::Api { status, .. }) if !status.is_server_error() => {
-                tracing::trace!(%status, "token rejected");
+        let verified = match AuthVerifier::from_ref(state).verify(&token).await {
+            Ok(verified) => verified,
+            Err(VerifyError::Expired) => {
+                tracing::trace!("token expired");
+                return Err(AuthRejection::ExpiredToken);
+            }
+            Err(VerifyError::Invalid) => {
+                tracing::trace!("token rejected");
                 cookies.remove(Cookie::from(AUTH_COOKIE));
                 return Err(AuthRejection::InvalidToken);
             }
-            Err(e) => {
-                tracing::error!(error = %e, "token verification failed");
-                return Err(AuthRejection::VerifierUnavailable);
-            }
+            Err(VerifyError::Unavailable) => return Err(AuthRejection::VerifierUnavailable),
         };
 
-        let user = AuthUser { token, role };
+        let user = AuthUser {
+            token,
+            role: verified.role,
+            user_name: verified.user_name,
+        };
         parts.extensions.insert(user.clone());
         Ok(user)
     }

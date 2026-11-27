@@ -16,6 +16,11 @@ pub const TEST_USERNAME: &str = "testuser";
 pub const TEST_PASSWORD: &str = "testpassword";
 pub const AUTH_SECRET: &str = "testpassword";
 
+/// Path of a test-only JWT key in `backend/test-fixtures/jwt`.
+fn fixture(name: &str) -> String {
+    format!("{}/../test-fixtures/jwt/{name}", env!("CARGO_MANIFEST_DIR"))
+}
+
 pub struct TestContext {
     auth_postgres_container: Option<ContainerAsync<Postgres>>,
     data_storage_postgres_container: Option<ContainerAsync<Postgres>>,
@@ -183,6 +188,8 @@ async fn start_auth_service(db_url: String) -> tokio::task::JoinHandle<Result<()
         service_port: 3001,
         sentry_url: String::new(),
         jwt_secret: AUTH_SECRET.to_string(),
+        jwt_private_key_path: fixture("test_jwt_private.pem"),
+        jwt_key_id: String::from("test"),
         environment: String::from("test"),
     };
 
@@ -261,6 +268,7 @@ async fn start_web_api() -> tokio::task::JoinHandle<Result<(), std::io::Error>> 
         },
         sentry_url: String::new(),
         environment: String::from("test"),
+        jwt_public_key_path: fixture("test_jwt_public.pem"),
     };
 
     let api_app = web_api::app(web_api_config.clone());
@@ -308,6 +316,27 @@ pub async fn register_admin() {
 }
 
 pub async fn api_login() -> String {
+    api_login_session().await.0
+}
+
+/// Value of cookie `name` set by `response`.
+#[allow(dead_code)]
+pub fn set_cookie(response: &reqwest::Response, name: &str) -> Option<String> {
+    response
+        .headers()
+        .get_all(reqwest::header::SET_COOKIE)
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .find_map(|v| {
+            let (pair, _) = v.split_once(';').unwrap_or((v, ""));
+            let (n, value) = pair.split_once('=')?;
+            (n == name && !value.is_empty()).then(|| value.to_string())
+        })
+}
+
+/// Logs in through web_api and returns the access token and the refresh
+/// token from the cookies.
+pub async fn api_login_session() -> (String, String) {
     let client = reqwest::Client::new();
     let response = client
         .post("http://localhost:3000/api/login")
@@ -320,9 +349,10 @@ pub async fn api_login() -> String {
         .unwrap();
 
     assert!(response.status().is_success(), "Failed api login");
+    let refresh = set_cookie(&response, "refresh-token").expect("no refresh cookie");
     let user_token: greenhouse_core::auth_service_dto::login::LoginResponseDto =
         response.json().await.unwrap();
-    user_token.token
+    (user_token.token, refresh)
 }
 
 /// Address of the fake smart device started by [`TestContext`].

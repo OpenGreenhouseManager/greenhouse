@@ -12,7 +12,7 @@ bb8 = { workspace = true }
 bcrypt = { workspace = true }
 chrono = { workspace = true }
 derive_more = { workspace = true }
-diesel = { workspace = true, features = ["uuid", "postgres", "serde_json"] }
+diesel = { workspace = true, features = ["uuid", "postgres", "serde_json", "chrono"] }
 diesel-async = { workspace = true }
 diesel_migrations = { workspace = true }
 greenhouse_core = { workspace = true, features = ["auth_service_dto", "error_handling"] }
@@ -22,6 +22,7 @@ sentry = { workspace = true, features = ["debug-images", "tower"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+sha2 = { workspace = true }
 tokio = { workspace = true }
 tower-http = { workspace = true, features = ["trace"] }
 tracing = { workspace = true }
@@ -32,3 +33,6 @@ uuid = { workspace = true, features = [
     "macro-diagnostics",
     "serde",
 ] }
+
+[dev-dependencies]
+greenhouse_core = { workspace = true, features = ["auth"] }
