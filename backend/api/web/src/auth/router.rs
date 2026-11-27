@@ -103,7 +103,8 @@ pub(crate) async fn api_register_handler(
     match auth.register(&register_request).await {
         Ok(session) => Ok(start_session(&cookies, session).into_response()),
         Err(e) => {
-            end_session(&cookies);
+            // Leave any existing session alone: a failed attempt must not
+            // drop cookies of a live session without revoking it.
             tracing::error!("Error during registration: {:?}", e);
             Err(e.into())
         }
@@ -120,7 +121,8 @@ pub(crate) async fn api_login_handler(
     match auth.login(&login_request).await {
         Ok(session) => Ok(start_session(&cookies, session).into_response()),
         Err(e) => {
-            end_session(&cookies);
+            // Leave any existing session alone: a failed attempt must not
+            // drop cookies of a live session without revoking it.
             tracing::error!("Error during login: {:?}", e);
             Err(e.into())
         }

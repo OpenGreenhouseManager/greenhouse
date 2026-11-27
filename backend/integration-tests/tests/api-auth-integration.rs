@@ -356,6 +356,58 @@ async fn logout_revokes_session_and_expires_cookies() {
 }
 
 #[tokio::test]
+async fn failed_login_keeps_existing_session_cookies() {
+    let mut context = TestContext::new();
+    context.start_all_services().await;
+    test_helper::register_admin().await;
+    let (access, refresh_token) = test_helper::api_login_session().await;
+
+    // A failed login (say, in another tab) must not expire the cookies of the
+    // live session, or logout could no longer revoke it.
+    let response = reqwest::Client::new()
+        .post("http://localhost:3000/api/login")
+        .header(
+            "Cookie",
+            format!("auth-token={access}; refresh-token={refresh_token}"),
+        )
+        .json(&greenhouse_core::auth_service_dto::login::LoginRequestDto {
+            username: test_helper::TEST_USERNAME.to_string(),
+            password: "wrong-password".to_string(),
+        })
+        .send()
+        .await
+        .unwrap();
+    assert!(!response.status().is_success());
+    assert_eq!(
+        response
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter()
+            .count(),
+        0
+    );
+
+    // The session still works and logout still revokes it.
+    assert_eq!(
+        refresh(Some(&refresh_token)).await.status(),
+        reqwest::StatusCode::OK
+    );
+    let response = reqwest::Client::new()
+        .post("http://localhost:3000/api/session/logout")
+        .header("Cookie", format!("refresh-token={refresh_token}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    assert_eq!(
+        refresh(Some(&refresh_token)).await.status(),
+        reqwest::StatusCode::FORBIDDEN
+    );
+
+    context.stop().await;
+}
+
+#[tokio::test]
 async fn refresh_without_or_with_unknown_cookie_is_forbidden() {
     let mut context = TestContext::new();
     context.start_all_services().await;
