@@ -266,7 +266,7 @@ async fn register_user(username: String, password: String, one_time_token: Strin
 }
 
 async fn refresh(refresh_token: Option<&str>) -> reqwest::Response {
-    let mut request = reqwest::Client::new().post("http://localhost:3000/api/refresh");
+    let mut request = reqwest::Client::new().post("http://localhost:3000/api/session/refresh");
     if let Some(token) = refresh_token {
         request = request.header("Cookie", format!("refresh-token={token}"));
     }
@@ -320,13 +320,16 @@ async fn logout_revokes_session_and_expires_cookies() {
     let mut context = TestContext::new();
     context.start_all_services().await;
     test_helper::register_admin().await;
-    let (access, refresh_token) = test_helper::api_login_session().await;
+    let (_, refresh_token) = test_helper::api_login_session().await;
 
-    // Only the access cookie is sent: the refresh cookie is scoped to
-    // /api/refresh.
+    // The refresh cookie is scoped to /api/session, so logout gets it even
+    // without a valid access cookie.
     let response = reqwest::Client::new()
-        .post("http://localhost:3000/api/logout")
-        .header("Cookie", format!("auth-token={access}"))
+        .post("http://localhost:3000/api/session/logout")
+        .header(
+            "Cookie",
+            format!("auth-token=garbage; refresh-token={refresh_token}"),
+        )
         .send()
         .await
         .unwrap();
@@ -340,7 +343,7 @@ async fn logout_revokes_session_and_expires_cookies() {
     assert!(
         removals
             .iter()
-            .any(|c| c.starts_with("refresh-token=;") && c.contains("Path=/api/refresh"))
+            .any(|c| c.starts_with("refresh-token=;") && c.contains("Path=/api/session"))
     );
     assert!(removals.iter().any(|c| c.starts_with("auth-token=;")));
 

@@ -22,9 +22,8 @@ pub struct RefreshRequestDto {
     pub refresh_token: String,
 }
 
-/// Ends session `sid` of `user_name` if it is still the current one.
+/// Ends the session `refresh_token` belongs to, if it still exists.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LogoutRequestDto {
-    pub user_name: String,
-    pub sid: String,
+    pub refresh_token: String,
 }

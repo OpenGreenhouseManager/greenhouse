@@ -45,15 +45,6 @@ function refreshSession(next: HttpHandlerFn): Observable<RefreshResult> {
 }
 
 /**
- * Completes once no refresh is running. Sign-out waits for it, so a refresh
- * that was already in flight cannot set fresh cookies after logout, and
- * logout sees the access token naming the session it revokes.
- */
-export function refreshSettled(): Observable<unknown> {
-  return refreshInFlight ? refreshInFlight.pipe(take(1)) : of(null);
-}
-
-/**
  * Access tokens live 10 minutes. A 401 means the token expired (or the role
  * is missing): refresh the session once and retry. A 403 means the session
  * is gone, so drop the cookie and go to the login page.

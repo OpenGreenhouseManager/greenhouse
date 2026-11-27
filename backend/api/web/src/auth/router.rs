@@ -7,7 +7,7 @@ use axum::{
     routing::{get, post},
 };
 use greenhouse_core::{
-    auth::{AuthUser, JwtVerifier, REFRESH_COOKIE},
+    auth::{AuthUser, REFRESH_COOKIE},
     auth_service_dto::{
         login::{LoginRequestDto, LoginResponseDto},
         register::RegisterRequestDto,
@@ -24,15 +24,15 @@ use tower_cookies::{
 use super::AUTH_TOKEN;
 
 /// Path the refresh cookie is scoped to, so it is only sent to the refresh
-/// endpoint and not with every request.
-pub(crate) const REFRESH_PATH: &str = "/api/refresh";
+/// and logout endpoints and not with every request.
+pub(crate) const SESSION_PATH: &str = "/api/session";
 
 pub(crate) fn auth_routes(state: AppState) -> Router {
     Router::new()
         .route("/api/register", post(api_register_handler))
         .route("/api/login", post(api_login_handler))
-        .route(REFRESH_PATH, post(api_refresh_handler))
-        .route("/api/logout", post(api_logout_handler))
+        .route("/api/session/refresh", post(api_refresh_handler))
+        .route("/api/session/logout", post(api_logout_handler))
         .with_state(state)
 }
 
@@ -58,7 +58,7 @@ fn refresh_cookie(value: String) -> Cookie<'static> {
     c.set_same_site(SameSite::None);
     c.set_http_only(true);
     c.set_secure(true);
-    c.set_path(REFRESH_PATH);
+    c.set_path(SESSION_PATH);
     c
 }
 
@@ -82,8 +82,7 @@ fn start_session(cookies: &Cookies, session: SessionDto) -> Json<LoginResponseDt
 }
 
 /// Expires both cookies. `Cookies::remove` only emits a removal for cookies
-/// the request carried, and the refresh cookie is not sent outside
-/// `/api/refresh`, so the removals are added explicitly.
+/// the request carried, so the removals are added explicitly.
 fn end_session(cookies: &Cookies) {
     for mut cookie in [auth_cookie(String::new()), refresh_cookie(String::new())] {
         cookie.make_removal();
@@ -153,20 +152,15 @@ pub(crate) async fn api_refresh_handler(
     }
 }
 
-/// Revokes the session named by the access token (expired or not) and
-/// clears both cookies, so neither this browser nor a refresh that was still
-/// in flight can continue it.
+/// Revokes the session of the refresh cookie and clears both cookies. A
+/// refresh still in flight then fails, or its token is the one revoked here.
 #[axum::debug_handler(state = AppState)]
 pub(crate) async fn api_logout_handler(
     State(auth): State<AuthServiceClient>,
-    State(jwt): State<JwtVerifier>,
     cookies: Cookies,
 ) -> HttpResult<StatusCode> {
-    let claims = cookies
-        .get(AUTH_TOKEN)
-        .and_then(|c| jwt.verify_ignoring_expiry(c.value()).ok());
-    if let Some(claims) = claims
-        && let Err(e) = auth.logout(&claims.user_name, &claims.sid).await
+    if let Some(refresh_token) = cookies.get(REFRESH_COOKIE).map(|c| c.value().to_string())
+        && let Err(e) = auth.logout(&refresh_token).await
     {
         tracing::error!("Error during logout: {:?}", e);
         return Err(e.into());

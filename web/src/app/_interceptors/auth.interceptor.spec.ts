@@ -11,7 +11,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 import { refresh } from '../urls/urls';
-import { authInterceptor, refreshSettled } from './auth.interceptor';
+import { authInterceptor } from './auth.interceptor';
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -96,25 +96,6 @@ describe('authInterceptor', () => {
 
     expect(status).toBe(401);
     expect(router.navigate).not.toHaveBeenCalled();
-  });
-
-  it('lets sign-out wait for a refresh in flight', () => {
-    http.get('/api/diary').subscribe();
-    backend
-      .expectOne('/api/diary')
-      .flush(null, { status: 401, statusText: 'Unauthorized' });
-
-    let settled = false;
-    refreshSettled().subscribe(() => (settled = true));
-    expect(settled).toBe(false);
-
-    backend.expectOne(refresh).flush({ token: 't', token_type: 'Bearer' });
-    expect(settled).toBe(true);
-    backend.expectOne('/api/diary').flush({});
-
-    let idle = false;
-    refreshSettled().subscribe(() => (idle = true));
-    expect(idle).toBe(true);
   });
 
   it('logs out on 403 without refreshing', () => {

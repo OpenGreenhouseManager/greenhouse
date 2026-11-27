@@ -234,24 +234,20 @@ pub(crate) async fn refresh(
     }))
 }
 
-/// Ends a session so its refresh token stops working. Does nothing if a
-/// newer login already replaced it.
+/// Ends the session of a refresh token so it can no longer be refreshed.
+/// Does nothing if the session is already gone.
 #[axum::debug_handler]
 pub(crate) async fn logout(
     State(AppState { pool, .. }): State<AppState>,
     Json(request): Json<LogoutRequestDto>,
 ) -> HttpResult<StatusCode> {
-    let Ok(sid) = uuid::Uuid::parse_str(&request.sid) else {
-        return Ok(StatusCode::OK);
-    };
     let mut conn = pool.get().await.map_err(|e| {
         sentry::capture_error(&e);
         Error::DatabaseConnection
     })?;
 
     diesel::update(users)
-        .filter(username.eq(&request.user_name))
-        .filter(session_id.eq(sid))
+        .filter(login_session.eq(hash_refresh_token(&request.refresh_token)))
         .set((
             login_session.eq(""),
             session_id.eq(None::<uuid::Uuid>),

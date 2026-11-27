@@ -53,13 +53,12 @@ impl AuthServiceClient {
             .await
     }
 
-    /// Ends session `sid` of `user_name`, so its refresh token stops working.
-    pub async fn logout(&self, user_name: &str, sid: &str) -> ClientResult<()> {
+    /// Ends the session of `refresh_token`, so it can no longer be refreshed.
+    pub async fn logout(&self, refresh_token: &str) -> ClientResult<()> {
         self.0
             .post(endpoints::LOGOUT)
             .json(&LogoutRequestDto {
-                user_name: user_name.to_string(),
-                sid: sid.to_string(),
+                refresh_token: refresh_token.to_string(),
             })
             .send_empty()
             .await

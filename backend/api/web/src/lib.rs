@@ -67,7 +67,6 @@ struct AppState {
     device: DeviceServiceClient,
     data_storage: DataStorageServiceClient,
     verifier: AuthVerifier,
-    jwt: JwtVerifier,
 }
 
 impl AppState {
@@ -78,8 +77,7 @@ impl AppState {
         // One pooled client shared by every service client.
         let http = http_client();
         Self {
-            verifier: AuthVerifier::Jwt(jwt.clone()),
-            jwt,
+            verifier: AuthVerifier::Jwt(jwt),
             auth: AuthServiceClient::new(http.clone(), &addresses.auth_service),
             device: DeviceServiceClient::new(http.clone(), &addresses.device_service),
             data_storage: DataStorageServiceClient::new(http, &addresses.data_storage_service),
