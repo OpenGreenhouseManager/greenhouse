@@ -303,9 +303,17 @@ async fn new_login_ends_old_session_at_refresh() {
     let (_, old_refresh) = test_helper::api_login_session().await;
     let (_, new_refresh) = test_helper::api_login_session().await;
 
+    // The rejected refresh must not clear cookies: the browser may already
+    // hold the newer session, which logout still has to be able to revoke.
+    let rejected = refresh(Some(&old_refresh)).await;
+    assert_eq!(rejected.status(), reqwest::StatusCode::FORBIDDEN);
     assert_eq!(
-        refresh(Some(&old_refresh)).await.status(),
-        reqwest::StatusCode::FORBIDDEN
+        rejected
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter()
+            .count(),
+        0
     );
     assert_eq!(
         refresh(Some(&new_refresh)).await.status(),

@@ -143,8 +143,10 @@ pub(crate) async fn api_refresh_handler(
     match auth.refresh(&refresh_token).await {
         Ok(session) => Ok(start_session(&cookies, session).into_response()),
         Err(ClientError::Api { status, .. }) if !status.is_server_error() => {
+            // Leave the cookies alone: by the time this answer lands the
+            // browser may hold a newer session (a login in another tab), and
+            // clearing it would leave that session unrevocable by logout.
             tracing::trace!(%status, "refresh rejected");
-            end_session(&cookies);
             Ok(StatusCode::FORBIDDEN.into_response())
         }
         Err(e) => {
