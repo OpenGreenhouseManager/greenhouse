@@ -1,38 +1,42 @@
 use super::{Error, HttpResult};
 use crate::database::schema::preferences::{alert_preferences, dashboard_preferences, user_id};
-use crate::token;
 use crate::{
     AppState,
     database::{self, models::Preferences, models::User},
 };
 use crate::{
-    Config, Pool, database::schema::preferences::dsl::preferences,
-    database::schema::users::dsl::users, token::one_time_token::check_one_time_token,
+    Pool, database::schema::preferences::dsl::preferences, database::schema::users::dsl::users,
+    token::one_time_token::check_one_time_token, token::session::hash_refresh_token,
+    token::user_token::TokenSigner,
 };
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{Json, extract::State, response::Response};
-use database::schema::users::{id, login_session, username};
+use database::schema::users::{id, login_session, session_expires_at, session_id, username};
 use diesel::{ExpressionMethods, query_dsl::methods::FilterDsl};
 use diesel_async::RunQueryDsl;
 use greenhouse_core::auth_service_dto::generate_one_time_token::{
     GenerateOneTimeTokenRequestDto, GenerateOneTimeTokenResponseDto,
 };
-use greenhouse_core::auth_service_dto::token::TokenResponseDto;
 use greenhouse_core::auth_service_dto::user_preferences::{
-    SetPreferencesRequestDto, UserPreferencesResponseDto,
+    GetPreferencesRequestDto, SetPreferencesRequestDto, UserPreferencesResponseDto,
 };
 use greenhouse_core::auth_service_dto::{
-    login::{LoginRequestDto, LoginResponseDto},
-    register::{RegisterRequestDto, RegisterResponseDto},
-    register_admin::{RegisterAdminRequestDto, RegisterAdminResponseDto},
-    token::TokenRequestDto,
+    login::LoginRequestDto,
+    register::RegisterRequestDto,
+    register_admin::RegisterAdminRequestDto,
+    session::{LogoutRequestDto, RefreshRequestDto, SessionDto},
 };
 
 #[axum::debug_handler]
 pub(crate) async fn register(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState {
+        config,
+        pool,
+        signer,
+    }): State<AppState>,
     Json(user): Json<RegisterRequestDto>,
-) -> HttpResult<Response> {
+) -> HttpResult<Json<SessionDto>> {
     let role = "user";
     check_one_time_token(
         &user.username,
@@ -41,45 +45,33 @@ pub(crate) async fn register(
             .map_err(|_| Error::OneTimeToken)?,
         &config.jwt_secret,
     )?;
-    let token = register_user(&user.username, &user.password, role, &config, &pool).await?;
-    Ok(Json(RegisterResponseDto {
-        token,
-        token_type: String::from("Bearer"),
-    })
-    .into_response())
+    let session = register_user(&user.username, &user.password, role, &signer, &pool).await?;
+    Ok(Json(session))
 }
 
 #[axum::debug_handler]
 pub(crate) async fn register_admin(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState { pool, signer, .. }): State<AppState>,
     Json(user): Json<RegisterAdminRequestDto>,
-) -> HttpResult<Response> {
+) -> HttpResult<Json<SessionDto>> {
     let role = "admin";
-    let token = register_user(&user.username, &user.password, role, &config, &pool).await?;
-    Ok(Json(RegisterAdminResponseDto {
-        token,
-        token_type: String::from("Bearer"),
-    })
-    .into_response())
+    let session = register_user(&user.username, &user.password, role, &signer, &pool).await?;
+    Ok(Json(session))
 }
 
 #[axum::debug_handler]
 pub(crate) async fn register_guest(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState { pool, signer, .. }): State<AppState>,
     Json(user): Json<RegisterAdminRequestDto>,
-) -> HttpResult<Response> {
+) -> HttpResult<Json<SessionDto>> {
     let role = "guest";
-    let token = register_user(&user.username, &user.password, role, &config, &pool).await?;
-    Ok(Json(RegisterAdminResponseDto {
-        token,
-        token_type: String::from("Bearer"),
-    })
-    .into_response())
+    let session = register_user(&user.username, &user.password, role, &signer, &pool).await?;
+    Ok(Json(session))
 }
 
 #[axum::debug_handler]
 pub(crate) async fn generate_one_time_token(
-    State(AppState { config, pool: _ }): State<AppState>,
+    State(AppState { config, .. }): State<AppState>,
     Json(user): Json<GenerateOneTimeTokenRequestDto>,
 ) -> HttpResult<Response> {
     let token =
@@ -94,22 +86,16 @@ pub(crate) async fn register_user(
     name: &str,
     password: &str,
     role: &str,
-    config: &Config,
+    signer: &TokenSigner,
     pool: &Pool,
-) -> HttpResult<String> {
+) -> HttpResult<SessionDto> {
     let mut conn = pool.get().await.map_err(|e| {
-        sentry::configure_scope(|scope| {
-            let mut map = std::collections::BTreeMap::new();
-            map.insert(String::from("db_url"), config.database_url.clone().into());
-
-            scope.set_context("db", sentry::protocol::Context::Other(map));
-        });
         sentry::capture_error(&e);
         Error::DatabaseConnection
     })?;
 
     let mut new_user = User::new(name, password, role)?;
-    let token = new_user.refresh_token(&config.jwt_secret)?;
+    let session = new_user.start_session(signer)?;
     let _ = diesel::insert_into(database::schema::users::table)
         .values(new_user)
         .execute(&mut conn)
@@ -129,14 +115,18 @@ pub(crate) async fn register_user(
             sentry::capture_error(&e);
             Error::UsernameTaken
         })?;
-    Ok(token)
+    Ok(session)
 }
 
 #[axum::debug_handler]
 pub(crate) async fn login(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState {
+        config,
+        pool,
+        signer,
+    }): State<AppState>,
     Json(login): Json<LoginRequestDto>,
-) -> HttpResult<Response> {
+) -> HttpResult<Json<SessionDto>> {
     let mut conn = pool.get().await.map_err(|e| {
         sentry::configure_scope(|scope| {
             let mut map = std::collections::BTreeMap::new();
@@ -174,11 +164,17 @@ pub(crate) async fn login(
         return Err(Error::PasswordIncorrect.into());
     }
 
-    let token = user.refresh_token(&config.jwt_secret)?;
+    // Replaces the previous session: its refresh token stops working now and
+    // its access token at the latest when it expires.
+    let session = user.start_session(&signer)?;
 
     diesel::update(users)
         .filter(id.eq(user.id))
-        .set(login_session.eq(&token))
+        .set((
+            login_session.eq(&user.login_session),
+            session_id.eq(user.session_id),
+            session_expires_at.eq(user.session_expires_at),
+        ))
         .execute(&mut conn)
         .await
         .map_err(|e| {
@@ -196,76 +192,89 @@ pub(crate) async fn login(
             Error::UserNotFound
         })?;
 
-    Ok(Json(LoginResponseDto {
-        token,
-        token_type: String::from("Bearer"),
-    })
-    .into_response())
+    Ok(Json(session))
 }
 
+/// Issues a new access token for a live refresh session. This is where a
+/// session replaced by a newer login ends.
 #[axum::debug_handler]
-pub(crate) async fn check_token(
-    State(AppState { config, pool }): State<AppState>,
-    Json(token): Json<TokenRequestDto>,
-) -> HttpResult<Response> {
+pub(crate) async fn refresh(
+    State(AppState { pool, signer, .. }): State<AppState>,
+    Json(request): Json<RefreshRequestDto>,
+) -> HttpResult<Json<SessionDto>> {
     let mut conn = pool.get().await.map_err(|e| {
-        sentry::configure_scope(|scope| {
-            let mut map = std::collections::BTreeMap::new();
-            map.insert(String::from("db_url"), config.database_url.into());
-
-            scope.set_context("db", sentry::protocol::Context::Other(map));
-        });
         sentry::capture_error(&e);
         Error::DatabaseConnection
     })?;
 
-    let claims = token::user_token::get_claims(&token.token, &config.jwt_secret)?;
-
     let user = users
-        .filter(username.eq(&claims.user_name))
+        .filter(login_session.eq(hash_refresh_token(&request.refresh_token)))
         .get_result::<User>(&mut conn)
         .await
-        .map_err(|e| {
-            sentry::configure_scope(|scope| {
-                scope.set_user(Some(sentry::User {
-                    username: Some(claims.user_name.clone()),
-                    ..Default::default()
-                }));
-                let mut map = std::collections::BTreeMap::new();
-                map.insert(String::from("username"), claims.user_name.clone().into());
-
-                scope.set_context("user_long", sentry::protocol::Context::Other(map));
-            });
-            sentry::capture_error(&e);
-            Error::UserNotFound
+        .map_err(|e| match e {
+            diesel::result::Error::NotFound => Error::SessionInvalid,
+            e => {
+                sentry::capture_error(&e);
+                Error::DatabaseConnection
+            }
         })?;
 
-    if token.token != user.login_session {
-        return Err(Error::TokenInvalid.into());
+    if !user.session_is_valid(&request.refresh_token) {
+        return Err(Error::SessionInvalid.into());
     }
+    let (Some(sid), Some(expires_at)) = (user.session_id, user.session_expires_at) else {
+        return Err(Error::SessionInvalid.into());
+    };
 
-    Ok(Json(TokenResponseDto { role: user.role }).into_response())
+    Ok(Json(SessionDto {
+        token: signer.issue(&user.username, &user.role, &sid.to_string())?,
+        token_type: String::from("Bearer"),
+        refresh_token: request.refresh_token,
+        refresh_expires_at: expires_at.timestamp(),
+    }))
+}
+
+/// Ends the session of a refresh token so it can no longer be refreshed.
+/// Does nothing if the session is already gone.
+#[axum::debug_handler]
+pub(crate) async fn logout(
+    State(AppState { pool, .. }): State<AppState>,
+    Json(request): Json<LogoutRequestDto>,
+) -> HttpResult<StatusCode> {
+    let mut conn = pool.get().await.map_err(|e| {
+        sentry::capture_error(&e);
+        Error::DatabaseConnection
+    })?;
+
+    diesel::update(users)
+        .filter(login_session.eq(hash_refresh_token(&request.refresh_token)))
+        .set((
+            login_session.eq(""),
+            session_id.eq(None::<uuid::Uuid>),
+            session_expires_at.eq(None::<chrono::DateTime<chrono::Utc>>),
+        ))
+        .execute(&mut conn)
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+            Error::DatabaseConnection
+        })?;
+    Ok(StatusCode::OK)
 }
 
 #[axum::debug_handler]
 pub(crate) async fn get_preferences(
-    State(AppState { config, pool }): State<AppState>,
-    Json(token_request): Json<TokenRequestDto>,
+    State(AppState { pool, .. }): State<AppState>,
+    Json(request): Json<GetPreferencesRequestDto>,
 ) -> HttpResult<UserPreferencesResponseDto> {
     let mut conn = pool.get().await.map_err(|_| Error::DatabaseConnection)?;
 
-    // Extract user info from token
-    let claims = token::user_token::get_claims(&token_request.token, &config.jwt_secret)?;
-
+    // web_api verified the access token and passes its user.
     let user = users
-        .filter(username.eq(&claims.user_name))
+        .filter(username.eq(&request.user_name))
         .get_result::<User>(&mut conn)
         .await
         .map_err(|_| Error::UserNotFound)?;
-
-    if token_request.token != user.login_session {
-        return Err(Error::TokenInvalid.into());
-    }
 
     let pref = preferences
         .filter(user_id.eq(&user.id))
@@ -280,7 +289,7 @@ pub(crate) async fn get_preferences(
 
 #[axum::debug_handler]
 pub(crate) async fn set_preferences(
-    State(AppState { config, pool }): State<AppState>,
+    State(AppState { pool, .. }): State<AppState>,
     Json(request): Json<SetPreferencesRequestDto>,
 ) -> HttpResult<UserPreferencesResponseDto> {
     let mut conn = pool.get().await.map_err(|e| {
@@ -288,18 +297,12 @@ pub(crate) async fn set_preferences(
         Error::DatabaseConnection
     })?;
 
-    // Extract user info from token
-    let claims = token::user_token::get_claims(&request.token, &config.jwt_secret)?;
-
+    // web_api verified the access token and passes its user.
     let user = users
-        .filter(username.eq(&claims.user_name))
+        .filter(username.eq(&request.user_name))
         .get_result::<User>(&mut conn)
         .await
         .map_err(|_| Error::UserNotFound)?;
-
-    if request.token != user.login_session {
-        return Err(Error::TokenInvalid.into());
-    }
 
     diesel::insert_into(preferences)
         .values(Preferences::new(

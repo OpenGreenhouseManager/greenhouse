@@ -1,17 +1,21 @@
 use crate::auth_service_dto::{
     endpoints,
     generate_one_time_token::{GenerateOneTimeTokenRequestDto, GenerateOneTimeTokenResponseDto},
-    login::{LoginRequestDto, LoginResponseDto},
-    register::{RegisterRequestDto, RegisterResponseDto},
-    token::{TokenRequestDto, TokenResponseDto},
+    login::LoginRequestDto,
+    register::RegisterRequestDto,
+    session::{LogoutRequestDto, RefreshRequestDto, SessionDto},
     user_preferences::{
-        SetPreferencesRequestDto, UserPreferencesRequestDto, UserPreferencesResponseDto,
+        GetPreferencesRequestDto, SetPreferencesRequestDto, UserPreferencesRequestDto,
+        UserPreferencesResponseDto,
     },
 };
 
 use super::{ClientResult, ServiceClient};
 
 /// Typed client for `auth_service`.
+///
+/// Access tokens are verified locally by [`crate::auth::JwtVerifier`]; this
+/// client is only needed for login, register, refresh and preferences.
 #[derive(Clone, Debug)]
 pub struct AuthServiceClient(ServiceClient);
 
@@ -20,10 +24,7 @@ impl AuthServiceClient {
         Self(ServiceClient::new(http, base_url))
     }
 
-    pub async fn register(
-        &self,
-        request: &RegisterRequestDto,
-    ) -> ClientResult<RegisterResponseDto> {
+    pub async fn register(&self, request: &RegisterRequestDto) -> ClientResult<SessionDto> {
         self.0
             .post(endpoints::REGISTER)
             .json(request)
@@ -31,7 +32,8 @@ impl AuthServiceClient {
             .await
     }
 
-    pub async fn login(&self, request: &LoginRequestDto) -> ClientResult<LoginResponseDto> {
+    /// Logs in and starts a new session, replacing the user's previous one.
+    pub async fn login(&self, request: &LoginRequestDto) -> ClientResult<SessionDto> {
         self.0
             .post(endpoints::LOGIN)
             .json(request)
@@ -39,12 +41,26 @@ impl AuthServiceClient {
             .await
     }
 
-    /// Verifies the signature and expiry of a user JWT and returns its role.
-    pub async fn check_token(&self, token: &str) -> ClientResult<TokenResponseDto> {
+    /// Issues a new access token if `refresh_token` is the user's current,
+    /// unexpired session.
+    pub async fn refresh(&self, refresh_token: &str) -> ClientResult<SessionDto> {
         self.0
-            .post(endpoints::CHECK_TOKEN)
-            .json(&bearer(token))
+            .post(endpoints::REFRESH)
+            .json(&RefreshRequestDto {
+                refresh_token: refresh_token.to_string(),
+            })
             .send_json()
+            .await
+    }
+
+    /// Ends the session of `refresh_token`, so it can no longer be refreshed.
+    pub async fn logout(&self, refresh_token: &str) -> ClientResult<()> {
+        self.0
+            .post(endpoints::LOGOUT)
+            .json(&LogoutRequestDto {
+                refresh_token: refresh_token.to_string(),
+            })
+            .send_empty()
             .await
     }
 
@@ -60,33 +76,33 @@ impl AuthServiceClient {
         Ok(resp.token)
     }
 
-    pub async fn get_preferences(&self, token: &str) -> ClientResult<UserPreferencesResponseDto> {
+    /// Preferences of `user_name`, who must come from a verified token.
+    pub async fn get_preferences(
+        &self,
+        user_name: &str,
+    ) -> ClientResult<UserPreferencesResponseDto> {
         self.0
             .post(&format!("{}/get", endpoints::PREFERENCES))
-            .json(&bearer(token))
+            .json(&GetPreferencesRequestDto {
+                user_name: user_name.to_string(),
+            })
             .send_json()
             .await
     }
 
+    /// Stores preferences of `user_name`, who must come from a verified token.
     pub async fn set_preferences(
         &self,
-        token: &str,
+        user_name: &str,
         preferences: UserPreferencesRequestDto,
     ) -> ClientResult<UserPreferencesResponseDto> {
         self.0
             .post(&format!("{}/set", endpoints::PREFERENCES))
             .json(&SetPreferencesRequestDto {
-                token: token.to_string(),
+                user_name: user_name.to_string(),
                 preferences,
             })
             .send_json()
             .await
-    }
-}
-
-fn bearer(token: &str) -> TokenRequestDto {
-    TokenRequestDto {
-        token: token.to_string(),
-        token_type: String::from("Bearer"),
     }
 }

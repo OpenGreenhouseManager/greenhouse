@@ -14,7 +14,7 @@ pub(crate) enum Error {
     UserNotFound,
     PasswordIncorrect,
     OneTimeToken,
-    TokenInvalid,
+    SessionInvalid,
     #[from]
     User(database::Error),
     #[from]
@@ -44,20 +44,18 @@ impl HttpErrorMapping for Error {
             Error::UserNotFound => StatusCode::NOT_FOUND,
             Error::PasswordIncorrect => StatusCode::UNAUTHORIZED,
             Error::OneTimeToken => StatusCode::BAD_REQUEST,
-            Error::TokenInvalid => StatusCode::UNAUTHORIZED,
+            Error::SessionInvalid => StatusCode::UNAUTHORIZED,
             Error::User(e) => match e {
                 database::Error::InvalidHash => StatusCode::BAD_REQUEST,
                 database::Error::Token(e) => match e {
-                    token::Error::InvalidTime => StatusCode::BAD_REQUEST,
-                    token::Error::JwtDecode => StatusCode::BAD_REQUEST,
-                    token::Error::JwtEncode => StatusCode::BAD_REQUEST,
+                    token::Error::JwtEncode => StatusCode::INTERNAL_SERVER_ERROR,
+                    token::Error::KeyLoad => StatusCode::INTERNAL_SERVER_ERROR,
                     token::Error::RegisterToken => StatusCode::BAD_REQUEST,
                 },
             },
             Error::Token(e) => match e {
-                token::Error::InvalidTime => StatusCode::BAD_REQUEST,
-                token::Error::JwtDecode => StatusCode::BAD_REQUEST,
-                token::Error::JwtEncode => StatusCode::BAD_REQUEST,
+                token::Error::JwtEncode => StatusCode::INTERNAL_SERVER_ERROR,
+                token::Error::KeyLoad => StatusCode::INTERNAL_SERVER_ERROR,
                 token::Error::RegisterToken => StatusCode::BAD_REQUEST,
             },
         }
@@ -70,20 +68,18 @@ impl HttpErrorMapping for Error {
             Error::UserNotFound => String::from("Username or password incorrect"),
             Error::PasswordIncorrect => String::from("Username or password incorrect"),
             Error::OneTimeToken => String::from("One-time token error"),
-            Error::TokenInvalid => String::from("Token invalid"),
+            Error::SessionInvalid => String::from("Session expired or replaced"),
             Error::User(e) => match e {
                 database::Error::InvalidHash => String::from("Invalid hash"),
                 database::Error::Token(e) => match e {
-                    token::Error::InvalidTime => String::from("Invalid time"),
-                    token::Error::JwtDecode => String::from("JWT decode error"),
                     token::Error::JwtEncode => String::from("JWT encode error"),
+                    token::Error::KeyLoad => String::from("JWT key error"),
                     token::Error::RegisterToken => String::from("Register token error"),
                 },
             },
             Error::Token(e) => match e {
-                token::Error::InvalidTime => String::from("Invalid time"),
-                token::Error::JwtDecode => String::from("JWT decode error"),
                 token::Error::JwtEncode => String::from("JWT encode error"),
+                token::Error::KeyLoad => String::from("JWT key error"),
                 token::Error::RegisterToken => String::from("Register token error"),
             },
         }

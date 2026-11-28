@@ -16,6 +16,8 @@ diesel::table! {
         role -> Text,
         login_session -> Varchar,
         hash -> Varchar,
+        session_id -> Nullable<Uuid>,
+        session_expires_at -> Nullable<Timestamptz>,
     }
 }
 

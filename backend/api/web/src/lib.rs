@@ -3,7 +3,7 @@ use axum::extract::FromRef;
 use axum::routing::get;
 use axum::{Router, middleware};
 use greenhouse_core::{
-    auth::AuthVerifier,
+    auth::{AuthVerifier, JwtVerifier},
     service_client::{
         AuthServiceClient, DataStorageServiceClient, DeviceServiceClient, http_client,
     },
@@ -43,10 +43,22 @@ pub struct Config {
     pub sentry_url: String,
     #[serde(rename = "ENVIRONMENT", default = "default_environment")]
     pub environment: String,
+    /// PEM file with auth_service's Ed25519 public key. Access tokens are
+    /// verified with it, without calling auth_service.
+    #[serde(rename = "JWT_PUBLIC_KEY_PATH", default = "default_public_key_path")]
+    pub jwt_public_key_path: String,
 }
 
 fn default_environment() -> String {
     "development".to_string()
+}
+
+fn default_public_key_path() -> String {
+    if cfg!(debug_assertions) {
+        "api/web/config/jwt_public.pem".to_string()
+    } else {
+        "config/jwt_public.pem".to_string()
+    }
 }
 
 #[derive(FromRef, Clone)]
@@ -58,13 +70,15 @@ struct AppState {
 }
 
 impl AppState {
-    fn new(addresses: &ServiceAddresses) -> Self {
+    fn new(config: &Config) -> Self {
+        let addresses = &config.service_addresses;
+        let jwt = JwtVerifier::from_public_key_file(&config.jwt_public_key_path)
+            .unwrap_or_else(|e| panic!("{e}"));
         // One pooled client shared by every service client.
         let http = http_client();
-        let auth = AuthServiceClient::new(http.clone(), &addresses.auth_service);
         Self {
-            verifier: AuthVerifier::AuthService(auth.clone()),
-            auth,
+            verifier: AuthVerifier::Jwt(jwt),
+            auth: AuthServiceClient::new(http.clone(), &addresses.auth_service),
             device: DeviceServiceClient::new(http.clone(), &addresses.device_service),
             data_storage: DataStorageServiceClient::new(http, &addresses.data_storage_service),
         }
@@ -72,7 +86,7 @@ impl AppState {
 }
 
 pub fn app(config: Config) -> Router {
-    let state = AppState::new(&config.service_addresses);
+    let state = AppState::new(&config);
 
     let cors = CorsLayer::new()
         .allow_headers([AUTHORIZATION, ACCEPT, reqwest::header::CONTENT_TYPE])

@@ -1,8 +1,12 @@
-use crate::token;
+use crate::token::{self, user_token::TokenSigner};
 
 use super::{Error, Result};
 use bcrypt::Version;
+use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
+use greenhouse_core::auth_service_dto::{
+    session::SessionDto, user_token::REFRESH_SESSION_TTL_SECS,
+};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -13,8 +17,11 @@ pub(crate) struct User {
     pub(crate) id: Uuid,
     pub(crate) username: String,
     pub(crate) role: String,
+    /// SHA-256 of the current refresh token, empty when logged out.
     pub(crate) login_session: String,
     hash: String,
+    pub(crate) session_id: Option<Uuid>,
+    pub(crate) session_expires_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Queryable, Selectable, Deserialize, Insertable, AsChangeset)]
@@ -66,15 +73,36 @@ impl User {
             hash: password_hash.format_for_version(Version::TwoB),
             role: String::from(role),
             login_session: String::from(""),
+            session_id: None,
+            session_expires_at: None,
         })
     }
 
-    pub(crate) fn refresh_token(&mut self, jws_secret: &str) -> Result<String> {
-        let login_session =
-            token::user_token::generate_token(&self.username, &self.role, jws_secret)?;
+    /// Starts a new refresh session, replacing any previous one, and issues
+    /// its first access token. The caller stores the changed fields.
+    pub(crate) fn start_session(&mut self, signer: &TokenSigner) -> Result<SessionDto> {
+        let refresh_token = token::session::new_refresh_token();
+        let session_id = Uuid::new_v4();
+        let expires_at = Utc::now() + Duration::seconds(REFRESH_SESSION_TTL_SECS);
 
-        self.login_session = login_session.clone();
-        Ok(login_session)
+        self.login_session = token::session::hash_refresh_token(&refresh_token);
+        self.session_id = Some(session_id);
+        self.session_expires_at = Some(expires_at);
+
+        Ok(SessionDto {
+            token: signer.issue(&self.username, &self.role, &session_id.to_string())?,
+            token_type: String::from("Bearer"),
+            refresh_token,
+            refresh_expires_at: expires_at.timestamp(),
+        })
+    }
+
+    /// Whether `refresh_token` belongs to this user's current, unexpired
+    /// session.
+    pub(crate) fn session_is_valid(&self, refresh_token: &str) -> bool {
+        !self.login_session.is_empty()
+            && self.login_session == token::session::hash_refresh_token(refresh_token)
+            && self.session_expires_at.is_some_and(|at| at > Utc::now())
     }
 
     pub(crate) async fn check_login(&self, password: &str) -> Result<bool> {
@@ -107,6 +135,35 @@ mod tests {
 
         assert_eq!(user.username, "testUser1");
         assert_eq!(user.role, "test");
+    }
+
+    fn signer() -> TokenSigner {
+        TokenSigner::from_pem(
+            include_bytes!("../../../../test-fixtures/jwt/test_jwt_private.pem"),
+            "test",
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn new_session_replaces_old_one() {
+        let mut user = User::new("testUser1", "testPassword1", "test").unwrap();
+        assert!(!user.session_is_valid(""));
+
+        let first = user.start_session(&signer()).unwrap();
+        assert!(user.session_is_valid(&first.refresh_token));
+
+        let second = user.start_session(&signer()).unwrap();
+        assert!(user.session_is_valid(&second.refresh_token));
+        assert!(!user.session_is_valid(&first.refresh_token));
+    }
+
+    #[test]
+    fn expired_session_is_invalid() {
+        let mut user = User::new("testUser1", "testPassword1", "test").unwrap();
+        let session = user.start_session(&signer()).unwrap();
+        user.session_expires_at = Some(Utc::now() - Duration::seconds(1));
+        assert!(!user.session_is_valid(&session.refresh_token));
     }
 
     #[allow(clippy::needless_return)] // https://github.com/rust-lang/rust-clippy/issues/13458
